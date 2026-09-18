@@ -47,6 +47,12 @@ behind your mistakes, judging a bet spread, reading a rules sign from a photo.
 Every call is handed the engine's verdict and told not to contradict it, so the
 coach and the charts can never disagree.
 
+`tests/test-ai.mjs` installs a stand-in for the artifact runtime and exercises
+what the page controls: availability, the grounding prompt, streaming, cancel,
+the photo-to-rules flow, and each error code the contract defines. The live
+call itself needs a signed-in viewer and spends their account, so it is the one
+thing the suite cannot run.
+
 It uses the artifact `sample` capability — the page has no API key and stores no
 secret; calls run on the viewer's own Claude account with their consent. Opened
 as a plain file the AI panel says so and everything else keeps working. Tiers
@@ -65,6 +71,7 @@ node tests/test-ui.mjs      # end-to-end pass over all six screens
 node tests/test-money.mjs   # 220 simulated hands reconciled against an
                             # independently computed settlement
 node tests/test-sim.mjs     # 120M rounds checked against published figures
+node tests/test-ai.mjs      # every Claude path against a stand-in runtime
 ```
 
 `test-sim.mjs` is the one that decides whether the analyzer can be trusted. It

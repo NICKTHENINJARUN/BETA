@@ -3171,7 +3171,7 @@ async function initAI(){
     stateEl.innerHTML='Claude is available when this page is opened as a published artifact on claude.ai. Everything else on this screen — the play, the index, the count — is computed locally and works anywhere.';
     return;
   }
-  stateEl.textContent='Checking whether Claude is available here…';
+  stateEl.textContent='Checking whether Claude is available here — this can take a few seconds…';
   let fn=null;
   try{ fn=await window.claude.use('sample'); }catch(e){ fn=null; }
   if(!fn){
@@ -3179,9 +3179,13 @@ async function initAI(){
     return;
   }
   ai.fn=fn;
-  try{ const lim=await fn.limits(); ai.images=!!(lim&&lim.images); }catch(e){ ai.images=false; }
+  /* limits() is asked once and reused: a second call that rejected here would
+     throw past the lines below and strand the panel on "Checking...". */
+  let lim=null;
+  try{ lim=await fn.limits(); }catch(e){ lim=null; }
+  ai.images=!!(lim&&lim.images);
   $('#asPhoto').hidden=!ai.images;
-  if(ai.images) $('#asPhotoFile').accept=(await fn.limits()).images.mediaTypes.join(',');
+  if(ai.images&&Array.isArray(lim.images.mediaTypes)) $('#asPhotoFile').accept=lim.images.mediaTypes.join(',');
   stateEl.hidden=true; body.hidden=false;
 }
 function addBubble(cls,text){
