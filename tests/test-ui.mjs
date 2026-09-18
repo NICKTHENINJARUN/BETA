@@ -292,6 +292,12 @@ ok(/No sessions/.test(await txt('#sessionList')), 'second bankroll is separate')
 await p.locator('#dashBank').selectOption('main'); await p.waitForTimeout(150);
 await p.locator('[data-delsession]').first().click(); await p.waitForTimeout(150);
 ok((await txt('#totalEarn')) === '$70', `session delete recalculates (${await txt('#totalEarn')})`);
+// CSV export: as a plain file this must produce a real browser download
+const dl = p.waitForEvent('download', { timeout: 5000 }).catch(() => null);
+await p.click('#exportSessions');
+const download = await dl;
+ok(!!download, 'CSV export triggers a download when opened as a plain file');
+if (download) ok(/blackjack-sessions-main\.csv/.test(download.suggestedFilename()), `export filename (${download && download.suggestedFilename()})`);
 
 // ---- persistence across reload
 await p.reload(); await p.waitForTimeout(400);

@@ -1700,16 +1700,36 @@ $('#sessionList').addEventListener('click',e=>{
   state.sessions=state.sessions.filter(s=>s.id!==b.dataset.delsession);
   save(); renderDash(); toast('Session removed');
 });
+/* Saving a file: published on claude.ai the page must hand the file to the
+   host, which asks the viewer first; opened as a plain file it is an ordinary
+   browser download. Resolve the capability at load so the click is instant. */
+const downloadsReady=(window.claude&&typeof window.claude.use==='function')
+  ? window.claude.use('downloads').catch(()=>null)
+  : Promise.resolve(null);
+async function saveFile(filename,text,mime){
+  const host=await downloadsReady;
+  if(host){
+    try{ await host.save({filename,data:text}); toast('CSV saved'); }
+    catch(err){
+      if(!err||err.code==='declined') return;
+      toast(err.code==='rate_limited'?'A save is already open — try again in a moment.':'Saving is not available here.');
+    }
+    return;
+  }
+  try{
+    const url=URL.createObjectURL(new Blob([text],{type:mime}));
+    const a=document.createElement('a');
+    a.href=url; a.download=filename; a.click();
+    setTimeout(()=>URL.revokeObjectURL(url),1000);
+    toast('CSV downloaded');
+  }catch(e){ toast('Could not export this file.'); }
+}
 $('#exportSessions').onclick=()=>{
   const list=bankSessions();
   if(!list.length) return toast('Nothing to export yet.');
   const rows=[['date','hours','result','table','note'],...list.map(s=>[s.date,s.hours,s.result,s.venue||'',s.note||''])];
   const csv=rows.map(r=>r.map(c=>`"${String(c).replace(/"/g,'""')}"`).join(',')).join('\n');
-  const url=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));
-  const a=document.createElement('a');
-  a.href=url; a.download=`blackjack-sessions-${state.activeBank}.csv`; a.click();
-  setTimeout(()=>URL.revokeObjectURL(url),1000);
-  toast('CSV downloaded');
+  saveFile(`blackjack-sessions-${state.activeBank}.csv`,csv,'text/csv');
 };
 $('#clearSessions').onclick=()=>{
   if(!bankSessions().length) return toast('This bankroll has no sessions.');
