@@ -150,9 +150,22 @@ const afterDeal = await p.evaluate(() => ({
   dealer: document.querySelectorAll('#simDealer .playing-card').length
 }));
 ok(afterDeal.cards >= 2, 'player dealt two cards');
-ok(!(await p.locator('#simInsure').isVisible()), 'insurance row not shown against a non-ace upcard');
-ok(!(await p.locator('#simBetLine').isVisible()), 'bet box hidden while a hand is live');
-ok(await p.locator('#simActions').isVisible(), 'action buttons shown while a hand is live');
+// Which controls are showing is a function of the phase, not of luck: a hand that
+// resolves on the deal (either blackjack) is legitimately back at the bet box.
+async function checkPhaseControls(label) {
+  const st = await p.evaluate(() => ({
+    phase: window.__BJ.sim().phase,
+    bet: !document.querySelector('#simBetLine').hidden,
+    act: !document.querySelector('#simActions').hidden,
+    ins: !document.querySelector('#simInsure').hidden
+  }));
+  const wantBet = st.phase === 'bet' || st.phase === 'done';
+  ok(st.bet === wantBet, `${label}: bet box matches phase ${st.phase}`);
+  ok(st.act === (st.phase === 'play'), `${label}: action buttons match phase ${st.phase}`);
+  ok(st.ins === (st.phase === 'insurance'), `${label}: insurance row matches phase ${st.phase}`);
+  return st.phase;
+}
+await checkPhaseControls('after deal');
 ok(afterDeal.dealer === 2, 'dealer shows two cards (one face down)');
 ok(afterDeal.bank === bank0 - 25 || afterDeal.bank > bank0 - 25, 'bet deducted at deal');
 // play out several hands using basic strategy via the buttons
@@ -167,6 +180,7 @@ for (let i = 0; i < 25 && handsPlayed < 8; i++) {
       enabled: [...document.querySelectorAll('#simActions [data-s]')].filter(x => !x.disabled).map(x => x.dataset.s)
     };
   });
+  if (i % 7 === 0) await checkPhaseControls('mid play');
   if (st.insuring) { await p.click('#simInsure [data-i="no"]'); }
   else if (st.acting) { await p.click(`#simActions [data-s="${st.enabled.includes('STAND') ? 'STAND' : st.enabled[0]}"]`); }
   else if (st.betting) { await p.click('#simDeal'); handsPlayed++; }
@@ -271,6 +285,122 @@ ok(await p.locator('#view-strategy').isVisible(), 'load-into-charts switches to 
 ok(/6:5/.test(await p.evaluate(() => document.querySelector('#ruleChipTrain').textContent)), 'loaded rules applied');
 
 
+
+// ---- DRILL PACING: a wrong answer must never advance on its own
+await p.click('#nav button[data-view="train"]'); await p.waitForTimeout(150);
+await p.click('[data-mode="basic"]'); await p.waitForTimeout(200);
+// answer wrongly on purpose
+const wrongPick = await p.evaluate(() => {
+  const rank = el => el.getAttribute('aria-label').split(' ')[0];
+  const B = window.__BJ;
+  const up = rank(document.querySelector('#basicDealer .playing-card'));
+  const cards = [...document.querySelectorAll('#basicPlayer .playing-card')].map(rank);
+  const hi = B.handInfo(cards.map(r => B.card(r, '♠'))), r = B.state.rules;
+  const right = B.basicPlay(cards.map(r2 => B.card(r2, '♠')), B.card(up, '♣'), r,
+    { canDouble: true, canSplit: hi.pair, canSurrender: r.surrender && !r.enhc, das: r.das });
+  const opts = [...document.querySelectorAll('#basicActions [data-a]')].filter(b => !b.disabled).map(b => b.dataset.a);
+  return opts.find(o => o !== right) || opts[0];
+});
+await p.click(`#basicActions [data-a="${wrongPick}"]`);
+await p.waitForTimeout(400);
+const shownCards = await p.evaluate(() => document.querySelector('#basicPlayer').innerHTML);
+const fbAfterWrong = await txt('#basicFeedback');
+ok(/Not quite/.test(fbAfterWrong), 'wrong answer explains the correct play');
+ok(fbAfterWrong.length > 90, `the explanation says why, not just what (${fbAfterWrong.length} chars)`);
+ok(/[a-z]{4,}/.test(fbAfterWrong.split('\n').pop() || ''), 'explanation is prose, not a rule code');
+ok(await p.locator('#basicNext').isVisible(), 'a Next control appears instead of auto-advancing');
+// wait far longer than the old 1.5s timeout and confirm nothing moved
+await p.waitForTimeout(4000);
+ok((await txt('#basicFeedback')) === fbAfterWrong, 'explanation still on screen after 4s');
+ok((await p.evaluate(() => document.querySelector('#basicPlayer').innerHTML)) === shownCards,
+   'the hand you got wrong is still on screen');
+// Enter continues
+await p.keyboard.press('Enter'); await p.waitForTimeout(300);
+ok((await p.evaluate(() => document.querySelector('#basicPlayer').innerHTML)) !== shownCards, 'Enter deals the next hand');
+ok(!(await p.locator('#basicNext').isVisible()), 'Next control hides once you continue');
+// correct answers may auto-advance, and the preference turns that off
+await p.evaluate(() => { window.__BJ.state.prefs.autoAdvance = false; });
+const beforeRight = await p.evaluate(() => {
+  const rank = el => el.getAttribute('aria-label').split(' ')[0];
+  const B = window.__BJ;
+  const up = rank(document.querySelector('#basicDealer .playing-card'));
+  const cards = [...document.querySelectorAll('#basicPlayer .playing-card')].map(rank);
+  const hi = B.handInfo(cards.map(r => B.card(r, '♠'))), r = B.state.rules;
+  return B.basicPlay(cards.map(r2 => B.card(r2, '♠')), B.card(up, '♣'), r,
+    { canDouble: true, canSplit: hi.pair, canSurrender: r.surrender && !r.enhc, das: r.das });
+});
+const htmlBefore = await p.evaluate(() => document.querySelector('#basicPlayer').innerHTML);
+await p.click(`#basicActions [data-a="${beforeRight}"]`);
+await p.waitForTimeout(2500);
+ok((await p.evaluate(() => document.querySelector('#basicPlayer').innerHTML)) === htmlBefore,
+   'with auto-advance off, even a correct answer waits');
+await p.evaluate(() => { window.__BJ.state.prefs.autoAdvance = true; });
+await p.click('[data-next="basic"]'); await p.waitForTimeout(200);
+await back();
+
+// the other three drills share the pacing
+await p.click('[data-mode="true"]'); await p.waitForTimeout(200);
+await p.locator('#tcAnswer').fill('999');
+await p.click('#tcSubmit'); await p.waitForTimeout(300);
+ok(await p.locator('#trueNext').isVisible(), 'true-count drill waits after a wrong answer');
+const tcFb = await txt('#tcFeedback');
+await p.waitForTimeout(3000);
+ok((await txt('#tcFeedback')) === tcFb, 'true-count explanation persists');
+await p.click('[data-next="true"]'); await p.waitForTimeout(200);
+await back();
+await p.click('[data-mode="deviation"]'); await p.waitForTimeout(200);
+const devWrong = await p.evaluate(() => {
+  const en = [...document.querySelectorAll('#devActions [data-d]')].filter(b => !b.disabled).map(b => b.dataset.d);
+  return en;
+});
+await p.click(`#devActions [data-d="${devWrong[0]}"]`); await p.waitForTimeout(300);
+ok(await p.locator('#devNext').isVisible(), 'deviation drill waits before moving on');
+await p.click('[data-next="dev"]'); await p.waitForTimeout(200);
+await back();
+
+// ---- ASSIST
+await p.click('#nav button[data-view="assist"]'); await p.waitForTimeout(250);
+ok(await p.locator('#view-assist').isVisible(), 'assist view opens');
+ok(/device assistance/.test(await p.evaluate(() => document.querySelector('#view-assist').textContent)),
+   'the legal notice about device use is shown');
+// build 16 v 10 and check the engine's verdict and the index
+await p.click('#asUp [data-up="10"]');
+await p.click('#asCards [data-card="10"]');
+await p.click('#asCards [data-card="6"]');
+await p.locator('#asRC').fill('0');
+await p.locator('#asDecks').fill('2');
+await p.waitForTimeout(200);
+const v1 = await p.evaluate(() => ({
+  act: document.querySelector('#asAct').textContent,
+  why: document.querySelector('#asWhy').textContent,
+  meta: document.querySelector('#asMeta').textContent
+}));
+ok(v1.act === 'STAND', `16 v 10 at TC 0 stands on the index (got ${v1.act})`);
+ok(/16 vs 10/.test(v1.why) || /16 vs 10/.test(v1.meta), 'the index behind the play is named');
+// drop the count below the index and the play must revert
+await p.locator('#asRC').fill('-8'); await p.waitForTimeout(200);
+const v2 = await p.evaluate(() => document.querySelector('#asAct').textContent);
+ok(v2 !== 'STAND', `below the index the play reverts (got ${v2})`);
+// a pair
+await p.click('#asClear');
+await p.click('#asCards [data-card="8"]');
+await p.click('#asCards [data-card="8"]');
+await p.locator('#asRC').fill('0'); await p.waitForTimeout(200);
+ok((await p.evaluate(() => document.querySelector('#asAct').textContent)) === 'SPLIT', '8,8 v 10 splits');
+// insurance advice tracks the +3 index
+await p.click('#asUp [data-up="A"]'); await p.locator('#asRC').fill('8'); await p.locator('#asDecks').fill('2');
+await p.waitForTimeout(200);
+ok(/Take it/.test(await p.evaluate(() => document.querySelector('#asMeta').textContent)), 'insurance advised at +4');
+await p.locator('#asRC').fill('2'); await p.waitForTimeout(200);
+ok(/Decline/.test(await p.evaluate(() => document.querySelector('#asMeta').textContent)), 'insurance declined at +1');
+// the grounding context handed to Claude must carry the engine's answer
+const aiCtx = await p.evaluate(() => window.__BJ.aiContext());
+ok(/ENGINE'S CORRECT PLAY/.test(aiCtx), 'AI context states the engine verdict');
+ok(/Rules in use/.test(aiCtx), 'AI context carries the rule set');
+// without the artifact runtime the panel must explain itself, not sit broken
+ok(await p.locator('#asAIState').isVisible(), 'AI panel explains its absence when Claude is unavailable');
+ok(!(await p.locator('#asAIBody').isVisible()), 'AI chat hidden when unavailable');
+
 // ---- ANALYZER
 await p.click('#nav button[data-view="analyzer"]'); await p.waitForTimeout(250);
 ok(await p.locator('#view-analyzer').isVisible(), 'analyzer view opens');
@@ -299,7 +429,10 @@ await p.locator('#anRounds').fill('100');
 await p.locator('#anPrecision').selectOption('quick');
 await p.evaluate(() => {
   const B = window.__BJ;
-  B.state.rules.pen = 0.85;                       // deep penetration
+  // control the preconditions: an earlier test loaded a 6:5 table into the rules,
+  // which makes even a strong spread marginal and the assertion a coin flip
+  Object.assign(B.state.rules, { h17: true, enhc: false, das: true, surrender: true,
+    peek: true, decks: 6, bjPays: 1.5, pen: 0.85, maxHands: 4, rsa: false, es10: false });
   const ramp = { '-4':0,'-3':0,'-2':0,'-1':25,'0':25,'1':25,'2':100,'3':200,'4':300,'5':400,'6':400,'7':400,'8':400 };
   for (const k in ramp) B.state.an.spread[k] = { bet: ramp[k], hands: 1 };
 });

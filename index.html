@@ -39,6 +39,11 @@ h1{font-size:21px;line-height:1.1;margin:0 0 8px;font-weight:780;letter-spacing:
 .btn{border:1px solid #39312d;background:#161616;border-radius:5px;padding:9px 14px;font-size:11px;font-weight:700}.btn.primary{background:linear-gradient(#f77c35,#e96b25);border-color:#f4752d;color:white}.btn.primary:hover:not(:disabled){filter:brightness(1.06)}.btn.ghost{background:#111;border-color:#242424;color:#aaa}.btn.danger{color:#e28199;border-color:#572131;background:#1a0d11}
 .btn.sm{padding:6px 9px;font-size:9px}
 .segment{display:flex;border:1px solid var(--line2);border-radius:6px;overflow:hidden;background:#141414}.segment button{flex:1;padding:8px 11px;background:transparent;border:0;color:#777;font-size:10px;position:relative}.segment button+button{border-left:1px solid #2a2623}.segment button.active{color:#f5f3ef;background:linear-gradient(180deg,#171717,#121212)}.segment button.active:after{content:"";position:absolute;left:12%;right:12%;bottom:0;height:1px;background:var(--orange);box-shadow:0 0 8px var(--orange)}
+.nextbar{display:flex;align-items:center;justify-content:center;gap:12px;margin-top:14px;flex-wrap:wrap;animation:fade .18s ease}
+.nextbar .btn kbd{font-size:8px;opacity:.7;font-family:inherit;margin-left:4px}
+.nexthint{font-size:9px;color:#7e7e7a}
+.prefline{display:flex;align-items:center;gap:6px;font-size:9px;color:#8a8a87}
+.prefline input{accent-color:var(--orange)}
 /* strategy */
 .controls{display:grid;gap:12px;margin-bottom:16px}.legend{display:flex;gap:16px;align-items:center;justify-content:center;padding:13px 15px;margin-bottom:18px;flex-wrap:wrap}.legend span{font-size:9px;color:#aaa;display:flex;align-items:center;gap:5px}.dot{width:14px;height:11px;border-radius:3px;display:inline-grid;place-items:center;font-size:7px}.d-hit{background:#5b321f;color:#f6a26f}.d-stand{background:#5f0922;color:#e84f78}.d-double{background:#0c472d;color:#54d893}.d-split{background:#5f541f;color:#edd567}.d-surr{background:#4d1730;color:#e97caf}
 .chartbox{padding:18px 18px 16px}.charttitle{font-size:14px;font-weight:760;margin-bottom:15px;display:flex;justify-content:space-between;align-items:baseline;gap:10px}.charttitle small{font-size:9px;color:#6d6d69;font-weight:500}
@@ -166,6 +171,41 @@ h1{font-size:21px;line-height:1.1;margin:0 0 8px;font-weight:780;letter-spacing:
 .toast{position:fixed;left:50%;bottom:25px;transform:translateX(-50%) translateY(20px);background:#151515;border:1px solid #3b312d;color:#ddd;padding:10px 14px;border-radius:6px;font-size:10px;opacity:0;pointer-events:none;transition:.2s;z-index:30}.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 @media(max-width:850px){.shell{padding:16px 14px 50px}.topnav{margin-bottom:24px}.nav{overflow:auto;max-width:70vw}.nav button{white-space:nowrap}.traincards{grid-template-columns:1fr 1fr}.casino-wrap{grid-template-columns:1fr}.casinoside{max-height:360px}.metrics{grid-template-columns:1fr}.sim-grid{grid-template-columns:1fr}.strategy-table{font-size:7px}.chartbox{padding:12px}.map{min-height:500px}}
 @media(max-width:520px){.brand span{display:none}.nav{max-width:82vw}.traincards{grid-template-columns:1fr}.traincard{min-height:165px}.segment button{padding:8px 4px;font-size:9px}.legend{gap:8px}.playing-card{width:52px;height:74px;font-size:14px}.playing-card .big-suit{font-size:26px}.actions .btn{min-width:62px;padding:9px 10px}.drillpanel{padding:20px 16px}.map{min-height:470px}.chartpanel{padding:10px}.sim-table{padding:10px}.felt{padding:18px 10px}.sessionrow{grid-template-columns:auto 1fr auto auto;font-size:8px}}
+/* ---------------------------------------------------------- assist view */
+.assist-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;align-items:start}
+.as-label{font-size:9px;color:#8c8b87;margin:14px 0 7px;display:flex;align-items:center;gap:10px}
+.linkbtn{background:none;border:0;color:#6d6d69;font-size:9px;padding:0;text-decoration:underline}
+.linkbtn:hover{color:#ddd}
+.pickrow{display:flex;gap:5px;flex-wrap:wrap}
+.pickrow button{flex:1 1 auto;min-width:34px;padding:9px 0;background:#121212;border:1px solid #2a2724;border-radius:5px;font-size:11px;font-weight:700;color:#c9c8c4}
+.pickrow button:hover{border-color:#54362c;color:#fff}
+.pickrow button.sel{background:linear-gradient(#f77c35,#e96b25);border-color:#f4752d;color:#fff}
+.as-hand{margin-top:10px;min-height:44px;display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.as-empty{font-size:9px;color:#5f5f5c}
+.mini-card{width:30px;height:42px;border-radius:4px;background:#f7f7f5;color:#111;display:grid;place-items:center;font-weight:800;font-size:13px;box-shadow:0 3px 8px rgba(0,0,0,.35)}
+.as-total{font-size:10px;color:#9a9995;margin-left:6px}
+.verdict{margin-top:16px;padding:16px;border-radius:8px;border:1px solid #3a3330;background:rgba(10,10,10,.6);text-align:center}
+.v-act{font-size:30px;font-weight:800;letter-spacing:-.02em;line-height:1.1;color:#5f5f5c}
+.v-act.a-HIT{color:#f39a69}.v-act.a-STAND{color:#e94d75}.v-act.a-DOUBLE{color:#56d795}
+.v-act.a-SPLIT{color:#e8d264}.v-act.a-SURRENDER{color:#e578a8}
+.v-why{font-size:10px;color:#9a9995;margin-top:9px;line-height:1.6}
+.v-meta{margin-top:10px;display:grid;gap:6px}
+.v-row{display:flex;justify-content:space-between;gap:10px;font-size:9px;color:#8a8a87;padding:6px 0;border-bottom:1px solid #1b1b1b}
+.v-row b{color:#ddd}
+.v-dev{border:1px solid #57402a;background:rgba(224,160,111,.07);color:#d3a679;border-radius:6px;padding:8px 10px;font-size:9px;line-height:1.6}
+.tierpick{background:#0d0d0d;border:1px solid #2a2724;color:#c9c8c4;border-radius:5px;padding:4px 7px;font-size:9px}
+.quickrow{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
+.chatlog{max-height:340px;overflow-y:auto;display:grid;gap:10px;margin-bottom:12px}
+.chatlog:empty{display:none}
+.bubble{font-size:10px;line-height:1.7;padding:10px 12px;border-radius:8px;white-space:pre-wrap;word-break:break-word}
+.bubble.me{background:#1a1311;border:1px solid #33302c;color:#e6e5e1;justify-self:end;max-width:88%}
+.bubble.ai{background:#101010;border:1px solid #232323;color:#c4c3bf}
+.bubble.err{background:#1a0d11;border:1px solid #572131;color:#e28199}
+.bubble .think{color:#6d6d69;font-style:italic}
+.chatbox textarea{width:100%;background:#0d0d0d;border:1px solid #2a2724;color:#eee;border-radius:6px;padding:9px 10px;font-size:11px;resize:vertical;font-family:inherit}
+.chatacts{display:flex;gap:6px;align-items:center;margin-top:8px}
+@media(max-width:980px){.assist-grid{grid-template-columns:1fr}}
+
 /* ===================================================== analyzer / EV view */
 .an-grid{display:grid;grid-template-columns:1fr 340px;gap:14px;align-items:start}
 .an-col{display:grid;gap:14px;align-content:start}
@@ -248,6 +288,7 @@ h1{font-size:21px;line-height:1.1;margin:0 0 8px;font-weight:780;letter-spacing:
       <button data-view="strategy">Charts</button>
       <button data-view="course">Course</button>
       <button data-view="casinos">Casinos</button>
+      <button data-view="assist">Assist</button>
       <button data-view="analyzer">EV &amp; Risk</button>
       <button data-view="dashboard">Dashboard</button>
     </nav>
@@ -268,6 +309,7 @@ h1{font-size:21px;line-height:1.1;margin:0 0 8px;font-weight:780;letter-spacing:
         <div class="rulebar" style="justify-content:center;margin-top:20px">
           <span>House rules in use:</span><span class="chip" id="ruleChipTrain"></span>
           <button class="btn ghost sm" data-view-link="strategy">Change in Charts</button>
+          <label class="prefline"><input type="checkbox" id="prefAuto" checked> Move on automatically after a correct answer</label>
         </div>
       </div>
 
@@ -293,6 +335,7 @@ h1{font-size:21px;line-height:1.1;margin:0 0 8px;font-weight:780;letter-spacing:
               <button class="btn" data-a="SURRENDER">Surrender<kbd>R</kbd></button>
             </div>
             <div id="basicFeedback" class="feedback"></div>
+            <div class="nextbar" id="basicNext" hidden><button class="btn primary" data-next="basic">Next hand <kbd>↵</kbd></button><span class="nexthint"></span></div>
             <div class="rulebar" style="justify-content:center">
               <span class="chip" id="ruleChipBasic"></span>
               <button class="btn ghost sm" id="basicMistakes">Trouble hands</button>
@@ -326,6 +369,7 @@ h1{font-size:21px;line-height:1.1;margin:0 0 8px;font-weight:780;letter-spacing:
             <div class="inputline"><input id="runAnswer" type="number" placeholder="Count" inputmode="numeric"><button class="btn primary" id="submitRun">Submit</button></div>
             <div class="feedback" id="runFeedback"></div>
             <div class="seqreview" id="runSeq"></div>
+            <div class="nextbar" id="runNext" hidden><button class="btn primary" data-next="run">Next round <kbd>↵</kbd></button><span class="nexthint"></span></div>
             <div class="drillmeta"><div><span>Round</span><b id="runRounds">0</b></div><div><span>Correct</span><b id="runCorrect" style="color:var(--green)">0</b></div><div><span>Cards Seen</span><b id="runSeen">0</b></div></div>
             <button class="btn ghost sm" id="quitRun" style="margin-top:14px">End drill</button>
           </div>
@@ -349,6 +393,7 @@ h1{font-size:21px;line-height:1.1;margin:0 0 8px;font-weight:780;letter-spacing:
           </div>
           <div class="inputline"><input id="tcAnswer" type="number" step="1" placeholder="True count" inputmode="numeric"><button class="btn primary" id="tcSubmit">Submit</button></div>
           <div class="feedback" id="tcFeedback"></div>
+          <div class="nextbar" id="trueNext" hidden><button class="btn primary" data-next="true">Next question <kbd>↵</kbd></button><span class="nexthint"></span></div>
           <div class="checkline" style="justify-content:center;margin-top:10px">
             <label><input type="checkbox" id="tcEstimate"> Estimate decks from a discard tray instead</label>
             <label><input type="checkbox" id="tcFloor" checked> Round toward zero (floor)</label>
@@ -378,6 +423,7 @@ h1{font-size:21px;line-height:1.1;margin:0 0 8px;font-weight:780;letter-spacing:
             <button class="btn primary" data-d="INSURE">Insure<kbd>I</kbd></button>
           </div>
           <div class="feedback" id="devFeedback"></div>
+          <div class="nextbar" id="devNext" hidden><button class="btn primary" data-next="dev">Next play <kbd>↵</kbd></button><span class="nexthint"></span></div>
         </div>
       </div>
 
@@ -554,6 +600,76 @@ h1{font-size:21px;line-height:1.1;margin:0 0 8px;font-weight:780;letter-spacing:
       </div>
     </section>
 
+
+    <!-- ================= ASSIST ================= -->
+    <section id="view-assist" class="view">
+      <div class="wide">
+        <div class="dashhead">
+          <div>
+            <h1>Table Assist</h1>
+            <div class="sub" style="margin:0;max-width:660px">The play comes from the same verified engine that powers the charts — instantly, offline, no guessing. Claude sits on top of it to explain, coach and answer anything the tables cannot.</div>
+          </div>
+        </div>
+
+        <div class="an-warn" style="margin:0 0 14px">
+          Casinos prohibit device assistance at the table, and in some jurisdictions — Nevada among them — using one to help you play is a criminal offence. Built for practice, home play, and reviewing sessions afterwards.
+        </div>
+
+        <div class="assist-grid">
+          <div class="an-col">
+            <div class="panel an-panel">
+              <h3>Live hand <span class="r" id="asRules"></span></h3>
+
+              <div class="as-label">Dealer shows</div>
+              <div class="pickrow" id="asUp"></div>
+
+              <div class="as-label">Your hand <button class="linkbtn" id="asClear">clear</button><button class="linkbtn" id="asUndo">undo</button></div>
+              <div class="pickrow" id="asCards"></div>
+              <div class="as-hand" id="asHand"><span class="as-empty">Tap the cards you were dealt.</span></div>
+
+              <div class="fgrid" style="margin-top:14px">
+                <div class="f"><label>Running count</label><input id="asRC" type="number" step="1" value="0" inputmode="numeric"></div>
+                <div class="f"><label>Decks remaining</label><input id="asDecks" type="number" step="0.5" min="0.25" value="6" inputmode="decimal"></div>
+              </div>
+
+              <div class="verdict" id="asVerdict">
+                <div class="v-act" id="asAct">—</div>
+                <div class="v-why" id="asWhy">Pick a dealer upcard and your cards.</div>
+              </div>
+              <div class="v-meta" id="asMeta"></div>
+            </div>
+          </div>
+
+          <div class="an-col">
+            <div class="panel an-panel" id="asAIPanel">
+              <h3>Ask Claude <span class="r" id="asTierWrap"><select id="asTier" class="tierpick"><option value="quick">Fast</option><option value="default" selected>Balanced</option><option value="complex">Deep</option></select></span></h3>
+              <div id="asAIState" class="empty">Checking whether Claude is available here…</div>
+              <div id="asAIBody" hidden>
+                <div class="quickrow" id="asQuick">
+                  <button class="chip tog" data-ask="why">Why this play?</button>
+                  <button class="chip tog" data-ask="mistakes">Coach my mistakes</button>
+                  <button class="chip tog" data-ask="spread">Review my spread</button>
+                  <button class="chip tog" data-ask="session">Review my sessions</button>
+                </div>
+                <div class="chatlog" id="asChat"></div>
+                <div class="chatbox">
+                  <textarea id="asInput" rows="2" placeholder="Ask anything — why a play is right, how to drill a weakness, what a rule costs you…"></textarea>
+                  <div class="chatacts">
+                    <button class="btn ghost sm" id="asPhoto" hidden>📷 Read a rules sign</button>
+                    <input type="file" id="asPhotoFile" accept="image/*" hidden>
+                    <span style="flex:1"></span>
+                    <button class="btn ghost sm" id="asStop" hidden>Stop</button>
+                    <button class="btn primary sm" id="asSend">Ask</button>
+                  </div>
+                </div>
+                <div class="an-note" id="asNote">Claude is told the engine's answer and told not to contradict it, so explanations stay consistent with the charts. Answers use your own Claude account.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
     <!-- ================= ANALYZER ================= -->
     <section id="view-analyzer" class="view">
       <div class="wide">
@@ -692,6 +808,7 @@ const DEFAULTS={
   activeBank:'main',
   sessions:[],
   sim:{bank:500,unit:25,bet:25,hands:0,won:0,start:500},
+  prefs:{autoAdvance:true,advanceMs:1400},
   an:{bankroll:20000,unit:25,roundsHr:100,players:3,hours:500,precision:'standard',useIdx:true,insure:true,spread:null},
   spreadTemplates:[]
 };
@@ -927,7 +1044,7 @@ function indexPlay(entry,tc,rules=state.rules){
 }
 
 /* --------------------------------------------------------------- routing */
-const VIEWS=['train','strategy','course','casinos','analyzer','dashboard'];
+const VIEWS=['train','strategy','course','casinos','assist','analyzer','dashboard'];
 let currentView='train';
 function showView(v,push=true){
   if(!VIEWS.includes(v)) v='train';
@@ -941,6 +1058,7 @@ function showView(v,push=true){
   if(v==='casinos') renderVenues();
   if(v==='dashboard') renderDash();
   if(v==='analyzer') renderAnalyzer();
+  if(v==='assist') renderAssist();
   if(v==='train') renderMenuStats();
 }
 $$('#nav button').forEach(b=>b.onclick=()=>showView(b.dataset.view));
@@ -978,7 +1096,7 @@ function openMode(m){
   if(m==='simulation') simOpen();
   if(m==='running'){ $('#runSetup').hidden=false; $('#runPlay').hidden=true; }
 }
-function stopDrills(){ runStop(); }
+function stopDrills(){ runStop(); clearPending(); }
 function renderMenuStats(){
   const b=state.basic,r=state.run,t=state.tc,d=state.dev,s=state.sim;
   $('#statBasic').textContent=b.n?`${pct(b.c,b.n)}% over ${b.n} hands`:'Not started';
@@ -990,11 +1108,48 @@ function renderMenuStats(){
 }
 $$('[data-back]').forEach(b=>b.onclick=hideModes);
 $$('[data-mode]').forEach(b=>b.onclick=()=>openMode(b.dataset.mode));
+$('#prefAuto').checked=state.prefs.autoAdvance;
+$('#prefAuto').onchange=e=>{ state.prefs.autoAdvance=e.target.checked; save(); };
+
+/* ---------------------------------------------------------------------
+   Advancing a drill.
+   Getting a hand wrong is the moment the drill is actually teaching you
+   something, so the explanation stays on screen with the cards that
+   produced it until you choose to move on. Only a correct answer — where
+   there is nothing to read — advances on its own, and even that can be
+   turned off.
+   --------------------------------------------------------------------- */
+const pending={key:null,fn:null,timer:null};
+function queueNext(key,fn,ok){
+  clearTimeout(pending.timer);
+  pending.key=key; pending.fn=fn;
+  const bar=$('#'+key+'Next');
+  if(bar){
+    bar.hidden=false;
+    const hint=bar.querySelector('.nexthint');
+    if(hint) hint.textContent=ok?'':'Read it over — this waits for you.';
+  }
+  if(ok&&state.prefs.autoAdvance) pending.timer=setTimeout(()=>advanceNext(key),state.prefs.advanceMs);
+}
+function advanceNext(key){
+  if(pending.key!==key||!pending.fn) return;
+  clearTimeout(pending.timer);
+  const fn=pending.fn;
+  pending.key=null; pending.fn=null; pending.timer=null;
+  const bar=$('#'+key+'Next'); if(bar) bar.hidden=true;
+  fn();
+}
+function clearPending(){
+  clearTimeout(pending.timer);
+  pending.key=null; pending.fn=null; pending.timer=null;
+  $$('.nextbar').forEach(b=>b.hidden=true);
+}
+$$('[data-next]').forEach(b=>b.onclick=()=>advanceNext(b.dataset.next));
 
 /* ======================================================= BASIC STRATEGY */
 let basicCur=null,basicStart=0,basicLock=false;
 function newBasic(){
-  basicLock=false;
+  basicLock=false; clearTimeout(pending.timer);
   const shoe=Shoe(state.rules.decks);
   let up,p1,p2,h,guard=0;
   do{
@@ -1021,16 +1176,42 @@ function updateBasicStats(){
   $('#basicAvg').textContent=`${s.n?(s.totalMs/s.n/1000).toFixed(1):'0.0'}s avg`;
   $('#basicStreak').textContent=`${s.streak} streak${s.best?` (best ${s.best})`:''}`;
 }
+/* The explanation is the part that teaches, so it says why the play is right,
+   not just what it is. Reasons are grouped by the pattern behind them, which
+   is how the chart is actually learned. */
+function explainPlay(cur){
+  const h=cur.h, cards=cur.cards, a=cur.answer;
+  const up=VALUE[cur.up.rank], upR=cur.up.rank;
+  const weak=up>=2&&up<=6, pv=h.pair?VALUE[cards[0].rank]:0;
+  const dealer=`a dealer ${upR}`;
+  if(a==='SPLIT'){
+    if(pv===11) return 'Always split aces. Two hands each starting at 11 beat one hand of 12 that can only draw a single card.';
+    if(pv===8) return 'Always split eights. 16 is the worst total in blackjack; two hands starting at 8 are both live, even against a strong upcard.';
+    if(weak) return `Against ${dealer} the dealer is likely to break, so getting a second bet on the table is worth more than playing one ${h.total}.`;
+    return `Splitting ${pv}s against ${dealer} makes two hands that both improve on the ${h.total} you would otherwise play out.`;
+  }
+  if(a==='SURRENDER') return `Against ${dealer} this hand loses more than half the time however you play it, so giving up half the bet costs less than playing it out.`;
+  if(a==='DOUBLE'){
+    if(h.soft) return `Soft hands cannot bust on one card, and ${dealer} is weak — so take the extra bet on a free draw. If the card is bad you still have the ace to fall back on.`;
+    if(h.total===11||h.total===10) return `${h.total} is the best doubling total: any ten makes ${h.total+10}, and ${dealer} is not strong enough to punish it.`;
+    return `A dealer ${upR} breaks often enough that doubling ${h.total} wins more than drawing cautiously would.`;
+  }
+  if(a==='STAND'){
+    if(pv===10) return 'Never split tens. 20 wins outright most of the time — breaking it up trades a near-certain winner for two ordinary hands.';
+    if(pv===9) return `Nines stand against 7, 10 and A. Against ${dealer} your 18 already wins or pushes often enough that splitting risks two losing hands instead of one.`;
+    if(h.soft) return `Soft ${h.total} is already a strong total, and drawing can only turn it into something worse against ${dealer}.`;
+    if(h.total>=17) return `${h.total} stands everywhere. The chance of improving is far smaller than the chance of busting.`;
+    return `Stiff hands stand against 2 through 6. You act first, so busting loses immediately — let ${dealer} draw and break instead.`;
+  }
+  // HIT
+  if(h.soft) return `Soft ${h.total} cannot bust on one card, so there is no reason to stand on it against ${dealer}.`;
+  if(h.total<=11) return `You cannot bust with ${h.total}, so there is never a reason to stand.`;
+  if(h.total===12&&(up===2||up===3)) return `12 against a 2 or 3 is the exception to standing on stiffs: the dealer does not break often enough yet, so take the card.`;
+  return `A dealer ${upR} makes a strong hand too often for ${h.total} to win by standing. Drawing risks busting, but standing loses more.`;
+}
 function whyBasic(cur){
-  const h=cur.h,up=cur.up.rank;
-  const map={
-    HIT:'take another card', STAND:'stand pat', DOUBLE:'double down',
-    SPLIT:'split the pair', SURRENDER:'surrender'
-  };
-  const reason = h.pair ? `pair of ${cur.cards[0].rank}s vs ${up}`
-    : h.soft ? `soft ${h.total} vs ${up}`
-    : `hard ${h.total} vs ${up}`;
-  return `${reason} → ${map[cur.answer]||cur.answer.toLowerCase()} under ${ruleText()}.`;
+  const line=`${cur.h.pair?'Pair of '+cur.cards[0].rank+'s':(cur.h.soft?'Soft ':'Hard ')+cur.h.total} vs ${cur.up.rank} → ${cur.answer}.`;
+  return `${line} ${explainPlay(cur)}`;
 }
 function answerBasic(ans){
   if(!basicCur||basicLock) return;
@@ -1048,7 +1229,7 @@ function answerBasic(ans){
   f.innerHTML=(ok?`Correct — ${basicCur.answer}`:`Not quite — correct play: ${basicCur.answer}`)+`<em>${esc(whyBasic(basicCur))}</em>`;
   f.className='feedback '+(ok?'good':'bad');
   updateBasicStats();
-  setTimeout(newBasic,ok?750:1500);
+  queueNext('basic',newBasic,ok);
 }
 $$('#basicActions [data-a]').forEach(b=>b.onclick=()=>answerBasic(b.dataset.a));
 $('#basicMistakes').onclick=()=>{
@@ -1146,7 +1327,7 @@ function submitRun(){
     setTimeout(()=>{ if(!run.active){ $('#runSetup').hidden=false; $('#runPlay').hidden=true; } },1800);
   }else{
     run.round++;
-    setTimeout(()=>{ if(run.active) startRunRound(); },ok?900:2200);
+    queueNext('run',()=>{ if(run.active) startRunRound(); },ok);
   }
 }
 $('#submitRun').onclick=submitRun;
@@ -1194,7 +1375,7 @@ function submitTC(){
   f.innerHTML=(ok?'Correct.':`Correct answer: ${signed(tcQ.ans)}`)+`<em>${tcQ.estimate?`${tcQ.decksTotal} decks − ${(tcQ.decksTotal-tcQ.left).toFixed(1)} discarded = ${tcQ.left.toFixed(1)} remaining. `:''}${work}</em>`;
   f.className='feedback '+(ok?'good':'bad');
   updateTCStats(); renderMenuStats();
-  setTimeout(newTrue,ok?900:1900);
+  queueNext('true',newTrue,ok);
 }
 $('#tcSubmit').onclick=submitTC;
 $('#tcEstimate').onchange=newTrue;
@@ -1248,7 +1429,7 @@ function answerDev(ans){
   f.innerHTML=(ok?'Correct deviation.':`Correct play: ${devQ.answer}`)+`<em>${esc(rule)} At ${signed(devQ.tc)}, ${meetsIndex(e,devQ.tc)?'the index is met':'the index is not met'}.</em>`;
   f.className='feedback '+(ok?'good':'bad');
   updateDevStats(); renderMenuStats();
-  setTimeout(newDev,ok?900:2200);
+  queueNext('dev',newDev,ok);
 }
 $$('#devActions [data-d]').forEach(b=>b.onclick=()=>answerDev(b.dataset.d));
 
@@ -2002,6 +2183,7 @@ document.addEventListener('keydown',e=>{
     return;
   }
   if(currentView!=='train'||e.metaKey||e.ctrlKey||e.altKey) return;
+  if(pending.key&&(e.key==='Enter'||e.key===' ')){ e.preventDefault(); return advanceNext(pending.key); }
   const k=e.key.toLowerCase(), move=KEYMAP[k];
   if(!$('#basicMode').hidden&&move&&move!=='INSURE'){
     const btn=$(`#basicActions [data-a="${move}"]`); if(btn&&!btn.disabled){ e.preventDefault(); btn.click(); }
@@ -2775,10 +2957,293 @@ function renderAnalyzer(){
   renderTemplates();
 }
 
+/* =====================================================================
+   TABLE ASSIST
+   The verdict is computed locally by the same engine the charts use:
+   instant, offline, free, and identical to what the drills grade. Claude
+   is layered on top to explain and coach — it is handed the engine's
+   answer and told not to contradict it, so the two can never disagree.
+   ===================================================================== */
+const PICK_RANKS=['A','2','3','4','5','6','7','8','9','10'];
+let assist={up:null,cards:[]};
+
+function renderAssistPickers(){
+  $('#asUp').innerHTML=PICK_RANKS.map(r=>`<button data-up="${r}" class="${assist.up===r?'sel':''}">${r}</button>`).join('');
+  $('#asCards').innerHTML=PICK_RANKS.map(r=>`<button data-card="${r}">${r}</button>`).join('');
+}
+$('#asUp').onclick=e=>{ const b=e.target.closest('[data-up]'); if(!b) return; assist.up=assist.up===b.dataset.up?null:b.dataset.up; renderAssist(); };
+$('#asCards').onclick=e=>{ const b=e.target.closest('[data-card]'); if(!b) return; if(assist.cards.length<12) assist.cards.push(b.dataset.card); renderAssist(); };
+$('#asClear').onclick=()=>{ assist.cards=[]; renderAssist(); };
+$('#asUndo').onclick=()=>{ assist.cards.pop(); renderAssist(); };
+$('#asRC').addEventListener('input',renderAssistVerdict);
+$('#asDecks').addEventListener('input',renderAssistVerdict);
+
+function assistTC(){
+  const rc=Number($('#asRC').value)||0;
+  const d=Math.max(.25,Number($('#asDecks').value)||1);
+  const raw=rc/d;
+  return {rc,decks:d,raw,tc:raw>=0?Math.floor(raw):Math.ceil(raw)};
+}
+/** The index entry, if any, covering this exact hand against this upcard. */
+function findIndexFor(cards,up){
+  const h=handInfo(cards), col=colOf(up.rank);
+  const tens=h.pair&&VALUE[cards[0].rank]===10;
+  for(const e of INDICES){
+    if(e.id==='ins'||!e.hand) continue;
+    const eh=handInfo(e.hand.map(r=>card(r)));
+    const eTens=eh.pair&&VALUE[e.hand[0]]===10;
+    if(colOf(e.up)!==col) continue;
+    if(eTens!==tens) continue;
+    if(eh.total!==h.total||eh.soft!==h.soft) continue;
+    return e;
+  }
+  return null;
+}
+/** Everything the page knows about the hand on screen. */
+function assistVerdict(){
+  if(!assist.up||assist.cards.length<2) return null;
+  const cards=assist.cards.map(r=>card(r));
+  const up=card(assist.up);
+  const h=handInfo(cards), r=state.rules, {tc,rc,decks,raw}=assistTC();
+  const ctx={
+    canDouble:cards.length===2, canSplit:cards.length===2&&h.pair,
+    canSurrender:cards.length===2&&r.surrender&&!r.enhc, das:r.das
+  };
+  const basic=basicPlay(cards,up,r,ctx);
+  /* 8,8 against a ten is a hard 16, but it is a split — the 16 v 10 index
+     must not reach it. Only the tens-pair indices may override a split. */
+  const tensPair=h.pair&&VALUE[cards[0].rank]===10;
+  const entry=(basic==='SPLIT'&&!tensPair)?null:findIndexFor(cards,up);
+  let play=basic, deviated=false;
+  if(entry){
+    const want=indexPlay(entry,tc,r);
+    const avail=want!=='DOUBLE'||ctx.canDouble;
+    if(want!==basic&&avail&&meetsIndex(entry,tc)){ play=want; deviated=true; }
+  }
+  const insure=up.rank==='A'&&r.peek&&!r.enhc?(tc>=3?'Take it — the ten density is high enough at +3':'Decline — insurance only pays at +3 or higher'):null;
+  const sp=state.an.spread&&state.an.spread[clamp(tc,SPREAD_LO,SPREAD_HI)];
+  return {cards,up,h,basic,play,deviated,entry,tc,rc,decks,raw,insure,
+          nextBet:sp?sp.bet*sp.hands:null,ctx};
+}
+function renderAssistVerdict(){
+  const v=assistVerdict();
+  const act=$('#asAct'), why=$('#asWhy'), meta=$('#asMeta');
+  if(!v){
+    act.textContent='—'; act.className='v-act';
+    why.textContent=assist.up?'Add at least two cards to your hand.':'Pick the dealer upcard, then your cards.';
+    meta.innerHTML=''; return;
+  }
+  act.textContent=v.play; act.className='v-act a-'+v.play;
+  why.textContent=v.deviated
+    ? `${v.entry.label} — basic strategy says ${v.basic.toLowerCase()}, but at a true count of ${signed(v.tc)} the index says ${v.play.toLowerCase()}.`
+    : `${handLabel(v.h)} against a dealer ${v.up.rank}, under ${ruleText()}.`;
+  const rows=[
+    ['Basic strategy',v.basic],
+    ['True count',`${signed(v.tc)} (${signed(v.raw,1)} raw, ${v.decks.toFixed(1)} decks left)`]
+  ];
+  if(v.nextBet!=null) rows.push(['Next bet at this count',v.nextBet<=0?'sit out':money(v.nextBet)]);
+  if(v.insure) rows.push(['Insurance',v.insure]);
+  meta.innerHTML=rows.map(([k,val])=>`<div class="v-row"><span>${k}</span><b>${esc(String(val))}</b></div>`).join('')+
+    (v.entry?`<div class="v-dev">${esc(v.entry.label)}: ${v.entry.dir==='>='?'at or above':'below'} ${signed(v.entry.idx)}, ${esc(v.entry.play.toLowerCase())}; otherwise ${esc(v.entry.base.toLowerCase())}. You are at ${signed(v.tc)}.</div>`:'');
+}
+function renderAssist(){
+  renderAssistPickers();
+  $('#asRules').textContent=ruleText();
+  const h=assist.cards.length?handInfo(assist.cards.map(r=>card(r))):null;
+  $('#asHand').innerHTML=assist.cards.length
+    ? assist.cards.map(r=>`<div class="mini-card">${r}</div>`).join('')+`<span class="as-total">${handLabel(h)}</span>`
+    : '<span class="as-empty">Tap the cards you were dealt.</span>';
+  renderAssistVerdict();
+}
+
+/* ---- Claude, grounded on the engine ---------------------------------- */
+let ai={ready:null,fn:null,turns:[],busy:false,ctl:null,images:false};
+const AI_RULES=`You are the coach inside Blackjack Academy, a blackjack training app.
+
+The CONTEXT block below is computed by the app's own engine, which is verified against published figures. Treat every value in it as fact. Never contradict the engine's play; if the user believes something different, explain why the engine is right. Never invent a number that is not in the context — if you do not have a figure, say so and point at the part of the app that would produce it (Charts, EV & Risk, the drills).
+
+Be concrete, practical and brief: around 100 words unless asked for more. No preamble, no restating the question. Plain prose, no headings. You are talking to someone learning to beat a real game, so be direct about what costs money and what does not.`;
+
+function aiContext(){
+  const v=assistVerdict(), r=state.rules, b=state.basic, L=[];
+  L.push(`Rules in use: ${ruleText()}${r.pen?` · ${Math.round(r.pen*100)}% penetration`:''}`);
+  if(v){
+    L.push(`Hand on screen: ${assist.cards.join(',')} (${handLabel(v.h)}) versus dealer ${v.up.rank}`);
+    L.push(`Running count ${signed(v.rc)}, ${v.decks.toFixed(1)} decks left, true count ${signed(v.tc)}`);
+    L.push(`ENGINE'S CORRECT PLAY: ${v.play}`);
+    L.push(`Basic strategy alone would say: ${v.basic}`);
+    if(v.entry) L.push(`Relevant index: ${v.entry.label}, ${v.entry.dir==='>='?'at or above':'below'} ${signed(v.entry.idx)} → ${v.entry.play}, else ${v.entry.base}`);
+    if(v.insure) L.push(`Insurance: ${v.insure}`);
+  }else L.push('No hand is entered on screen right now.');
+  if(b.n) L.push(`Basic strategy drill: ${pct(b.c,b.n)}% over ${b.n} hands, best streak ${b.best}`);
+  const miss=Object.entries(b.misses||{}).sort((x,y)=>y[1]-x[1]).slice(0,8);
+  if(miss.length) L.push(`Most-missed hands: ${miss.map(([k,n])=>`${k} (${n}x)`).join('; ')}`);
+  if(state.tc.n) L.push(`True-count drill: ${pct(state.tc.c,state.tc.n)}% over ${state.tc.n}`);
+  if(state.dev.n) L.push(`Deviation drill: ${pct(state.dev.c,state.dev.n)}% over ${state.dev.n}`);
+  const a=state.an.last;
+  if(a) L.push(`Analyzer last run: EV ${money(a.ev)}/hr, SD ${money(a.sd)}/hr, advantage ${(a.adv*100).toFixed(3)}% of wagered`);
+  if(state.an.spread){
+    const sp=state.an.spread;
+    L.push(`Bet spread (true count: bet x hands): ${Object.keys(sp).sort((x,y)=>x-y).map(k=>`${k}:${sp[k].bet}x${sp[k].hands}`).join(', ')}`);
+  }
+  const ses=state.sessions.filter(x=>x.bank===state.activeBank);
+  if(ses.length){
+    const hrs=ses.reduce((t,x)=>t+(x.hours||0),0), net=ses.reduce((t,x)=>t+x.result,0);
+    L.push(`Logged sessions: ${ses.length} covering ${hrs.toFixed(1)} hours, net ${money(net)}`);
+  }
+  return L.join('\n');
+}
+const QUICK={
+  why:'Explain the play for the hand on screen. Say what makes it right and what the common mistake is.',
+  mistakes:'Look at my most-missed hands and my drill accuracy. Tell me the single pattern behind them and one drill to fix it.',
+  spread:'Look at my bet spread, bankroll and the analyzer figures. Is the spread too aggressive, too timid, or about right? Say what you would change.',
+  session:'Compare my logged sessions against the analyzer figures. Am I running normally, or is something wrong with how I am playing?'
+};
+async function initAI(){
+  const stateEl=$('#asAIState'), body=$('#asAIBody');
+  if(!(window.claude&&typeof window.claude.use==='function')){
+    stateEl.innerHTML='Claude is available when this page is opened as a published artifact on claude.ai. Everything else on this screen — the play, the index, the count — is computed locally and works anywhere.';
+    return;
+  }
+  stateEl.textContent='Checking whether Claude is available here…';
+  let fn=null;
+  try{ fn=await window.claude.use('sample'); }catch(e){ fn=null; }
+  if(!fn){
+    stateEl.innerHTML='Claude is not available in this view. The play, the index and the count above are computed locally and work regardless.';
+    return;
+  }
+  ai.fn=fn;
+  try{ const lim=await fn.limits(); ai.images=!!(lim&&lim.images); }catch(e){ ai.images=false; }
+  $('#asPhoto').hidden=!ai.images;
+  if(ai.images) $('#asPhotoFile').accept=(await fn.limits()).images.mediaTypes.join(',');
+  stateEl.hidden=true; body.hidden=false;
+}
+function addBubble(cls,text){
+  const d=document.createElement('div');
+  d.className='bubble '+cls;
+  d.textContent=text;
+  $('#asChat').appendChild(d);
+  $('#asChat').scrollTop=$('#asChat').scrollHeight;
+  return d;
+}
+const AI_ERROR={
+  not_granted:'You declined Claude for this page, so the coach is off. Everything else still works.',
+  sampling_disabled:'Claude is not available on this account.',
+  rate_limited:'Too many questions too quickly. Give it a minute and ask again.',
+  session_expired:'Your Claude session expired — sign in again and retry.',
+  prompt_too_large:'That was too much at once. Ask about one thing.',
+  refused:'Claude declined to answer that one. Try asking it differently.',
+  empty_completion:'Claude returned nothing. Try asking for less.',
+  invalid_json:'Could not read that reply. Try again.',
+  image_rejected:'That image could not be read — try a clearer photo.',
+  images_unavailable:'This view cannot send images.'
+};
+async function askAI(question){
+  if(!ai.fn||ai.busy) return;
+  ai.busy=true;
+  $('#asSend').disabled=true; $('#asStop').hidden=false;
+  addBubble('me',question);
+  const out=addBubble('ai','Thinking…');
+  out.classList.add('think');
+  ai.ctl=new AbortController();
+  const framed=`${AI_RULES}\n\n<context>\n${aiContext()}\n</context>`;
+  ai.turns.push({role:'user',content:question});
+  const turns=[{role:'user',content:framed},...ai.turns.slice(-8)];
+  try{
+    const {text,truncated}=await ai.fn(turns,{
+      signal:ai.ctl.signal,
+      modelTier:$('#asTier').value,
+      cache:false,
+      onText:({text})=>{ out.classList.remove('think'); out.textContent=text; $('#asChat').scrollTop=$('#asChat').scrollHeight; }
+    });
+    out.classList.remove('think');
+    out.textContent=text+(truncated?'\n\n[cut short — ask for less at a time]':'');
+    ai.turns.push({role:'assistant',content:text});
+  }catch(err){
+    const code=err&&err.code;
+    if(code==='cancelled'){ out.textContent=(err.text||'')+'\n[stopped]'; }
+    else{
+      out.className='bubble err';
+      out.textContent=AI_ERROR[code]||'Something went wrong reaching Claude. Try again in a moment.';
+      if(err&&err.text) addBubble('ai',err.text);
+    }
+    if(code==='not_granted'||code==='sampling_disabled'||code==='not_declared'){
+      $('#asAIBody').hidden=true; $('#asAIState').hidden=false;
+      $('#asAIState').textContent=AI_ERROR[code]||'Claude is unavailable here.';
+    }
+  }finally{
+    ai.busy=false; $('#asSend').disabled=false; $('#asStop').hidden=true; ai.ctl=null;
+  }
+}
+$('#asSend').onclick=()=>{
+  const q=$('#asInput').value.trim();
+  if(!q) return;
+  $('#asInput').value='';
+  askAI(q);
+};
+$('#asInput').addEventListener('keydown',e=>{
+  if(e.key==='Enter'&&(e.metaKey||e.ctrlKey)){ e.preventDefault(); $('#asSend').click(); }
+});
+$('#asStop').onclick=()=>{ if(ai.ctl) ai.ctl.abort(); };
+$('#asQuick').onclick=e=>{
+  const b=e.target.closest('[data-ask]'); if(!b) return;
+  if(b.dataset.ask==='why'&&!assistVerdict()) return toast('Enter a hand above first.');
+  askAI(QUICK[b.dataset.ask]);
+};
+$('#asPhoto').onclick=()=>$('#asPhotoFile').click();
+$('#asPhotoFile').onchange=async e=>{
+  const file=e.target.files&&e.target.files[0];
+  e.target.value='';
+  if(!file||!ai.fn||ai.busy) return;
+  ai.busy=true; $('#asSend').disabled=true;
+  addBubble('me','[photo of a rules sign]');
+  const out=addBubble('ai','Reading the sign…');
+  out.classList.add('think');
+  try{
+    const data=await ai.fn.json(
+      'This photo shows a blackjack table rules sign. Reply with only a JSON object: '+
+      '{"decks":number|null,"h17":boolean|null,"das":boolean|null,"surrender":boolean|null,'+
+      '"bjPays":1.5|1.2|1|null,"min":number|null,"notes":string}. '+
+      'Use null for anything the photo does not state. "notes" is one short sentence on what you could read.',
+      {images:file,modelTier:'default',cache:false});
+    out.classList.remove('think');
+    const parts=[];
+    if(data.decks) parts.push(data.decks+' decks');
+    if(data.h17!=null) parts.push(data.h17?'H17':'S17');
+    if(data.das!=null) parts.push(data.das?'DAS':'no DAS');
+    if(data.surrender!=null) parts.push(data.surrender?'surrender':'no surrender');
+    if(data.bjPays) parts.push(data.bjPays===1.5?'3:2':data.bjPays===1.2?'6:5':'even money');
+    out.textContent=(parts.length?parts.join(' · '):'Nothing readable')+(data.notes?'\n'+data.notes:'');
+    if(parts.length){
+      const btn=document.createElement('button');
+      btn.className='btn primary sm'; btn.style.marginTop='8px';
+      btn.textContent='Apply these rules';
+      btn.onclick=()=>{
+        if(data.decks&&[1,2,4,6,8].includes(data.decks)) state.rules.decks=data.decks;
+        if(data.h17!=null) state.rules.h17=data.h17;
+        if(data.das!=null) state.rules.das=data.das;
+        if(data.surrender!=null) state.rules.surrender=data.surrender;
+        if(data.bjPays) state.rules.bjPays=data.bjPays;
+        save(); renderCharts(); renderAssist();
+        if(typeof syncAnalyzerForm==='function') syncAnalyzerForm();
+        toast('Rules applied — '+ruleText());
+        btn.disabled=true; btn.textContent='Applied';
+      };
+      out.appendChild(document.createElement('br'));
+      out.appendChild(btn);
+    }
+  }catch(err){
+    out.className='bubble err';
+    out.textContent=AI_ERROR[err&&err.code]||'Could not read that photo.';
+  }finally{ ai.busy=false; $('#asSend').disabled=false; }
+};
+
 /* ================================================================== INIT */
 renderCharts();
 renderCourse();
 renderAnalyzer();
+renderAssist();
+initAI();
 renderVenues();
 renderDash();
 hideModes();
@@ -2786,7 +3251,7 @@ updateBasicStats(); updateTCStats(); updateDevStats(); runStats();
 showView(location.hash.slice(1)||'train',false);
 
 // exposed for automated checks only
-window.__BJ={basicPlay,handInfo,card,Shoe,INDICES,indexPlay,houseEdge,state,codeFor,resolve,colOf,ruleText,sim:()=>sim,compileTables,SimEngine,ACT};
+window.__BJ={basicPlay,handInfo,card,Shoe,INDICES,indexPlay,houseEdge,state,codeFor,resolve,colOf,ruleText,sim:()=>sim,compileTables,SimEngine,ACT,assistVerdict,aiContext,assist,pending,whyBasic,explainPlay};
 })();
 </script>
 </body></html>
