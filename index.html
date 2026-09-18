@@ -166,6 +166,77 @@ h1{font-size:21px;line-height:1.1;margin:0 0 8px;font-weight:780;letter-spacing:
 .toast{position:fixed;left:50%;bottom:25px;transform:translateX(-50%) translateY(20px);background:#151515;border:1px solid #3b312d;color:#ddd;padding:10px 14px;border-radius:6px;font-size:10px;opacity:0;pointer-events:none;transition:.2s;z-index:30}.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 @media(max-width:850px){.shell{padding:16px 14px 50px}.topnav{margin-bottom:24px}.nav{overflow:auto;max-width:70vw}.nav button{white-space:nowrap}.traincards{grid-template-columns:1fr 1fr}.casino-wrap{grid-template-columns:1fr}.casinoside{max-height:360px}.metrics{grid-template-columns:1fr}.sim-grid{grid-template-columns:1fr}.strategy-table{font-size:7px}.chartbox{padding:12px}.map{min-height:500px}}
 @media(max-width:520px){.brand span{display:none}.nav{max-width:82vw}.traincards{grid-template-columns:1fr}.traincard{min-height:165px}.segment button{padding:8px 4px;font-size:9px}.legend{gap:8px}.playing-card{width:52px;height:74px;font-size:14px}.playing-card .big-suit{font-size:26px}.actions .btn{min-width:62px;padding:9px 10px}.drillpanel{padding:20px 16px}.map{min-height:470px}.chartpanel{padding:10px}.sim-table{padding:10px}.felt{padding:18px 10px}.sessionrow{grid-template-columns:auto 1fr auto auto;font-size:8px}}
+/* ===================================================== analyzer / EV view */
+.an-grid{display:grid;grid-template-columns:1fr 340px;gap:14px;align-items:start}
+.an-col{display:grid;gap:14px;align-content:start}
+.an-panel{padding:16px 18px}
+.an-panel h3{font-size:12px;margin:0 0 14px;color:var(--orange);font-weight:760;letter-spacing:.01em}
+.an-panel h3 .r{float:right;color:#5f5f5c;font-weight:500;font-size:9px;letter-spacing:0}
+.fgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px 12px}
+.fgrid.one{grid-template-columns:1fr}
+.f{display:grid;gap:5px}
+.f>label{font-size:9px;color:#8c8b87;letter-spacing:.02em}
+.f input,.f select{background:#0d0d0d;border:1px solid #2a2724;color:#eee;border-radius:5px;padding:9px 10px;font-size:11px;width:100%}
+.f input:focus,.f select:focus{border-color:#54362c}
+.f .unit{font-size:8px;color:#5b5b58}
+.switchrow{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 0;border-top:1px solid #1c1a19}
+.switchrow:first-of-type{border-top:0}
+.switchrow span{font-size:10px;color:#c9c8c4}
+.switch{width:38px;height:21px;border-radius:99px;background:#2a2724;border:1px solid #332f2b;position:relative;flex:none;transition:.16s;padding:0}
+.switch:after{content:"";position:absolute;top:2px;left:2px;width:15px;height:15px;border-radius:50%;background:#6b6a66;transition:.16s}
+.switch.on{background:linear-gradient(#f77c35,#e96b25);border-color:#f4752d}
+.switch.on:after{left:19px;background:#fff}
+/* bet spread */
+.spread{display:grid;gap:3px}
+.spread-head,.spread-row{display:grid;grid-template-columns:42px 1fr 74px;gap:8px;align-items:center}
+.spread-head{font-size:8px;color:#6d6d69;text-transform:uppercase;letter-spacing:.09em;margin-bottom:5px;text-align:center}
+.spread-row .tc{font-size:11px;font-weight:800;text-align:center;border-radius:4px;padding:5px 0}
+.tc-neg{color:#e0607f;background:rgba(182,16,56,.09)}
+.tc-zero{color:#c9c8c4;background:rgba(255,255,255,.04)}
+.tc-pos{color:#4fd08a;background:rgba(38,189,99,.09)}
+.spread-row input{background:#0d0d0d;border:1px solid #2a2724;color:#eee;border-radius:5px;padding:7px 9px;font-size:11px;width:100%;text-align:center}
+.spread-row input.sitout{color:#6d6d69;border-style:dashed}
+.handtog{display:flex;gap:4px;justify-content:flex-end}
+.handtog button{border:1px solid #2a2724;background:#111;color:#5f5f5c;border-radius:4px;padding:5px 7px;font-size:8px;font-weight:700;min-width:30px}
+.handtog button.on{border-color:#54362c;color:var(--orange);background:#1a1311}
+.spread-tools{display:flex;gap:6px;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap}
+.spread-note{font-size:8px;color:#5b5b58;line-height:1.6;margin-top:10px}
+/* results */
+.an-metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:14px}
+.an-metric{padding:15px 16px;border:1px solid #4d3128;border-radius:8px;background:rgba(18,18,18,.72);text-align:center}
+.an-metric:nth-child(2){border-color:#3f312c}.an-metric:nth-child(3){border-color:#4a2b33}.an-metric:nth-child(4){border-color:#263d30}
+.an-metric .lab{font-size:8px;color:#6d6d69;text-transform:uppercase;letter-spacing:.09em;margin-bottom:8px}
+.an-metric .val{font-size:20px;font-weight:800;letter-spacing:-.02em;line-height:1.1}
+.an-metric .sub2{font-size:8px;color:#5b5b58;margin-top:6px;line-height:1.5}
+.v-pos{color:#3fca77}.v-neg{color:#e0546f}.v-warn{color:#e0a06f}.v-plain{color:#e9e8e4}
+.runbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:4px}
+.progress{flex:1;min-width:120px;height:5px;border-radius:99px;background:#1d1d1d;overflow:hidden}
+.progress i{display:block;height:100%;width:0;background:linear-gradient(90deg,#2f9e5c,#e0703a);transition:width .12s linear}
+.runstat{font-size:9px;color:#6d6d69;white-space:nowrap}
+.varbox{padding:16px 18px;margin-top:14px}
+.varbox svg{width:100%;height:250px;display:block;overflow:visible}
+.band{fill:rgba(224,112,58,.10)}.band2{fill:rgba(224,112,58,.16)}
+.medline{fill:none;stroke:#e0703a;stroke-width:2}
+.pathline{fill:none;stroke-width:1;opacity:.55}
+.ruinline{stroke:#b61038;stroke-width:1;stroke-dasharray:4 3}
+.varlegend{display:flex;gap:14px;flex-wrap:wrap;font-size:8px;color:#6d6d69;margin-top:10px}
+.varlegend i{display:inline-block;width:10px;height:3px;border-radius:2px;margin-right:5px;vertical-align:middle}
+/* per-count table */
+.cnt-table{width:100%;border-collapse:collapse;font-size:9px;margin-top:4px}
+.cnt-table th{text-align:right;color:#6d6d69;font-weight:600;padding:5px 6px;border-bottom:1px solid #222;font-size:8px;text-transform:uppercase;letter-spacing:.06em}
+.cnt-table th:first-child,.cnt-table td:first-child{text-align:left}
+.cnt-table td{text-align:right;padding:5px 6px;border-bottom:1px solid #161616;color:#a9a8a4}
+.cnt-table tr:hover td{background:rgba(255,255,255,.02)}
+.cnt-bar{position:relative}
+.cnt-bar i{position:absolute;left:0;top:50%;transform:translateY(-50%);height:11px;border-radius:2px;opacity:.5}
+.cnt-bar span{position:relative}
+.hint-i{display:inline-grid;place-items:center;width:12px;height:12px;border-radius:50%;border:1px solid #3a3733;color:#77756f;font-size:8px;margin-left:5px;cursor:help;vertical-align:middle}
+.an-note{font-size:9px;color:#63635f;line-height:1.7;margin-top:12px}
+.an-warn{font-size:9px;line-height:1.7;margin-top:10px;padding:9px 11px;border-radius:6px;border:1px solid #57402a;background:rgba(224,160,111,.06);color:#d3a679}
+.cmp-row{display:grid;grid-template-columns:1fr auto;gap:10px;font-size:10px;padding:7px 0;border-bottom:1px solid #1b1b1b;color:#9a9995}
+.cmp-row b{color:#e9e8e4}
+@media(max-width:980px){.an-grid{grid-template-columns:1fr}.an-metrics{grid-template-columns:1fr 1fr}}
+@media(max-width:520px){.an-metrics{grid-template-columns:1fr}.fgrid{grid-template-columns:1fr}.spread-head,.spread-row{grid-template-columns:36px 1fr 66px}}
 </style>
 </head>
 <body>
@@ -177,6 +248,7 @@ h1{font-size:21px;line-height:1.1;margin:0 0 8px;font-weight:780;letter-spacing:
       <button data-view="strategy">Charts</button>
       <button data-view="course">Course</button>
       <button data-view="casinos">Casinos</button>
+      <button data-view="analyzer">EV &amp; Risk</button>
       <button data-view="dashboard">Dashboard</button>
     </nav>
     <button class="iconbtn" id="resetAll" title="Reset all saved progress">↻</button>
@@ -373,7 +445,7 @@ h1{font-size:21px;line-height:1.1;margin:0 0 8px;font-weight:780;letter-spacing:
             <div class="panel simstat">
               <label>Suggested bet at this count</label>
               <strong id="simBetSuggest" style="font-size:14px">—</strong>
-              <div style="font-size:8px;color:#666;margin-top:5px;line-height:1.6">1 unit = <span id="simUnit">$25</span>. Spread shown is (TC − 1) × unit, capped at 8 units.</div>
+              <div style="font-size:8px;color:#666;margin-top:5px;line-height:1.6">Taken from the spread you set in <b>EV &amp; Risk</b>.</div>
             </div>
           </aside>
         </div>
@@ -481,6 +553,120 @@ h1{font-size:21px;line-height:1.1;margin:0 0 8px;font-weight:780;letter-spacing:
         </div>
       </div>
     </section>
+
+    <!-- ================= ANALYZER ================= -->
+    <section id="view-analyzer" class="view">
+      <div class="wide">
+        <div class="dashhead">
+          <div>
+            <h1>EV &amp; Risk Analyzer</h1>
+            <div class="sub" style="margin:0;max-width:640px">Every number below is measured by dealing the game you describe — your rules, your spread, your indices — millions of rounds in the background. Nothing here is a lookup table.</div>
+          </div>
+          <div class="bankselect">
+            <select id="anLoadVenue" title="Load rules from a logged table"><option value="">Load table rules…</option></select>
+            <button class="btn primary sm" id="anRun">Run simulation</button>
+          </div>
+        </div>
+
+        <div class="runbar">
+          <div class="progress"><i id="anProgress"></i></div>
+          <div class="runstat" id="anStatus">Ready — press Run simulation</div>
+          <button class="btn ghost sm" id="anCancel" hidden>Cancel</button>
+        </div>
+
+        <div class="an-metrics">
+          <div class="an-metric"><div class="lab">Expected value</div><div class="val v-plain" id="mEV">—</div><div class="sub2" id="mEVsub">per hour</div></div>
+          <div class="an-metric"><div class="lab">1 standard deviation</div><div class="val v-plain" id="mSD">—</div><div class="sub2">per hour</div></div>
+          <div class="an-metric"><div class="lab">Risk of ruin</div><div class="val v-plain" id="mRoR">—</div><div class="sub2" id="mRoRsub">lifetime, this bankroll</div></div>
+          <div class="an-metric"><div class="lab">Player advantage</div><div class="val v-plain" id="mAdv">—</div><div class="sub2" id="mAdvsub">of total wagered</div></div>
+        </div>
+
+        <div class="an-grid" style="margin-top:14px">
+          <div class="an-col">
+            <div class="panel an-panel">
+              <h3>Player Settings</h3>
+              <div class="fgrid">
+                <div class="f"><label>Bankroll</label><input id="anBankroll" type="number" min="100" step="100" value="20000"></div>
+                <div class="f"><label>Betting unit</label><input id="anUnit" type="number" min="1" step="5" value="25"></div>
+                <div class="f"><label>Rounds / hour</label><input id="anRounds" type="number" min="20" max="400" step="1" value="100"><div class="unit">A full table deals far fewer rounds than a heads-up one.</div></div>
+                <div class="f"><label># of players at the table</label><select id="anPlayers"><option value="1">1 (heads up)</option><option value="2">2</option><option value="3" selected>3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option></select></div>
+                <div class="f"><label>Hours to project</label><input id="anHours" type="number" min="1" max="5000" step="10" value="500"></div>
+                <div class="f"><label>Simulation size</label><select id="anPrecision"><option value="quick">Quick — about 1M rounds</option><option value="standard" selected>Standard — about 5M rounds</option><option value="deep">Thorough — about 20M rounds</option></select></div>
+              </div>
+              <div class="switchrow"><span>Play the Illustrious 18 / Fab 4 indices</span><button class="switch on" id="anIndices" role="switch" aria-checked="true"></button></div>
+              <div class="switchrow"><span>Take insurance at true count +3 or higher</span><button class="switch on" id="anInsure" role="switch" aria-checked="true"></button></div>
+              <div class="an-note">With indices off you are modelled as a perfect basic-strategy player who varies bets only — useful for seeing what the deviations are actually worth.</div>
+            </div>
+
+            <div class="panel an-panel">
+              <h3>Table Rules <span class="r" id="anRuleSummary"></span></h3>
+              <div class="fgrid">
+                <div class="f"><label>Number of decks</label><select id="anDecks"><option value="1">1 Deck</option><option value="2">2 Deck</option><option value="4">4 Deck</option><option value="6" selected>6 Deck</option><option value="8">8 Deck</option></select></div>
+                <div class="f"><label>Penetration</label><select id="anPen"></select></div>
+                <div class="f"><label>Blackjack pays</label><select id="anBJ"><option value="1.5" selected>3 : 2</option><option value="1.2">6 : 5</option><option value="1">Even money</option></select></div>
+                <div class="f"><label>Splitting</label><select id="anMaxHands"><option value="2">Max 2 Hands</option><option value="3">Max 3 Hands</option><option value="4" selected>Max 4 Hands</option></select></div>
+              </div>
+              <div style="margin-top:6px">
+                <div class="switchrow"><span>Dealer hits soft 17</span><button class="switch on" id="anH17" role="switch" aria-checked="true"></button></div>
+                <div class="switchrow"><span>Late surrender allowed</span><button class="switch on" id="anSurr" role="switch" aria-checked="true"></button></div>
+                <div class="switchrow"><span>Double after splitting</span><button class="switch on" id="anDAS" role="switch" aria-checked="true"></button></div>
+                <div class="switchrow"><span>Re-split aces</span><button class="switch" id="anRSA" role="switch" aria-checked="false"></button></div>
+                <div class="switchrow"><span>Early surrender vs ten (ES10)<span class="hint-i" title="Surrender hard 14, 15 and 16 against a ten before the dealer checks for blackjack. Rare, and worth a lot when you find it.">i</span></span><button class="switch" id="anES10" role="switch" aria-checked="false"></button></div>
+                <div class="switchrow"><span>Dealer peeks for blackjack</span><button class="switch on" id="anPeek" role="switch" aria-checked="true"></button></div>
+              </div>
+            </div>
+
+            <div class="panel an-panel" id="anCountPanel" hidden>
+              <h3>Where the money comes from <span class="r">measured per true count</span></h3>
+              <div style="overflow-x:auto"><table class="cnt-table" id="anCountTable"></table></div>
+              <div class="an-note" id="anCountNote"></div>
+            </div>
+          </div>
+
+          <div class="an-col">
+            <div class="panel an-panel">
+              <h3>Bet Spread</h3>
+              <div class="spread-tools">
+                <select id="anTemplate" style="flex:1;min-width:120px;background:#0d0d0d;border:1px solid #2a2724;color:#c9c8c4;border-radius:5px;padding:7px 9px;font-size:10px"></select>
+                <button class="btn ghost sm" id="anSaveTpl">Save</button>
+                <button class="btn ghost sm" id="anDelTpl">Delete</button>
+              </div>
+              <div class="spread-head"><div>TC</div><div>Bet per hand</div><div>Hands</div></div>
+              <div class="spread" id="anSpread"></div>
+              <div class="spread-tools" style="margin:12px 0 0">
+                <button class="btn ghost sm" id="anSpreadReset">Reset to 1–8</button>
+                <button class="btn ghost sm" id="anSpreadUnits">Fill from unit</button>
+              </div>
+              <div class="spread-note">A bet of 0 means you sit the round out and just watch the cards (wonging). Two hands bets the listed amount on <em>each</em> hand.</div>
+            </div>
+
+            <div class="panel an-panel">
+              <h3>Bankroll maths</h3>
+              <div id="anBankMath"><div class="empty">Run a simulation to size your bankroll against a target risk.</div></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel varbox" id="anVarBox" hidden>
+          <div class="charttitle"><span>Variance over <b id="anVarHours">500</b> hours</span><small id="anVarSub"></small></div>
+          <svg id="anVarChart" viewBox="0 0 900 250" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Simulated bankroll outcomes over time"></svg>
+          <div class="varlegend">
+            <span><i style="background:rgba(224,112,58,.5)"></i>Middle 50% of outcomes</span>
+            <span><i style="background:rgba(224,112,58,.25)"></i>Middle 90%</span>
+            <span><i style="background:#e0703a"></i>Median</span>
+            <span><i style="background:#b61038"></i>Broke</span>
+          </div>
+          <div class="an-note" id="anVarNote"></div>
+        </div>
+
+        <div class="panel an-panel" id="anCompare" hidden style="margin-top:14px">
+          <h3>Against your logged results</h3>
+          <div id="anCompareBody"></div>
+        </div>
+
+        <div class="an-note">Simulation measures the game as described here: perfect play, no betting errors, no heat, no table maximum, and no cover. Real results run behind a model like this one. Figures carry sampling error, shown as a ± range.</div>
+      </div>
+    </section>
   </main>
   <div class="footer">Training and educational software. Blackjack involves financial risk and no counting or strategy system guarantees profit.</div>
 </div>
@@ -495,7 +681,7 @@ const $=(s,r=document)=>r.querySelector(s), $$=(s,r=document)=>[...r.querySelect
 /* ---------------------------------------------------------------- storage */
 const KEY='bjAcademyV3';
 const DEFAULTS={
-  rules:{h17:true,enhc:false,das:true,surrender:true,peek:true,decks:6,bjPays:1.5},
+  rules:{h17:true,enhc:false,das:true,surrender:true,peek:true,decks:6,bjPays:1.5,pen:.75,maxHands:4,rsa:false,es10:false},
   basic:{n:0,c:0,totalMs:0,streak:0,best:0,misses:{}},
   run:{n:0,c:0,totalMs:0,best:0},
   tc:{n:0,c:0,streak:0,best:0},
@@ -505,7 +691,9 @@ const DEFAULTS={
   bankrolls:[{id:'main',name:'Main Bankroll'},{id:'practice',name:'Practice Bankroll'}],
   activeBank:'main',
   sessions:[],
-  sim:{bank:500,unit:25,bet:25,hands:0,won:0,start:500}
+  sim:{bank:500,unit:25,bet:25,hands:0,won:0,start:500},
+  an:{bankroll:20000,unit:25,roundsHr:100,players:3,hours:500,precision:'standard',useIdx:true,insure:true,spread:null},
+  spreadTemplates:[]
 };
 function load(){
   let saved={};
@@ -739,7 +927,7 @@ function indexPlay(entry,tc,rules=state.rules){
 }
 
 /* --------------------------------------------------------------- routing */
-const VIEWS=['train','strategy','course','casinos','dashboard'];
+const VIEWS=['train','strategy','course','casinos','analyzer','dashboard'];
 let currentView='train';
 function showView(v,push=true){
   if(!VIEWS.includes(v)) v='train';
@@ -752,6 +940,7 @@ function showView(v,push=true){
   window.scrollTo({top:0,behavior:'smooth'});
   if(v==='casinos') renderVenues();
   if(v==='dashboard') renderDash();
+  if(v==='analyzer') renderAnalyzer();
   if(v==='train') renderMenuStats();
 }
 $$('#nav button').forEach(b=>b.onclick=()=>showView(b.dataset.view));
@@ -1069,7 +1258,6 @@ function simOpen(){
   if(!sim.shoe||sim.shoe.decks!==state.rules.decks) sim.shoe=Shoe(state.rules.decks);
   if(sim.phase!=='play'&&sim.phase!=='insurance') sim.phase='bet';
   $('#simBet').value=state.sim.bet;
-  $('#simUnit').textContent=money(state.sim.unit);
   simRender();
 }
 const activeHand=()=>sim.hands[sim.active];
@@ -1234,8 +1422,10 @@ function simRender(){
   $('#simPen').style.width=(tot?seen/tot*100:0).toFixed(1)+'%';
   $('#simSeenLine').textContent=`${seen} of ${tot} cards seen · ${sim.shoe?sim.shoe.decksLeft().toFixed(1):'0'} decks left`;
   $('#simShoeLabel').textContent=`${state.rules.decks}D · ${Math.round((sim.shoe?sim.shoe.penetration:0)*100)}% pen`;
-  const units=clamp(Math.floor(tc)-1,1,8);
-  $('#simBetSuggest').textContent=hide?'••':money(units*s.unit)+` (${units}u)`;
+  const tcFloor=tc>=0?Math.floor(tc):Math.ceil(tc);
+  const row=(state.an.spread&&state.an.spread[clamp(tcFloor,SPREAD_LO,SPREAD_HI)])||null;
+  const sug=row?row.bet*row.hands:clamp(Math.floor(tc)-1,1,8)*s.unit;
+  $('#simBetSuggest').textContent=hide?'••':(sug<=0?'sit out':money(sug)+(row&&row.hands>1?' (2 hands)':''));
   $('#simSession').textContent=`${s.hands} hands · ${money(s.bank-s.start)} this bankroll`;
 }
 $('#simActions').onclick=e=>{ const a=e.target.closest('[data-s]'); if(a) simAct(a.dataset.s); };
@@ -1536,11 +1726,13 @@ function renderVenues(){
       <div class="region-body">
         ${list.length?list.map(v=>`
           <div class="venue">
-            <div class="venue-top"><span class="venue-name">${esc(v.name)}</span><span class="venue-edge">${houseEdge(v).toFixed(2)}%</span></div>
+            <div class="venue-top"><span class="venue-name">${esc(v.name)}</span><span class="venue-edge">${(v.measured!=null?v.measured:houseEdge(v)).toFixed(2)}%</span></div>
             <div class="venue-rules">${esc(venueRuleLine(v))}</div>
+            <div class="venue-rules">${v.measured!=null?`Measured by simulation over ${(v.measuredRounds/1e6).toFixed(1)}M rounds`:'Estimated from published rule effects'}</div>
             ${v.note?`<div class="venue-rules">${esc(v.note)}</div>`:''}
             <div class="venue-acts">
               <button class="btn ghost sm" data-load="${v.id}">Load into charts</button>
+              <button class="btn ghost sm" data-measure="${v.id}">Measure</button>
               <button class="btn ghost sm" data-edit="${v.id}">Edit</button>
               <button class="btn danger sm" data-del="${v.id}">Delete</button>
             </div>
@@ -1568,6 +1760,11 @@ $('#regions').addEventListener('click',e=>{
       state.venues=state.venues.filter(x=>x.id!==del.dataset.del); save(); renderVenues(); toast('Table deleted');
     });
   }
+  const ms=e.target.closest('[data-measure]');
+  if(ms){
+    const v=state.venues.find(x=>x.id===ms.dataset.measure); if(!v) return;
+    return measureVenue(v,ms);
+  }
   const ld=e.target.closest('[data-load]');
   if(ld){
     const v=state.venues.find(x=>x.id===ld.dataset.load); if(!v) return;
@@ -1585,6 +1782,36 @@ $$('[data-zoom]').forEach(b=>b.onclick=()=>{
   mapScale=clamp(mapScale+Number(b.dataset.zoom)*.2,.6,2);
   $('#mapInner').style.transform=`scale(${mapScale})`;
 });
+/** Play this table's rules out flat-betting basic strategy and report the real edge. */
+async function measureVenue(v,btn){
+  if(anRun.busy) return toast('A simulation is already running.');
+  const rules={h17:v.h17,enhc:!!v.enhc,das:!!v.das,surrender:!!v.surrender&&!v.enhc,
+    peek:!v.enhc,decks:v.decks,bjPays:v.bjPays,pen:clamp((v.pen||75)/100,.4,.95),
+    maxHands:4,rsa:false,es10:false};
+  const t=compileTables(rules);
+  const flat=Array.from({length:17},()=>({bet:10,hands:1}));
+  const cfg={decks:rules.decks,penetration:rules.pen,h17:rules.h17,enhc:rules.enhc,peek:rules.peek,
+    das:rules.das,surrender:rules.surrender,es10:false,rsa:false,maxHands:4,bjPays:rules.bjPays,
+    players:1,useIdx:false,insure:false,spread:flat,bankroll:1e12,
+    roundsPerPath:1e6,samplePoints:4,paths:6,seed:(Math.random()*4294967295)>>>0,
+    hard:t.hard,soft:t.soft,pair:t.pair,idx:t.idx};
+  anRun.busy=true; anRun.cancel=false;
+  const label=btn.textContent; btn.textContent='Measuring…'; btn.disabled=true;
+  try{
+    const res=await runSimulation(cfg,f=>{ btn.textContent=`Measuring ${Math.round(f*100)}%`; });
+    const n=res.rounds, mean=res.net/n, avg=res.initial/n;
+    const varRound=Math.max(1e-9,res.sumSq/n-mean*mean);
+    v.measured=-mean/avg*100;
+    v.measuredSE=Math.sqrt(varRound/n)/avg*100;
+    v.measuredRounds=n;
+    save(); renderVenues();
+    toast(`${v.name}: ${v.measured.toFixed(2)}% ±${(1.96*v.measuredSE).toFixed(2)} house edge`);
+  }catch(err){
+    if(!(err&&err.cancelled)) toast('Could not run the simulation here.');
+    btn.textContent=label; btn.disabled=false;
+  }finally{ anRun.busy=false; }
+}
+
 function venueForm(v,regionId){
   const e=v||{id:'',name:'',region:regionId||REGIONS[0].id,decks:6,h17:true,enhc:false,das:true,surrender:true,bjPays:1.5,pen:75,min:25,note:''};
   openModal(`<h3>${v?'Edit table':'Add a table'}</h3><div class="sub">Record the rules as they are posted at the table.</div>
@@ -1617,7 +1844,7 @@ function venueForm(v,regionId){
   preview();
   $('#vSave').onclick=()=>{
     const data=read();
-    if(v){ Object.assign(v,data); } else state.venues.push(data);
+    if(v){ Object.assign(v,data); v.measured=null; v.measuredSE=null; } else state.venues.push(data);
     save(); closeModal(); renderVenues(); toast(v?'Table updated':'Table added');
   };
 }
@@ -1660,8 +1887,8 @@ function drawChart(list){
   const x=i=>padL+(pts.length===1?(W-padL-padR)/2:i*(W-padL-padR)/(pts.length-1));
   const y=v=>H-padB-(v-min)*(H-padT-padB)/(max-min);
   let g='';
-  for(let i=0;i<5;i++){
-    const val=max-i*(max-min)/4, yy=y(val);
+  for(const val of niceTicks(min,max,4)){
+    const yy=y(val);
     g+=`<line class="gridline" x1="${padL}" y1="${yy}" x2="${W-padR}" y2="${yy}"/>`+
        `<text class="axistext" x="${padL-6}" y="${yy+3}" text-anchor="end">${money(val)}</text>`;
   }
@@ -1788,9 +2015,770 @@ document.addEventListener('keydown',e=>{
   }
 });
 
+/* =====================================================================
+   MONTE CARLO ENGINE
+   The analyzer does not look EV up in a table — it deals the game you
+   describe and measures the result. The strategy tables above are the
+   single source of truth: they are compiled here into flat integer
+   lookups, then handed to a core that plays rounds as fast as it can.
+   The core closes over nothing, so the same source runs on the main
+   thread or inside a Worker.
+   ===================================================================== */
+const ACT={HIT:0,STAND:1,DOUBLE:2,SPLIT:3,SURRENDER:4};
+const CODE_ID={H:0,S:1,D:2,Ds:3,P:4,Ph:5,Rh:6,Rs:7,Rp:8};
+
+/** Compile the app's strategy tables into flat arrays for the given rules. */
+function compileTables(rules){
+  const hard=new Int8Array(22*10), soft=new Int8Array(22*10), pair=new Int8Array(12*10);
+  for(let t=5;t<=21;t++) for(let c=0;c<10;c++) hard[t*10+c]=CODE_ID[codeFor('hard',t,c,rules)];
+  for(let t=12;t<=21;t++) for(let c=0;c<10;c++) soft[t*10+c]=CODE_ID[codeFor('soft',t,c,rules)];
+  for(let v=2;v<=11;v++) for(let c=0;c<10;c++) pair[v*10+c]=CODE_ID[codeFor('pair',v,c,rules)];
+  // index plays, reduced to (kind, total, dealer column) matchers
+  const idx=[];
+  for(const e of INDICES){
+    if(e.id==='ins') continue;                       // insurance is handled on its own
+    if(e.play==='SURRENDER'&&!(rules.surrender&&!rules.enhc)) continue;
+    const cards=e.hand.map(r=>card(r));
+    const h=handInfo(cards);
+    const kind=(h.pair&&VALUE[cards[0].rank]===10)?1:0;   // 1 = a pair of tens
+    if(h.soft) continue;                                  // no soft indices in this set
+    idx.push({kind,total:h.total,col:colOf(e.up),index:e.idx,above:e.dir==='>=',act:ACT[e.play]});
+  }
+  return {hard,soft,pair,idx};
+}
+
+/** The simulation core. Pure; serialisable; no outer references. */
+function SimEngine(){
+'use strict';
+const TAG=[0,-1,1,1,1,1,1,0,0,0,-1];      // Hi-Lo tag by card value, 1 = ace
+const BUCKET_LO=-6, BUCKET_HI=10, BUCKETS=BUCKET_HI-BUCKET_LO+1;
+const SAMPLE_CAP=400;
+
+function rng(seed){
+  let a=seed>>>0;
+  return function(){ a=a+0x6D2B79F5|0; let t=Math.imul(a^a>>>15,1|a); t=t+Math.imul(t^t>>>7,61|t)^t; return ((t^t>>>14)>>>0)/4294967296; };
+}
+function buildShoe(decks){
+  const n=decks*52, a=new Int8Array(n);
+  let i=0;
+  for(let d=0;d<decks;d++){
+    for(let v=1;v<=9;v++) for(let k=0;k<4;k++) a[i++]=v;
+    for(let k=0;k<16;k++) a[i++]=10;
+  }
+  return a;
+}
+function shuffle(st){
+  const a=st.shoe, r=st.rnd;
+  for(let i=a.length-1;i>0;i--){ const j=(r()*(i+1))|0; const t=a[i]; a[i]=a[j]; a[j]=t; }
+  st.pos=0; st.rc=0; st.shuffles++;
+}
+const bucketOf=tc=>tc<BUCKET_LO?0:tc>BUCKET_HI?BUCKETS-1:tc-BUCKET_LO;
+
+/* ---- hands are plain numeric records; total counts every ace as 1 ---- */
+function newHand(bet){ return {t:0,aces:0,n:0,c0:0,c1:0,bet:bet||0,done:false,dbl:false,surr:false,split:false,aceSplit:false,natural:false}; }
+function add(h,v){ h.t+=v; if(v===1)h.aces++; if(h.n===0)h.c0=v; else if(h.n===1)h.c1=v; h.n++; }
+const best=h=>(h.aces>0&&h.t+10<=21)?h.t+10:h.t;
+const isSoft=h=>h.aces>0&&h.t+10<=21;
+const isBust=h=>h.t>21;
+const isPair=h=>h.n===2&&h.c0===h.c1;
+const isBJ=h=>h.n===2&&best(h)===21;
+
+function init(cfg){
+  const totalCards=cfg.decks*52;
+  const st={
+    cfg, rnd:rng(cfg.seed||1), shoe:buildShoe(cfg.decks), pos:totalCards, rc:0,
+    totalCards, cut:Math.max(20,Math.floor(totalCards*cfg.penetration)),
+    shuffles:0, pathsDone:0,
+    rounds:0, played:0, hands:0, wagered:0, initial:0, net:0, sumSq:0, dOut:new Float64Array(7),
+    bN:new Float64Array(BUCKETS), bBet:new Float64Array(BUCKETS),
+    bWag:new Float64Array(BUCKETS), bNet:new Float64Array(BUCKETS),
+    ruined:0, finals:[], samples:[],
+    // scratch, reused every round so the hot loop allocates nothing
+    hero:[], others:[], dealer:newHand(0)
+  };
+  for(let i=0;i<8;i++) st.hero.push(newHand(0));
+  for(let i=0;i<7;i++) st.others.push(newHand(0));
+  return st;
+}
+function resetHand(h,bet){ h.t=0;h.aces=0;h.n=0;h.c0=0;h.c1=0;h.bet=bet||0;h.done=false;h.dbl=false;h.surr=false;h.split=false;h.aceSplit=false;h.natural=false; return h; }
+
+/* A round can need more cards than are left behind the cut card — on a single
+   deck especially. Reading past the end would hand back undefined and poison
+   every total with NaN, so shuffle and carry on, exactly as a table does. */
+function draw(st){ if(st.pos>=st.shoe.length) shuffle(st); const v=st.shoe[st.pos++]; st.rc+=TAG[v]; return v; }
+function drawHidden(st){ if(st.pos>=st.shoe.length) shuffle(st); return st.shoe[st.pos++]; }
+function addHole(st,dealer,hole){ add(dealer,hole); st.rc+=TAG[hole]; }
+
+function resolveCode(code,canD,canP,canR,das){
+  switch(code){
+    case 0: return 0;
+    case 1: return 1;
+    case 2: return canD?2:0;
+    case 3: return canD?2:1;
+    case 4: return canP?3:-1;
+    case 5: return (canP&&das)?3:-1;
+    case 6: return canR?4:0;
+    case 7: return canR?4:1;
+    case 8: return canR?4:(canP?3:-1);
+  }
+  return 0;
+}
+function indexAct(cfg,kind,total,col,tc){
+  const idx=cfg.idx;
+  for(let i=0;i<idx.length;i++){
+    const e=idx[i];
+    if(e.kind!==kind||e.col!==col||e.total!==total) continue;
+    return (e.above?tc>=e.index:tc<e.index)?e.act:-1;
+  }
+  return -1;
+}
+/** One decision for one hero hand, indices included. */
+function decide(st,h,col,tc,canD,canP,canR){
+  const cfg=st.cfg, total=best(h), soft=isSoft(h);
+  if(canP){
+    const pv=h.c0===1?11:h.c0;
+    if(cfg.useIdx&&pv===10){
+      const a=indexAct(cfg,1,20,col,tc);
+      if(a>=0) return a;                       // split tens at a high enough count
+    }
+    const a=resolveCode(cfg.pair[pv*10+col],canD,canP,canR,cfg.das);
+    if(a>=0) return a;
+  }
+  if(cfg.useIdx&&!soft){
+    const a=indexAct(cfg,0,total,col,tc);
+    if(a>=0){
+      if(a===2&&!canD) return 0;
+      if(a===4&&!canR) return 0;
+      return a;
+    }
+  }
+  const t=total<5?5:total>21?21:total;
+  const act=resolveCode(soft?cfg.soft[t*10+col]:cfg.hard[t*10+col],canD,canP,canR,cfg.das);
+  return act<0?0:act;
+}
+/** Basic strategy only — the other players at the table. */
+function decidePlain(st,h,col,canD,canP){
+  const cfg=st.cfg, total=best(h), soft=isSoft(h);
+  if(canP){
+    const pv=h.c0===1?11:h.c0;
+    const a=resolveCode(cfg.pair[pv*10+col],canD,canP,false,cfg.das);
+    if(a>=0) return a;
+  }
+  const t=total<5?5:total>21?21:total;
+  const act=resolveCode(soft?cfg.soft[t*10+col]:cfg.hard[t*10+col],canD,canP,false,cfg.das);
+  return act<0?0:act;
+}
+
+/** The other players finish their hands. Returns true if any of them stands. */
+function playOthers(st,nOthers,col){
+  let live=false;
+  for(let i=0;i<nOthers;i++){
+    const h=st.others[i];
+    for(;;){
+      if(isBust(h)){ break; }
+      if(best(h)===21||h.n>=12){ live=true; break; }
+      const a=decidePlain(st,h,col,h.n===2,false);
+      if(a===1){ live=true; break; }
+      if(a===2){ add(h,draw(st)); if(!isBust(h)) live=true; break; }
+      add(h,draw(st));
+    }
+  }
+  return live;
+}
+/** The dealer draws to 17, hitting soft 17 when the rules say so. */
+function dealerPlay(st,dealer,standPat){
+  if(standPat&&!st.cfg.dealerAlways) return;
+  for(;;){
+    const t=best(dealer);
+    if(t>17||dealer.n>=12) break;
+    if(t===17&&!(st.cfg.h17&&isSoft(dealer))) break;
+    add(dealer,draw(st));
+    if(isBust(dealer)) break;
+  }
+  const t=best(dealer);
+  st.dOut[t>21?6:(dealer.n===2&&t===21)?5:t===21?4:t>=17?t-17:0]++;
+}
+
+function playRound(st){
+  const cfg=st.cfg;
+  if(st.pos>=st.cut) shuffle(st);
+  const decksLeft=Math.max(0.25,(st.totalCards-st.pos)/52);
+  const raw=st.rc/decksLeft;
+  const tc=raw>=0?Math.floor(raw):Math.ceil(raw);
+  const b=bucketOf(tc);
+  const sp=cfg.spread[b];
+  st.rounds++; st.bN[b]++;
+
+  const sitOut=sp.bet<=0;
+  const nh=sitOut?0:sp.hands;
+  // sitting out still needs a game to watch, so keep at least one other player
+  const nOthers=sitOut?Math.max(1,cfg.players-1):cfg.players-1;
+
+  for(let i=0;i<nh;i++) resetHand(st.hero[i],sp.bet);
+  for(let i=0;i<nOthers;i++) resetHand(st.others[i],0);
+  const dealer=resetHand(st.dealer,0);
+  let heroCount=nh;
+
+  for(let pass=0;pass<2;pass++){
+    for(let i=0;i<nh;i++) add(st.hero[i],draw(st));
+    for(let i=0;i<nOthers;i++) add(st.others[i],draw(st));
+  }
+  const up=draw(st); add(dealer,up);
+  const col=up===1?9:up-2;
+  const hasHole=!cfg.enhc;
+  const hole=hasHole?drawHidden(st):0;
+
+  if(sitOut){
+    playOthers(st,nOthers,col);
+    if(hasHole) addHole(st,dealer,hole); else add(dealer,draw(st));
+    dealerPlay(st,dealer,false);
+    return 0;
+  }
+
+  st.played++;
+  const baseBet=sp.bet*nh;
+  let wagered=baseBet, net=0, ins=0;
+
+  // early surrender is decided before the dealer looks at the hole card
+  if(cfg.es10&&up===10&&hasHole){
+    for(let i=0;i<heroCount;i++){
+      const h=st.hero[i], tot=best(h);
+      if(!isSoft(h)&&!isPair(h)&&tot>=14&&tot<=16){ h.surr=true; h.done=true; }
+    }
+  }
+  if(cfg.insure&&up===1&&hasHole&&cfg.peek&&tc>=3){ ins=baseBet*0.5; wagered+=ins; }
+
+  const dealerNatural=hasHole&&((up===1&&hole===10)||(up===10&&hole===1));
+
+  // the dealer peeks: only a blackjack is exposed, so only then is it counted
+  if(hasHole&&cfg.peek&&(up===1||up===10)&&dealerNatural){
+    addHole(st,dealer,hole);
+    for(let i=0;i<heroCount;i++){
+      const h=st.hero[i]; st.hands++;
+      if(h.surr) net-=h.bet/2;
+      else if(isBJ(h)&&!h.split) net+=0;        // both naturals — push
+      else net-=h.bet;
+    }
+    if(ins) net+=ins*2;
+    playOthers(st,nOthers,col);
+    return finishRound(st,b,baseBet,wagered,net);
+  }
+  if(ins) net-=ins;
+
+  for(let i=0;i<heroCount;i++){
+    const h=st.hero[i];
+    if(!h.done&&isBJ(h)&&!h.split){ h.done=true; h.natural=true; }
+  }
+
+  for(let i=0;i<heroCount;i++){
+    const h=st.hero[i];
+    if(h.done) continue;
+    for(;;){
+      if(isBust(h)||best(h)===21||h.n>=12){ h.done=true; break; }
+      if(h.aceSplit){
+        const canResplit=cfg.rsa&&isPair(h)&&h.c0===1&&heroCount<cfg.maxHands;
+        if(!canResplit){ h.done=true; break; }
+      }
+      const canD=h.n===2&&!h.aceSplit&&(!h.split||cfg.das);
+      const canP=h.n===2&&isPair(h)&&heroCount<cfg.maxHands;
+      const canR=cfg.surrender&&!cfg.enhc&&h.n===2&&!h.split&&heroCount===1&&!cfg.es10;
+      const a=decide(st,h,col,tc,canD,canP,canR);
+      if(a===1){ h.done=true; break; }
+      if(a===4){ h.surr=true; h.done=true; break; }
+      if(a===2){ wagered+=h.bet; h.bet*=2; h.dbl=true; add(h,draw(st)); h.done=true; break; }
+      if(a===3){
+        const v=h.c0;                            // a pair: both halves are this value
+        const nw=resetHand(st.hero[heroCount],sp.bet);
+        wagered+=sp.bet;
+        add(nw,v);
+        h.t=0;h.aces=0;h.n=0;h.c0=0;h.c1=0;
+        add(h,v);
+        h.split=true; nw.split=true;
+        heroCount++;
+        add(h,draw(st)); add(nw,draw(st));
+        if(v===1){ h.aceSplit=true; nw.aceSplit=true; }
+        continue;
+      }
+      add(h,draw(st));
+    }
+  }
+
+  const othersLive=playOthers(st,nOthers,col);
+  if(hasHole) addHole(st,dealer,hole); else add(dealer,draw(st));
+  let heroLive=false;
+  for(let i=0;i<heroCount;i++){ const h=st.hero[i]; if(!h.surr&&!isBust(h)&&!h.natural) heroLive=true; }
+  dealerPlay(st,dealer,!heroLive&&!othersLive);
+
+  const dBJ=dealer.n===2&&best(dealer)===21;
+  const dTot=best(dealer), dBust=isBust(dealer);
+  for(let i=0;i<heroCount;i++){
+    const h=st.hero[i];
+    st.hands++;
+    if(h.surr){ net-=h.bet/2; continue; }
+    if(h.natural){ net+=dBJ?0:h.bet*cfg.bjPays; continue; }
+    if(isBust(h)){ net-=h.bet; continue; }
+    if(dBJ){ net-=h.bet; continue; }
+    const pTot=best(h);
+    if(dBust||pTot>dTot) net+=h.bet;
+    else if(pTot<dTot) net-=h.bet;
+  }
+  return finishRound(st,b,baseBet,wagered,net);
+}
+
+function finishRound(st,b,baseBet,wagered,net){
+  st.wagered+=wagered; st.initial+=baseBet; st.net+=net; st.sumSq+=net*net;
+  st.bWag[b]+=wagered; st.bNet[b]+=net; st.bBet[b]+=baseBet;
+  return net;
+}
+
+function runPath(st){
+  const cfg=st.cfg, n=cfg.roundsPerPath, pts=cfg.samplePoints;
+  const keep=st.samples.length<SAMPLE_CAP;
+  const samp=keep?new Float32Array(pts):null;
+  let bank=0, low=0, si=0, nextAt=Math.max(1,Math.floor(n/pts));
+  for(let r=0;r<n;r++){
+    bank+=playRound(st);
+    if(bank<low) low=bank;
+    if(samp&&si<pts&&r+1>=nextAt){ samp[si++]=bank; nextAt=Math.floor((si+1)*n/pts); }
+  }
+  if(samp){ while(si<pts) samp[si++]=bank; st.samples.push(samp); }
+  if(low<=-cfg.bankroll) st.ruined++;
+  st.finals.push(bank);
+  st.pathsDone++;
+}
+function step(st,paths){ for(let i=0;i<paths&&st.pathsDone<st.cfg.paths;i++) runPath(st); return st.pathsDone; }
+function result(st){
+  return {
+    rounds:st.rounds, played:st.played, hands:st.hands, wagered:st.wagered, initial:st.initial,
+    dOut:Array.from(st.dOut),
+    net:st.net, sumSq:st.sumSq, shuffles:st.shuffles,
+    bN:Array.from(st.bN), bWag:Array.from(st.bWag), bNet:Array.from(st.bNet), bBet:Array.from(st.bBet),
+    ruined:st.ruined, paths:st.pathsDone,
+    finals:st.finals, samples:st.samples.map(a=>Array.from(a)),
+    bucketLo:BUCKET_LO
+  };
+}
+return {init,step,result,BUCKET_LO,BUCKETS};
+}
+
+/* =====================================================================
+   ANALYZER — drives the engine and renders what it measured
+   ===================================================================== */
+const SPREAD_LO=-4, SPREAD_HI=8;                 // editable rows
+const CORE_LO=-6, CORE_HI=10;                    // buckets the engine keeps
+const PRECISION={quick:1e6,standard:5e6,deep:2e7};
+const PEN_CHOICES=[[.5,'50%'],[.6,'60%'],[.667,'66%'],[.75,'75%'],[.79,'79%'],[.85,'85%'],[.9,'90%']];
+
+function defaultSpread(unit){
+  const mult={'-4':1,'-3':1,'-2':1,'-1':1,'0':1,'1':1,'2':2,'3':4,'4':6,'5':8,'6':8,'7':8,'8':8};
+  const out={};
+  for(let tc=SPREAD_LO;tc<=SPREAD_HI;tc++) out[tc]={bet:unit*mult[tc],hands:1};
+  return out;
+}
+function anSpread(){
+  if(!state.an.spread) state.an.spread=defaultSpread(state.an.unit);
+  return state.an.spread;
+}
+/** Expand the editable rows into the engine's full bucket range. */
+function spreadForEngine(){
+  const sp=anSpread(), out=[];
+  for(let tc=CORE_LO;tc<=CORE_HI;tc++){
+    const k=clamp(tc,SPREAD_LO,SPREAD_HI);
+    const row=sp[k]||{bet:state.an.unit,hands:1};
+    out.push({bet:Math.max(0,Number(row.bet)||0),hands:clamp(Number(row.hands)||1,1,2)});
+  }
+  return out;
+}
+function renderSpread(){
+  const sp=anSpread();
+  let h='';
+  for(let tc=SPREAD_LO;tc<=SPREAD_HI;tc++){
+    const row=sp[tc], label=tc===SPREAD_LO?'≤'+tc:tc===SPREAD_HI?'≥+'+tc:(tc>0?'+'+tc:String(tc));
+    const cls=tc<0?'tc-neg':tc===0?'tc-zero':'tc-pos';
+    h+=`<div class="spread-row">
+      <div class="tc ${cls}">${label}</div>
+      <input type="number" min="0" step="5" value="${row.bet}" data-sbet="${tc}" class="${row.bet<=0?'sitout':''}" aria-label="Bet at true count ${tc}">
+      <div class="handtog">
+        <button data-shands="${tc}" data-v="1" class="${row.hands===1?'on':''}">1×</button>
+        <button data-shands="${tc}" data-v="2" class="${row.hands===2?'on':''}">2×</button>
+      </div></div>`;
+  }
+  $('#anSpread').innerHTML=h;
+  const min=Math.min(...Object.values(sp).filter(r=>r.bet>0).map(r=>r.bet));
+  const max=Math.max(...Object.values(sp).map(r=>r.bet*r.hands));
+  $('#anSpread').dataset.ratio=min?Math.round(max/min):0;
+}
+$('#anSpread').addEventListener('input',e=>{
+  const t=e.target.dataset.sbet;
+  if(t===undefined) return;
+  anSpread()[t].bet=Math.max(0,Number(e.target.value)||0);
+  e.target.classList.toggle('sitout',anSpread()[t].bet<=0);
+  save(); markStale();
+});
+$('#anSpread').addEventListener('click',e=>{
+  const b=e.target.closest('[data-shands]'); if(!b) return;
+  anSpread()[b.dataset.shands].hands=Number(b.dataset.v);
+  save(); renderSpread(); markStale();
+});
+$('#anSpreadReset').onclick=()=>{ state.an.spread=defaultSpread(state.an.unit); save(); renderSpread(); markStale(); toast('Spread reset to 1–8'); };
+$('#anSpreadUnits').onclick=()=>{
+  const sp=anSpread(), u=state.an.unit, base=Math.min(...Object.values(sp).filter(r=>r.bet>0).map(r=>r.bet))||u;
+  for(const k in sp) sp[k].bet=Math.round(sp[k].bet/base*u);
+  save(); renderSpread(); markStale(); toast('Bets rescaled to a '+money(u)+' unit');
+};
+/* spread templates */
+function renderTemplates(){
+  const sel=$('#anTemplate');
+  sel.innerHTML='<option value="">Saved spreads…</option>'+
+    state.spreadTemplates.map((t,i)=>`<option value="${i}">${esc(t.name)}</option>`).join('');
+}
+$('#anTemplate').onchange=e=>{
+  const t=state.spreadTemplates[e.target.value];
+  if(!t) return;
+  state.an.spread=structuredClone(t.spread);
+  save(); renderSpread(); markStale(); toast('Loaded “'+t.name+'”');
+};
+$('#anSaveTpl').onclick=()=>{
+  openModal(`<h3>Save this spread</h3><div class="sub">Store the current bets so you can compare spreads side by side.</div>
+    <div class="field"><label>Name</label><input id="tplName" placeholder="e.g. 1-8 green chip" autofocus></div>
+    <div class="modal-acts"><button class="btn ghost" data-close>Cancel</button><button class="btn primary" id="tplSave">Save</button></div>`);
+  $('#tplSave').onclick=()=>{
+    const name=$('#tplName').value.trim()||('Spread '+(state.spreadTemplates.length+1));
+    state.spreadTemplates.push({name,spread:structuredClone(anSpread())});
+    save(); renderTemplates(); closeModal(); toast('Spread saved');
+  };
+};
+$('#anDelTpl').onclick=()=>{
+  const i=$('#anTemplate').value;
+  if(i==='') return toast('Pick a saved spread first.');
+  const t=state.spreadTemplates[i];
+  confirmBox(`Delete the spread “${t.name}”?`,()=>{
+    state.spreadTemplates.splice(i,1); save(); renderTemplates(); toast('Deleted');
+  });
+};
+
+/* ---- form wiring ------------------------------------------------------ */
+const AN_NUM={anBankroll:'bankroll',anUnit:'unit',anRounds:'roundsHr',anHours:'hours'};
+const AN_SWITCH={anIndices:['an','useIdx'],anInsure:['an','insure'],
+  anH17:['rules','h17'],anSurr:['rules','surrender'],anDAS:['rules','das'],
+  anRSA:['rules','rsa'],anES10:['rules','es10'],anPeek:['rules','peek']};
+function syncAnalyzerForm(){
+  $('#anPen').innerHTML=PEN_CHOICES.map(([v,l])=>{
+    const cards=Math.round(state.rules.decks*52*v);
+    return `<option value="${v}" ${Math.abs(v-state.rules.pen)<.005?'selected':''}>${(state.rules.decks*v).toFixed(2)} decks (${cards} cards, ${l})</option>`;
+  }).join('');
+  for(const id in AN_NUM) $('#'+id).value=state.an[AN_NUM[id]];
+  $('#anPlayers').value=state.an.players;
+  $('#anPrecision').value=state.an.precision;
+  $('#anDecks').value=state.rules.decks;
+  $('#anBJ').value=state.rules.bjPays;
+  $('#anMaxHands').value=state.rules.maxHands;
+  for(const id in AN_SWITCH){
+    const [grp,key]=AN_SWITCH[id], on=!!state[grp][key];
+    const el=$('#'+id);
+    el.classList.toggle('on',on);
+    el.setAttribute('aria-checked',String(on));
+  }
+  $('#anRuleSummary').textContent=ruleText();
+  $('#anLoadVenue').innerHTML='<option value="">Load table rules…</option>'+
+    state.venues.map(v=>`<option value="${v.id}">${esc(v.name)}</option>`).join('');
+}
+for(const id in AN_NUM) $('#'+id).addEventListener('input',e=>{
+  state.an[AN_NUM[id]]=Math.max(0,Number(e.target.value)||0); save(); markStale();
+});
+$('#anPlayers').onchange=e=>{ state.an.players=Number(e.target.value); save(); markStale(); };
+$('#anPrecision').onchange=e=>{ state.an.precision=e.target.value; save(); markStale(); };
+$('#anDecks').onchange=e=>{ state.rules.decks=Number(e.target.value); save(); syncAnalyzerForm(); renderCharts(); markStale(); };
+$('#anPen').onchange=e=>{ state.rules.pen=Number(e.target.value); save(); markStale(); };
+$('#anBJ').onchange=e=>{ state.rules.bjPays=Number(e.target.value); save(); syncAnalyzerForm(); renderCharts(); markStale(); };
+$('#anMaxHands').onchange=e=>{ state.rules.maxHands=Number(e.target.value); save(); markStale(); };
+for(const id in AN_SWITCH) $('#'+id).onclick=()=>{
+  const [grp,key]=AN_SWITCH[id];
+  state[grp][key]=!state[grp][key];
+  if(grp==='rules') renderCharts();
+  save(); syncAnalyzerForm(); markStale();
+};
+$('#anLoadVenue').onchange=e=>{
+  const v=state.venues.find(x=>x.id===e.target.value); if(!v) return;
+  Object.assign(state.rules,{h17:v.h17,enhc:!!v.enhc,das:!!v.das,surrender:!!v.surrender,
+    decks:v.decks,bjPays:v.bjPays,peek:!v.enhc,pen:clamp((v.pen||75)/100,.4,.95)});
+  save(); syncAnalyzerForm(); renderCharts(); markStale();
+  toast('Loaded '+v.name);
+};
+
+/* ---- running the simulation ------------------------------------------ */
+let anRun={busy:false,worker:null,cancel:false,timer:null};
+function markStale(){
+  if(!state.an.lastRunAt) return;
+  $('#anStatus').textContent='Inputs changed — run again to update';
+}
+function buildConfig(){
+  const r=state.rules, a=state.an;
+  const t=compileTables(r);
+  const roundsPerPath=Math.max(200,Math.round(a.hours*a.roundsHr));
+  const target=PRECISION[a.precision]||PRECISION.standard;
+  const paths=clamp(Math.ceil(target/roundsPerPath),30,5000);
+  return {
+    decks:r.decks, penetration:r.pen, h17:r.h17, enhc:r.enhc, peek:r.peek&&!r.enhc,
+    das:r.das, surrender:r.surrender&&!r.enhc, es10:r.es10&&!r.enhc, rsa:r.rsa,
+    maxHands:r.maxHands, bjPays:r.bjPays, players:clamp(a.players,1,6),
+    useIdx:a.useIdx, insure:a.insure&&a.useIdx,
+    spread:spreadForEngine(), bankroll:a.bankroll,
+    roundsPerPath, samplePoints:120, paths, seed:(Math.random()*4294967295)>>>0,
+    hard:t.hard, soft:t.soft, pair:t.pair, idx:t.idx
+  };
+}
+function workerSource(){
+  return `const SimEngine=${SimEngine.toString()};
+let eng=null,st=null,stop=false;
+self.onmessage=function(e){
+  const m=e.data;
+  if(m.type==='cancel'){ stop=true; return; }
+  if(m.type!=='run') return;
+  stop=false; eng=SimEngine(); st=eng.init(m.cfg);
+  (function tick(){
+    if(stop){ self.postMessage({type:'cancelled'}); return; }
+    const t0=Date.now();
+    while(Date.now()-t0<90 && st.pathsDone<st.cfg.paths) eng.step(st,1);
+    if(st.pathsDone>=st.cfg.paths) self.postMessage({type:'done',result:eng.result(st)});
+    else { self.postMessage({type:'progress',done:st.pathsDone,total:st.cfg.paths}); setTimeout(tick,0); }
+  })();
+};`;
+}
+function runSimulation(cfg,onProgress){
+  return new Promise((resolve,reject)=>{
+    let worker=null;
+    try{
+      const url=URL.createObjectURL(new Blob([workerSource()],{type:'text/javascript'}));
+      worker=new Worker(url);
+      setTimeout(()=>URL.revokeObjectURL(url),1000);
+    }catch(err){ worker=null; }
+    if(worker){
+      anRun.worker=worker;
+      worker.onmessage=e=>{
+        const m=e.data;
+        if(m.type==='progress') onProgress(m.done/m.total);
+        else if(m.type==='done'){ worker.terminate(); anRun.worker=null; resolve(m.result); }
+        else if(m.type==='cancelled'){ worker.terminate(); anRun.worker=null; reject({cancelled:true}); }
+      };
+      worker.onerror=()=>{ worker.terminate(); anRun.worker=null; mainThreadRun(cfg,onProgress).then(resolve,reject); };
+      worker.postMessage({type:'run',cfg});
+      return;
+    }
+    mainThreadRun(cfg,onProgress).then(resolve,reject);
+  });
+}
+/** Fallback when a Worker cannot be created: slice the work across frames. */
+function mainThreadRun(cfg,onProgress){
+  return new Promise((resolve,reject)=>{
+    const eng=SimEngine(), st=eng.init(cfg);
+    (function tick(){
+      if(anRun.cancel) return reject({cancelled:true});
+      const t0=Date.now();
+      while(Date.now()-t0<40&&st.pathsDone<cfg.paths) eng.step(st,1);
+      if(st.pathsDone>=cfg.paths) return resolve(eng.result(st));
+      onProgress(st.pathsDone/cfg.paths);
+      anRun.timer=setTimeout(tick,0);
+    })();
+  });
+}
+$('#anRun').onclick=async()=>{
+  if(anRun.busy) return;
+  const sp=spreadForEngine();
+  if(!sp.some(r=>r.bet>0)) return toast('Every bet is zero — set at least one.');
+  anRun.busy=true; anRun.cancel=false;
+  $('#anRun').disabled=true; $('#anCancel').hidden=false;
+  const cfg=buildConfig();
+  const started=performance.now();
+  $('#anStatus').textContent=`Dealing ~${(cfg.paths*cfg.roundsPerPath/1e6).toFixed(1)}M rounds…`;
+  $('#anProgress').style.width='0%';
+  try{
+    const res=await runSimulation(cfg,f=>{
+      $('#anProgress').style.width=(f*100).toFixed(1)+'%';
+      $('#anStatus').textContent=`Dealing… ${Math.round(f*100)}%`;
+    });
+    $('#anProgress').style.width='100%';
+    state.an.lastRunAt=Date.now();
+    showResults(res,cfg,(performance.now()-started)/1000);
+  }catch(err){
+    if(err&&err.cancelled) $('#anStatus').textContent='Cancelled';
+    else { $('#anStatus').textContent='Simulation failed'; console.error(err); }
+  }finally{
+    anRun.busy=false; $('#anRun').disabled=false; $('#anCancel').hidden=true;
+  }
+};
+$('#anCancel').onclick=()=>{
+  anRun.cancel=true;
+  clearTimeout(anRun.timer);
+  if(anRun.worker) anRun.worker.postMessage({type:'cancel'});
+};
+
+/* ---- turning raw counts into the numbers a player cares about --------- */
+function analyse(res,cfg){
+  const n=res.rounds;
+  const evRound=res.net/n;
+  const varRound=Math.max(1e-9,res.sumSq/n-evRound*evRound);
+  const sdRound=Math.sqrt(varRound);
+  const rph=state.an.roundsHr;
+  const evHour=evRound*rph, sdHour=sdRound*Math.sqrt(rph);
+  const seHour=sdRound/Math.sqrt(n)*rph;           // 1 standard error on EV/hr
+  const adv=res.wagered?res.net/res.wagered:0;
+  const ruinLifetime=evRound>0?Math.exp(-2*cfg.bankroll*evRound/varRound):1;
+  const n0Rounds=varRound/(evRound*evRound);
+  const bankFor=t=>evRound>0?-Math.log(t)*varRound/(2*evRound):Infinity;
+  return {
+    evRound,varRound,sdRound,evHour,sdHour,seHour,adv,ruinLifetime,
+    n0Rounds,n0Hours:n0Rounds/rph,bankFor,
+    ruinHorizon:res.paths?res.ruined/res.paths:0,
+    rounds:n,played:res.played,hands:res.hands,wagered:res.wagered,
+    avgBet:res.played?res.wagered/res.played:0,
+    sitOut:1-(res.played/n)
+  };
+}
+function showResults(res,cfg,secs){
+  const a=analyse(res,cfg);
+  state.an.last={ev:a.evHour,sd:a.sdHour,adv:a.adv,at:Date.now()}; save();
+  const ci=1.96*a.seHour;
+  const setv=(id,txt,cls)=>{ const el=$(id); el.textContent=txt; el.className='val '+cls; };
+  setv('#mEV',(a.evHour>=0?'+':'')+money(a.evHour),a.evHour>0?'v-pos':a.evHour<0?'v-neg':'v-plain');
+  $('#mEVsub').textContent=`per hour · ±${money(ci)} at 95%`;
+  setv('#mSD','±'+money(a.sdHour),'v-plain');
+  const rorPct=a.ruinLifetime*100;
+  setv('#mRoR',a.evHour>0?(rorPct<0.05?'<0.1%':rorPct.toFixed(1)+'%'):'certain',
+    a.evHour<=0?'v-neg':rorPct<5?'v-pos':rorPct<20?'v-warn':'v-neg');
+  $('#mRoRsub').textContent=a.evHour>0
+    ? `lifetime on ${money(cfg.bankroll)} · ${(a.ruinHorizon*100).toFixed(1)}% within ${state.an.hours}h`
+    : 'a losing game ruins any bankroll';
+  setv('#mAdv',(a.adv>=0?'+':'')+(a.adv*100).toFixed(3)+'%',a.adv>0?'v-pos':'v-neg');
+  $('#mAdvsub').textContent=`of ${money(a.wagered/res.paths)} wagered per ${state.an.hours}h run`;
+  $('#anStatus').textContent=`${(a.rounds/1e6).toFixed(2)}M rounds in ${secs.toFixed(1)}s · ${res.paths} runs of ${state.an.hours}h`;
+
+  renderBankMath(a,cfg);
+  renderCountTable(res,a);
+  renderVariance(res,a,cfg);
+  renderComparison(a);
+}
+function renderBankMath(a,cfg){
+  if(a.evRound<=0){
+    $('#anBankMath').innerHTML=`<div class="an-warn">This game loses money at ${money(-a.evHour)} an hour. No bankroll survives it — the spread, the rules, or both need to change before bankroll size is the question.</div>`;
+    return;
+  }
+  const rows=[
+    ['Bankroll for 10% risk of ruin',money(a.bankFor(.10))],
+    ['Bankroll for 5% risk of ruin',money(a.bankFor(.05))],
+    ['Bankroll for 1% risk of ruin',money(a.bankFor(.01))],
+    ['Break-even point (N₀)',`${Math.round(a.n0Hours).toLocaleString()} hours`],
+    ['Average bet when you play',money(a.avgBet)],
+    ['Rounds you sit out',(a.sitOut*100).toFixed(0)+'%']
+  ];
+  $('#anBankMath').innerHTML=rows.map(([k,v])=>`<div class="cmp-row"><span>${k}</span><b>${v}</b></div>`).join('')+
+    `<div class="an-note">N₀ is how long you must play before your expected win equals one standard deviation — the point where skill starts to outweigh luck. Risk of ruin assumes you keep betting this spread with no stop-loss and never re-buy.</div>`;
+}
+function renderCountTable(res,a){
+  const lo=res.bucketLo;
+  let rows='',maxFreq=0;
+  for(let i=0;i<res.bN.length;i++) maxFreq=Math.max(maxFreq,res.bN[i]/res.rounds);
+  for(let i=0;i<res.bN.length;i++){
+    const n=res.bN[i]; if(!n) continue;
+    const tc=lo+i;
+    const freq=n/res.rounds, bet=res.bBet[i]/n, wag=res.bWag[i], net=res.bNet[i];
+    const edge=wag?net/wag*100:0;
+    const label=i===0?'≤'+tc:i===res.bN.length-1?'≥+'+tc:(tc>0?'+'+tc:String(tc));
+    rows+=`<tr>
+      <td style="color:${tc>0?'#4fd08a':tc<0?'#e0607f':'#c9c8c4'};font-weight:700">${label}</td>
+      <td class="cnt-bar"><i style="width:${(freq/maxFreq*100).toFixed(1)}%;background:${tc>0?'#26bd63':'#8d8c88'}"></i><span>${(freq*100).toFixed(1)}%</span></td>
+      <td>${money(bet)}</td>
+      <td style="color:${edge>0?'#4fd08a':edge<0?'#e0607f':'#8d8c88'}">${edge>=0?'+':''}${edge.toFixed(2)}%</td>
+      <td style="color:${net>0?'#4fd08a':net<0?'#e0607f':'#8d8c88'}">${money(net/res.paths)}</td></tr>`;
+  }
+  $('#anCountTable').innerHTML=`<thead><tr><th>True count</th><th>Frequency</th><th>Avg bet</th><th>Edge</th><th>Net per run</th></tr></thead><tbody>${rows}</tbody>`;
+  const pos=res.bN.reduce((t,n,i)=>t+(lo+i>0?n:0),0)/res.rounds;
+  const posNet=res.bNet.reduce((t,v,i)=>t+(lo+i>0?v:0),0);
+  $('#anCountNote').textContent=`Counts above zero come up ${(pos*100).toFixed(1)}% of the time and produce ${posNet>=0?'':'−'}${money(Math.abs(posNet/res.paths))} of the result per run. Everything below that is the price of sitting there waiting.`;
+  $('#anCountPanel').hidden=false;
+}
+/** Gridline values a person would actually choose: 1, 2, 2.5 or 5 times a power of ten. */
+function niceStep(range,targetTicks){
+  const raw=range/Math.max(1,targetTicks);
+  const mag=Math.pow(10,Math.floor(Math.log10(Math.abs(raw)||1)));
+  const n=raw/mag;
+  return (n<=1?1:n<=2?2:n<=2.5?2.5:n<=5?5:10)*mag;
+}
+function niceTicks(lo,hi,target){
+  const step=niceStep(hi-lo,target), out=[];
+  for(let v=Math.ceil(lo/step)*step;v<=hi+step*1e-9;v+=step) out.push(v);
+  return out;
+}
+
+function renderVariance(res,a,cfg){
+  const box=$('#anVarBox'); box.hidden=false;
+  $('#anVarHours').textContent=state.an.hours;
+  $('#anVarSub').textContent=`${res.paths} independent runs · ${(a.ruinHorizon*100).toFixed(1)}% went broke`;
+  const svg=$('#anVarChart'), W=900,H=250,padL=64,padR=14,padT=14,padB=26;
+  const paths=res.samples;
+  if(!paths.length){ svg.innerHTML=''; return; }
+  const pts=paths[0].length;
+  const pct=(arr,q)=>{ const i=clamp(Math.floor(q*(arr.length-1)),0,arr.length-1); return arr[i]; };
+  const p05=[],p25=[],p50=[],p75=[],p95=[];
+  for(let i=0;i<pts;i++){
+    const col=paths.map(p=>p[i]).sort((x,y)=>x-y);
+    p05.push(pct(col,.05)); p25.push(pct(col,.25)); p50.push(pct(col,.5));
+    p75.push(pct(col,.75)); p95.push(pct(col,.95));
+  }
+  const ruinAt=-cfg.bankroll;
+  let lo=Math.min(...p05,0), hi=Math.max(...p95,0);
+  if(ruinAt>lo*1.4&&ruinAt<0) lo=Math.min(lo,ruinAt*1.08);
+  const padV=(hi-lo)*.08||100; lo-=padV; hi+=padV;
+  const x=i=>padL+i*(W-padL-padR)/(pts-1);
+  const y=v=>H-padB-(v-lo)*(H-padT-padB)/(hi-lo);
+  let g='';
+  for(const val of niceTicks(lo,hi,5)){
+    const yy=y(val);
+    g+=`<line class="gridline" x1="${padL}" y1="${yy}" x2="${W-padR}" y2="${yy}"/>`+
+       `<text class="axistext" x="${padL-8}" y="${yy+3}" text-anchor="end">${money(val)}</text>`;
+  }
+  const poly=(a1,a2)=>a1.map((v,i)=>`${x(i)},${y(v)}`).join(' ')+' '+a2.map((v,i)=>`${x(a2.length-1-i)},${y(a2[a2.length-1-i])}`).join(' ');
+  g+=`<polygon class="band" points="${poly(p05,p95)}"/>`;
+  g+=`<polygon class="band2" points="${poly(p25,p75)}"/>`;
+  g+=`<polyline class="medline" points="${p50.map((v,i)=>`${x(i)},${y(v)}`).join(' ')}"/>`;
+  if(lo<0&&hi>0) g+=`<line class="zeroline" x1="${padL}" y1="${y(0)}" x2="${W-padR}" y2="${y(0)}"/>`;
+  if(ruinAt>lo&&ruinAt<hi) g+=`<line class="ruinline" x1="${padL}" y1="${y(ruinAt)}" x2="${W-padR}" y2="${y(ruinAt)}"/>`+
+    `<text class="axistext" x="${padL+4}" y="${y(ruinAt)-4}" style="fill:#b61038">broke</text>`;
+  g+=`<text class="axistext" x="${padL}" y="${H-8}">0h</text><text class="axistext" x="${W-padR}" y="${H-8}" text-anchor="end">${state.an.hours}h</text>`;
+  svg.innerHTML=g;
+  const worst=Math.round(p05[pts-1]), best=Math.round(p95[pts-1]), mid=Math.round(p50[pts-1]);
+  $('#anVarNote').textContent=`After ${state.an.hours} hours the middle of the distribution lands near ${money(mid)}, but one run in twenty finishes below ${money(worst)} and one in twenty above ${money(best)}. That spread — not the average — is what a bankroll has to survive.`;
+}
+function renderComparison(a){
+  const list=state.sessions.filter(s=>s.bank===state.activeBank);
+  const hours=list.reduce((t,s)=>t+(s.hours||0),0);
+  if(!list.length||hours<=0||a.evHour===0){ $('#anCompare').hidden=true; return; }
+  const actual=list.reduce((t,s)=>t+s.result,0);
+  const expected=a.evHour*hours;
+  const sd=a.sdHour*Math.sqrt(hours);
+  const z=sd?(actual-expected)/sd:0;
+  const verdict=Math.abs(z)<1?'right in line with the model'
+    :Math.abs(z)<2?(z>0?'running above expectation, within normal variance':'running below expectation, within normal variance')
+    :(z>0?'well above expectation — enjoy it, but it is variance':'well below expectation — worth checking your game, though two standard deviations happens often enough');
+  $('#anCompare').hidden=false;
+  $('#anCompareBody').innerHTML=
+    `<div class="cmp-row"><span>Hours logged</span><b>${hours.toFixed(1)}</b></div>`+
+    `<div class="cmp-row"><span>Actual result</span><b style="color:${actual>=0?'#3fca77':'#e0546f'}">${money(actual)}</b></div>`+
+    `<div class="cmp-row"><span>Model expects over those hours</span><b>${money(expected)}</b></div>`+
+    `<div class="cmp-row"><span>One standard deviation</span><b>±${money(sd)}</b></div>`+
+    `<div class="cmp-row"><span>Where you sit</span><b>${z>=0?'+':''}${z.toFixed(2)} SD</b></div>`+
+    `<div class="an-note">You are ${verdict}. Over ${hours.toFixed(0)} hours the noise is ${money(sd)}, so anything inside roughly ${money(expected-2*sd)} to ${money(expected+2*sd)} is an ordinary outcome for this game.</div>`;
+}
+function renderAnalyzer(){
+  syncAnalyzerForm();
+  renderSpread();
+  renderTemplates();
+}
+
 /* ================================================================== INIT */
 renderCharts();
 renderCourse();
+renderAnalyzer();
 renderVenues();
 renderDash();
 hideModes();
@@ -1798,7 +2786,7 @@ updateBasicStats(); updateTCStats(); updateDevStats(); runStats();
 showView(location.hash.slice(1)||'train',false);
 
 // exposed for automated checks only
-window.__BJ={basicPlay,handInfo,card,Shoe,INDICES,indexPlay,houseEdge,state,codeFor,resolve,colOf,ruleText,sim:()=>sim};
+window.__BJ={basicPlay,handInfo,card,Shoe,INDICES,indexPlay,houseEdge,state,codeFor,resolve,colOf,ruleText,sim:()=>sim,compileTables,SimEngine,ACT};
 })();
 </script>
 </body></html>

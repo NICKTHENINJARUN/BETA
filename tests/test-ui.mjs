@@ -270,6 +270,90 @@ await p.locator('[data-load]').first().click(); await p.waitForTimeout(250);
 ok(await p.locator('#view-strategy').isVisible(), 'load-into-charts switches to charts');
 ok(/6:5/.test(await p.evaluate(() => document.querySelector('#ruleChipTrain').textContent)), 'loaded rules applied');
 
+
+// ---- ANALYZER
+await p.click('#nav button[data-view="analyzer"]'); await p.waitForTimeout(250);
+ok(await p.locator('#view-analyzer').isVisible(), 'analyzer view opens');
+ok((await p.locator('#anSpread .spread-row').count()) === 13, 'spread editor renders a row per true count');
+// rule switches are shared with the charts
+const h17Before = await p.evaluate(() => window.__BJ.state.rules.h17);
+await p.click('#anH17'); await p.waitForTimeout(120);
+ok((await p.evaluate(() => window.__BJ.state.rules.h17)) !== h17Before, 'rule switch flips shared state');
+ok((await p.locator('#anH17').getAttribute('aria-checked')) === String(!h17Before), 'switch reports its state');
+await p.click('#anH17'); await p.waitForTimeout(120);
+// editing a bet sticks
+await p.locator('[data-sbet="3"]').fill('175');
+await p.waitForTimeout(120);
+ok((await p.evaluate(() => window.__BJ.state.an.spread['3'].bet)) === 175, 'bet edit stored');
+await p.click('[data-shands="3"][data-v="2"]'); await p.waitForTimeout(120);
+ok((await p.evaluate(() => window.__BJ.state.an.spread['3'].hands)) === 2, 'hand count toggles');
+// a zero bet marks a sit-out row
+await p.locator('[data-sbet="-4"]').fill('0'); await p.waitForTimeout(120);
+ok(await p.locator('[data-sbet="-4"]').evaluate(el => el.classList.contains('sitout')), 'zero bet shows as a sit-out');
+await p.click('#anSpreadReset'); await p.waitForTimeout(150);
+ok((await p.evaluate(() => window.__BJ.state.an.spread['3'].bet)) !== 175, 'reset restores the default ramp');
+
+// run a small simulation end to end, in a game good enough to beat
+await p.locator('#anHours').fill('20');
+await p.locator('#anRounds').fill('100');
+await p.locator('#anPrecision').selectOption('quick');
+await p.evaluate(() => {
+  const B = window.__BJ;
+  B.state.rules.pen = 0.85;                       // deep penetration
+  const ramp = { '-4':0,'-3':0,'-2':0,'-1':25,'0':25,'1':25,'2':100,'3':200,'4':300,'5':400,'6':400,'7':400,'8':400 };
+  for (const k in ramp) B.state.an.spread[k] = { bet: ramp[k], hands: 1 };
+});
+await p.waitForTimeout(120);
+await p.click('#anRun');
+await p.waitForSelector('#anVarBox:not([hidden])', { timeout: 120000 });
+await p.waitForTimeout(200);
+const an = await p.evaluate(() => ({
+  ev: document.querySelector('#mEV').textContent,
+  sd: document.querySelector('#mSD').textContent,
+  ror: document.querySelector('#mRoR').textContent,
+  adv: document.querySelector('#mAdv').textContent,
+  status: document.querySelector('#anStatus').textContent,
+  bands: document.querySelectorAll('#anVarChart polygon').length,
+  median: document.querySelectorAll('#anVarChart polyline.medline').length,
+  countRows: document.querySelectorAll('#anCountTable tbody tr').length,
+  bankRows: document.querySelectorAll('#anBankMath .cmp-row').length,
+  last: window.__BJ.state.an.last
+}));
+ok(an.ev !== '—' && /\$/.test(an.ev), `EV populated (${an.ev})`);
+ok(/^±\$/.test(an.sd), `SD populated (${an.sd})`);
+ok(an.ror !== '—', `risk of ruin populated (${an.ror})`);
+ok(/%/.test(an.adv), `advantage populated (${an.adv})`);
+ok(/M rounds in/.test(an.status), `status reports the work done (${an.status})`);
+ok(an.bands === 2, `variance chart draws both percentile bands (${an.bands})`);
+ok(an.median === 1, 'variance chart draws the median');
+ok(an.countRows >= 5, `per-count breakdown filled (${an.countRows} rows)`);
+ok(an.bankRows >= 4, `bankroll maths filled (${an.bankRows} rows)`);
+ok(/^\+/.test(an.ev), `a strong spread in a deep-penetration game beats it (${an.ev})`);
+ok(an.last && Number.isFinite(an.last.ev) && Number.isFinite(an.last.sd), 'result stored for other views');
+// the advantage must be a plausible number, not a NaN or a wild value
+const advNum = Number(an.adv.replace(/[+%]/g, ''));
+ok(Number.isFinite(advNum) && Math.abs(advNum) < 5, `advantage is a sane percentage (${an.adv})`);
+
+// a losing spread must be reported as losing, not dressed up
+await p.evaluate(() => {
+  const sp = window.__BJ.state.an.spread;
+  for (const k in sp) { sp[k].bet = 25; sp[k].hands = 1; }   // flat betting
+});
+await p.click('#anRun');
+await p.waitForTimeout(400);
+await p.waitForFunction(() => !document.querySelector('#anRun').disabled, { timeout: 120000 });
+await p.waitForTimeout(150);
+const flatEV = await p.evaluate(() => document.querySelector('#mEV').textContent);
+ok(/−/.test(flatEV) || /^\+?\$0$/.test(flatEV), `flat betting shows a loss (${flatEV})`);
+ok(/losing game|No bankroll/.test(await p.evaluate(() => document.querySelector('#anBankMath').textContent)),
+   'bankroll panel says a losing game cannot be sized');
+
+// template save / load
+await p.click('#anSaveTpl'); await p.waitForTimeout(150);
+await p.locator('#tplName').fill('Flat test');
+await p.click('#tplSave'); await p.waitForTimeout(200);
+ok((await p.locator('#anTemplate option').count()) === 2, 'saved spread appears in the list');
+
 // ---- DASHBOARD
 await p.click('#nav button[data-view="dashboard"]'); await p.waitForTimeout(150);
 ok(/No sessions/.test(await txt('#sessionList')), 'dashboard starts empty, not pre-filled');
@@ -323,6 +407,12 @@ ok(overflow <= 1, `no horizontal overflow at 380px (got ${overflow}px)`);
 await m.click('#nav button[data-view="strategy"]'); await m.waitForTimeout(200);
 const ov2 = await m.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
 ok(ov2 <= 1, `charts fit at 380px (got ${ov2}px)`);
+await m.click('#nav button[data-view="analyzer"]'); await m.waitForTimeout(250);
+const ov3 = await m.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
+ok(ov3 <= 1, `analyzer fits at 380px (got ${ov3}px)`);
+await m.click('#nav button[data-view="casinos"]'); await m.waitForTimeout(250);
+const ov4 = await m.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
+ok(ov4 <= 1, `table log fits at 380px (got ${ov4}px)`);
 
 console.log(fails.length ? 'UI FAILURES:' : 'all UI checks passed');
 fails.forEach(f => console.log('  ✗ ' + f));
