@@ -30,6 +30,7 @@ button:disabled{cursor:not-allowed;opacity:.34}
 .brand{display:flex;align-items:center;gap:10px;font-size:13px;font-weight:750}.brandmark{width:28px;height:28px;border-radius:50%;display:grid;place-items:center;border:1px solid rgba(244,117,45,.45);background:rgba(244,117,45,.08);color:var(--orange);box-shadow:0 0 22px rgba(244,117,45,.14)}
 .nav{display:flex;gap:4px;align-items:center;background:rgba(15,15,15,.68);border:1px solid #222;border-radius:9px;padding:4px;backdrop-filter:blur(10px)}
 .nav button{border:0;background:transparent;color:#777;padding:8px 11px;border-radius:6px;font-size:11px}.nav button:hover{color:#ddd}.nav button.active{background:#1a1a1a;color:#f2f2f2;box-shadow:inset 0 0 0 1px #282828}
+.headacts{display:flex;gap:6px;align-items:center}
 .iconbtn{border:1px solid #272727;background:#121212;width:31px;height:31px;border-radius:7px;color:#777;display:inline-grid;place-items:center}
 .iconbtn:hover{color:#ddd;border-color:#3a3a3a}
 .view{display:none}.view.active{display:block;animation:fade .22s ease}@keyframes fade{from{opacity:0;transform:translateY(3px)}to{opacity:1;transform:none}}
@@ -292,7 +293,11 @@ h1{font-size:21px;line-height:1.1;margin:0 0 8px;font-weight:780;letter-spacing:
       <button data-view="analyzer">EV &amp; Risk</button>
       <button data-view="dashboard">Dashboard</button>
     </nav>
-    <button class="iconbtn" id="resetAll" title="Reset all saved progress">↻</button>
+    <div class="headacts">
+      <button class="iconbtn" id="dataBtn" title="Back up or restore your progress">⇅</button>
+      <button class="iconbtn" id="resetAll" title="Reset all saved progress">↻</button>
+    </div>
+    <input type="file" id="importFile" accept="application/json,.json" hidden>
   </header>
 
   <main>
@@ -2166,6 +2171,67 @@ $('#resetAll').onclick=()=>confirmBox('Reset all saved progress, stats, tables a
   try{ localStorage.removeItem(KEY); }catch(e){}
   location.reload();
 });
+
+/* ---------------------------------------------------------------------
+   Backup and restore.
+   Progress lives in this browser only, so a file is the way to move it to
+   another device or survive a cleared cache. The export is the whole saved
+   state; the import writes it back and reloads, which re-runs the normal
+   loader so an older or partial backup still merges against the defaults.
+   --------------------------------------------------------------------- */
+function backupPayload(){
+  return {app:'blackjack-academy',format:3,exportedAt:new Date().toISOString(),state};
+}
+function dataSummary(){
+  const lessons=ALL_LESSONS.filter(l=>state.lessons[l.id]).length;
+  const rows=[
+    ['Drill hands answered',state.basic.n+state.tc.n+state.dev.n+state.run.n],
+    ['Lessons complete',`${lessons} of ${ALL_LESSONS.length}`],
+    ['Tables logged',state.venues.length],
+    ['Sessions logged',state.sessions.length],
+    ['Saved bet spreads',state.spreadTemplates.length]
+  ];
+  return rows.map(([k,v])=>`<div class="cmp-row"><span>${k}</span><b>${esc(String(v))}</b></div>`).join('');
+}
+$('#dataBtn').onclick=()=>{
+  openModal(`<h3>Your data</h3>
+    <div class="sub">Everything you have done is saved in this browser only — it does not follow you to another device, and clearing site data erases it. A backup file is how you move it or keep it safe.</div>
+    ${dataSummary()}
+    <div class="modal-acts">
+      <button class="btn ghost" data-close>Close</button>
+      <button class="btn ghost" id="doImport">Import…</button>
+      <button class="btn primary" id="doExport">Export backup</button>
+    </div>`);
+  $('#doExport').onclick=()=>{
+    const name=`blackjack-academy-${new Date().toISOString().slice(0,10)}.json`;
+    saveFile(name,JSON.stringify(backupPayload(),null,2),'application/json');
+    closeModal();
+  };
+  $('#doImport').onclick=()=>{ closeModal(); $('#importFile').click(); };
+};
+$('#importFile').onchange=e=>{
+  const file=e.target.files&&e.target.files[0];
+  e.target.value='';
+  if(!file) return;
+  const reader=new FileReader();
+  reader.onerror=()=>toast('Could not read that file.');
+  reader.onload=()=>{
+    let parsed;
+    try{ parsed=JSON.parse(String(reader.result)); }
+    catch(err){ return toast('That file is not valid JSON.'); }
+    const incoming=(parsed&&typeof parsed==='object'&&parsed.state&&typeof parsed.state==='object')?parsed.state:parsed;
+    const looksRight=incoming&&typeof incoming==='object'&&
+      ['rules','basic','lessons','sessions','venues'].some(k=>k in incoming);
+    if(!looksRight) return toast('That does not look like a Blackjack Academy backup.');
+    const when=parsed&&parsed.exportedAt?new Date(parsed.exportedAt).toLocaleDateString():null;
+    confirmBox(`Replace everything saved in this browser with this backup${when?` from ${when}`:''}? Your current progress will be gone.`,()=>{
+      try{ localStorage.setItem(KEY,JSON.stringify(incoming)); }
+      catch(err){ return toast('Could not save the imported data.'); }
+      location.reload();
+    });
+  };
+  reader.readAsText(file);
+};
 
 /* ============================================================== KEYBOARD */
 const KEYMAP={h:'HIT',s:'STAND',d:'DOUBLE',p:'SPLIT',r:'SURRENDER',i:'INSURE'};

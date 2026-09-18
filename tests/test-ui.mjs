@@ -1,4 +1,7 @@
 import { chromium, APP_URL } from './harness.mjs';
+import { writeFileSync, mkdtempSync, readFileSync } from 'node:fs';
+import { join } from 'node:path';
+import { tmpdir } from 'node:os';
 const URL = APP_URL;
 const b = await chromium.launch();
 const ctx = await b.newContext();
@@ -522,6 +525,58 @@ await p.click('#nav button[data-view="dashboard"]'); await p.waitForTimeout(200)
 ok((await txt('#totalEarn')) === '$70', 'sessions persist across reload');
 await p.click('#nav button[data-view="course"]'); await p.waitForTimeout(150);
 ok((await txt('#overallPct')) === '7%', 'lesson progress persists');
+
+
+// ---- BACKUP / RESTORE
+await p.click('#dataBtn'); await p.waitForTimeout(200);
+ok(await p.locator('#modal').isVisible(), 'data modal opens');
+const summary = await txt('#modalBox');
+ok(/Lessons complete/.test(summary) && /Sessions logged/.test(summary), 'backup modal summarises what is stored');
+// export produces a json file
+const dlExport = p.waitForEvent('download', { timeout: 5000 }).catch(() => null);
+await p.click('#doExport');
+const exported = await dlExport;
+ok(!!exported, 'export triggers a download');
+ok(exported && /blackjack-academy-\d{4}-\d{2}-\d{2}\.json/.test(exported.suggestedFilename()),
+   `export filename (${exported && exported.suggestedFilename()})`);
+// and the exported bytes are a usable backup
+const expPath = join(mkdtempSync(join(tmpdir(), 'bj-')), 'out.json');
+if (exported) await exported.saveAs(expPath);
+const roundTrip = JSON.parse(readFileSync(expPath, 'utf8'));
+ok(roundTrip.app === 'blackjack-academy', 'export is tagged as ours');
+ok(roundTrip.state && roundTrip.state.rules && roundTrip.state.basic, 'export carries the saved state');
+ok(typeof roundTrip.exportedAt === 'string', 'export is dated');
+
+// import a backup with recognisable contents and confirm it lands
+const dir = mkdtempSync(join(tmpdir(), 'bjimport-'));
+const file = join(dir, 'backup.json');
+const payload = JSON.parse(JSON.stringify(roundTrip));
+payload.state.venues = [{ id: 'imp1', name: 'Imported Table', region: 'eu', decks: 8,
+  h17: false, enhc: false, das: true, surrender: false, bjPays: 1.5, pen: 70, min: 10, note: '' }];
+payload.state.lessons = { l1: true, l2: true, l3: true };
+payload.state.rules.decks = 8;
+writeFileSync(file, JSON.stringify(payload));
+await p.setInputFiles('#importFile', file);
+await p.waitForTimeout(300);
+ok(await p.locator('#modal').isVisible(), 'import asks before replacing anything');
+ok(/Replace everything/.test(await txt('#modalBox')), 'import warns that current progress goes');
+await Promise.all([p.waitForLoadState('load'), p.click('#cbYes')]);
+await p.waitForTimeout(500);
+const after = await p.evaluate(() => ({
+  venues: window.__BJ.state.venues.map(v => v.name),
+  decks: window.__BJ.state.rules.decks,
+  lessons: Object.keys(window.__BJ.state.lessons).filter(k => window.__BJ.state.lessons[k]).length
+}));
+ok(after.venues.includes('Imported Table'), `imported venue present (${after.venues.join(',')})`);
+ok(after.decks === 8, `imported rules applied (decks ${after.decks})`);
+ok(after.lessons === 3, `imported lesson progress applied (${after.lessons})`);
+// a file that is not ours is refused rather than wiping anything
+const junk = join(dir, 'junk.json');
+writeFileSync(junk, JSON.stringify({ hello: 'world' }));
+await p.setInputFiles('#importFile', junk);
+await p.waitForTimeout(400);
+ok(!(await p.locator('#modal').isVisible()), 'a foreign json file does not prompt to replace data');
+ok((await p.evaluate(() => window.__BJ.state.venues.length)) === 1, 'foreign file left data untouched');
 
 // ---- corrupt storage must not brick the app
 await p.evaluate(() => localStorage.setItem('bjAcademyV3', '{not json'));

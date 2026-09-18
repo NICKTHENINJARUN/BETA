@@ -12,7 +12,9 @@ open index.html          # or: npx serve .
 ```
 
 All progress is kept in `localStorage` under the key `bjAcademyV3` and never
-leaves the browser. The ↻ button in the header clears it.
+leaves the browser. The ⇅ button in the header exports everything to a JSON
+file and imports it back — the way to move your progress to another device or
+survive a cleared cache. The ↻ button clears it.
 
 ## What's in it
 
