@@ -396,13 +396,10 @@ await p.waitForTimeout(200);
 ok(/Take it/.test(await p.evaluate(() => document.querySelector('#asMeta').textContent)), 'insurance advised at +4');
 await p.locator('#asRC').fill('2'); await p.waitForTimeout(200);
 ok(/Decline/.test(await p.evaluate(() => document.querySelector('#asMeta').textContent)), 'insurance declined at +1');
-// the grounding context handed to Claude must carry the engine's answer
-const aiCtx = await p.evaluate(() => window.__BJ.aiContext());
-ok(/ENGINE'S CORRECT PLAY/.test(aiCtx), 'AI context states the engine verdict');
-ok(/Rules in use/.test(aiCtx), 'AI context carries the rule set');
-// without the artifact runtime the panel must explain itself, not sit broken
-ok(await p.locator('#asAIState').isVisible(), 'AI panel explains its absence when Claude is unavailable');
-ok(!(await p.locator('#asAIBody').isVisible()), 'AI chat hidden when unavailable');
+// Jack is built in, so he is present with no runtime check at all
+ok(await p.locator('#asAIBody').isVisible(), 'Jack is available with no external runtime');
+ok(/not a language model/.test(await p.evaluate(() => document.querySelector('#view-assist').textContent)),
+   'the page states plainly that Jack is not a language model');
 
 // ---- ANALYZER
 await p.click('#nav button[data-view="analyzer"]'); await p.waitForTimeout(250);
