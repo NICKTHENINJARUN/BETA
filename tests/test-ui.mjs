@@ -584,6 +584,23 @@ ok(await p.locator('#view-train').isVisible(), 'app still boots with corrupt sto
 ok((await p.locator('#basicMode').isHidden()), 'train menu shown after corrupt-storage boot');
 ok((await p.evaluate(() => !!window.__BJ)), 'script survives corrupt storage');
 
+// ---- nothing on a desktop screen should be too small to read comfortably
+const tooSmall = await p.evaluate(async () => {
+  const found = [];
+  for (const v of ['train','strategy','course','casinos','assist','analyzer','dashboard']) {
+    document.querySelector(`#nav button[data-view="${v}"]`).click();
+    await new Promise(r => setTimeout(r, 60));
+    document.querySelectorAll('.view.active *').forEach(e => {
+      if (e.children.length || !e.textContent.trim()) return;   // leaf text only
+      if (!e.getClientRects().length) return;                   // ignore hidden
+      const fs = parseFloat(getComputedStyle(e).fontSize);
+      if (fs < 12) found.push(`${v}: ${e.tagName}.${e.className} at ${fs}px`);
+    });
+  }
+  return [...new Set(found)];
+});
+ok(tooSmall.length === 0, `no text under 12px on desktop (${tooSmall.slice(0,4).join(' | ')})`);
+
 // ---- mobile
 const m = await ctx.newPage();
 await m.goto(URL);
