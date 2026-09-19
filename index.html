@@ -311,7 +311,7 @@ h1{font-size:21px;line-height:1.1;margin:0 0 8px;font-weight:780;letter-spacing:
           <article class="traincard featured"><div class="trainicon">◎</div><h3>Basic Strategy</h3><p>Practice optimal plays<br>for every hand</p><div class="stat" id="statBasic"></div><button class="btn primary" data-mode="basic">Start</button></article>
           <article class="traincard"><div class="trainicon">ϟ</div><h3>Running Count</h3><p>Hi-Lo card counting<br>speed drill</p><div class="stat" id="statRun"></div><button class="btn primary" data-mode="running">Start</button></article>
           <article class="traincard"><div class="trainicon">▦</div><h3>True Count</h3><p>Convert running count<br>to true count</p><div class="stat" id="statTrue"></div><button class="btn primary" data-mode="true">Start</button></article>
-          <article class="traincard"><div class="trainicon">⌁</div><h3>Deviations</h3><p>Master count-based<br>strategy plays</p><div class="stat" id="statDev"></div><button class="btn primary" data-mode="deviation">Start</button></article>
+          <article class="traincard"><div class="trainicon">⌁</div><h3>Deviations</h3><p>When the count<br>changes the play</p><div class="stat" id="statDev"></div><button class="btn primary" data-mode="deviation">Start</button></article>
           <article class="traincard"><div class="trainicon">♧</div><h3>Simulation</h3><p>Full blackjack practice<br>session</p><div class="stat" id="statSim"></div><button class="btn primary" data-mode="simulation">Start</button></article>
         </div>
         <div class="rulebar" style="justify-content:center;margin-top:20px">
@@ -572,7 +572,7 @@ h1{font-size:21px;line-height:1.1;margin:0 0 8px;font-weight:780;letter-spacing:
             <button class="resetview" id="resetView">◉ Reset View</button>
           </div>
           <aside class="casinoside">
-            <h3>Casino Stats Overview <button id="collapseAll">Collapse All</button></h3>
+            <h3>By region <button id="collapseAll">Collapse all</button></h3>
             <div id="regions"></div>
           </aside>
         </div>
@@ -1194,10 +1194,14 @@ function explainPlay(cur){
     if(weak) return `Against ${dealer} the dealer is likely to break, so getting a second bet on the table is worth more than playing one ${h.total}.`;
     return `Splitting ${pv}s against ${dealer} makes two hands that both improve on the ${h.total} you would otherwise play out.`;
   }
-  if(a==='SURRENDER') return `Against ${dealer} this hand loses more than half the time however you play it, so giving up half the bet costs less than playing it out.`;
+  if(a==='SURRENDER'){
+    if(h.pair&&pv===8) return `Eights are the one pair you give up. Against ${dealer} even two fresh hands starting at 8 lose often enough that half the bet back is the better outcome.`;
+    return `Against ${dealer} this hand loses more than half the time however you play it, so giving up half the bet costs less than playing it out.`;
+  }
   if(a==='DOUBLE'){
     if(h.soft) return `Soft hands cannot bust on one card, and ${dealer} is weak — so take the extra bet on a free draw. If the card is bad you still have the ace to fall back on.`;
-    if(h.total===11||h.total===10) return `${h.total} is the best doubling total: any ten makes ${h.total+10}, and ${dealer} is not strong enough to punish it.`;
+    if(h.total===11) return `11 is the best total there is to double: any ten makes 21, and ${dealer} isn't strong enough to punish it.`;
+    if(h.total===10) return `Doubling 10 puts the extra bet down when any ten gives you 20, and ${dealer} isn't strong enough to make that risky.`;
     return `A dealer ${upR} breaks often enough that doubling ${h.total} wins more than drawing cautiously would.`;
   }
   if(a==='STAND'){
@@ -1767,7 +1771,7 @@ const MODULES=[
  {id:'m3',n:'Running Count Fundamentals',ls:[
    {id:'l5',t:'The Hi-Lo System',go:'running',body:`
      <p>Hi-Lo assigns every card one of three values:</p>
-     <ul><li><code>2 3 4 5 6</code> → <b>+1</b> (small cards gone is good for you)</li><li><code>7 8 9</code> → <b>0</b></li><li><code>10 J Q K A</code> → <b>−1</b></li></ul>
+     <ul><li><code>2 3 4 5 6</code> → <b>+1</b> (fewer small cards left is good for you)</li><li><code>7 8 9</code> → <b>0</b></li><li><code>10 J Q K A</code> → <b>−1</b></li></ul>
      <p>The tags sum to zero across a full deck, which is what makes the system balanced and the true-count conversion valid. You add the tag of every card you see — yours, the other players', and the dealer's — and the total is the <b>running count</b>.</p>`},
    {id:'l6',t:'Fast Card Recognition',go:'running',body:`
      <p>At a real table you get roughly one second per card, so recognition has to be automatic. Two techniques do most of the work:</p>
@@ -1805,7 +1809,7 @@ const MODULES=[
    {id:'l14',t:'Putting It Together',go:'simulation',body:`
      <p>A complete round at the table looks like this:</p>
      <ul><li>Convert the running count to a true count <b>before</b> you bet.</li><li>Size the bet from the true count.</li><li>Play the hand by basic strategy, overriding only where an index applies.</li><li>Keep counting through the whole round, including the dealer's hole card.</li><li>Reset to zero at the shuffle.</li></ul>
-     <p>Run the simulator with the count hidden and the coach on. When you can play fifty hands with no strategy flags and your count still matches the shoe, the mechanics are there.</p>`}]}
+     <p>Run the simulator with the count hidden and the coach on. When you can play fifty hands with no strategy flags and your count still matches the shoe, you are ready to do it for money.</p>`}]}
 ];
 const ALL_LESSONS=MODULES.flatMap(m=>m.ls);
 function renderCourse(){
@@ -3257,27 +3261,27 @@ const JACK_TOPICS=[
   {id:'model',k:['are you chatgpt','are you claude','are you gpt','what model','which ai','language model','llm','chatbot'],
    a:()=>`Not one of the general chatbots, no. I'm built for this site and blackjack is all I do.\n\nThat's mostly to your benefit here: the plays I give you are worked out rather than remembered, so they match the charts exactly and they're right for the rules you've set.`},
   {id:'help',k:['help','what can you do','what can i ask','commands','how do you work','options'],
-   a:()=>`Ask me about a hand, a concept, or how you're doing. These all work:\n\n• "16 v 10 at +2" or "should I split 8s against an ace" — I run it through the engine\n• "why do I stand on 12 vs 4" — the reasoning, not just the answer\n• "what is the true count if running is 9 with 3 decks left"\n• "what does 6:5 cost me" or "how much is H17 worth"\n• "what should I practise" — from your own drill record\n• "is my spread too aggressive" — from your bankroll and the analyzer\n• "what is N0" / "risk of ruin" / "the illustrious 18" / "wonging"`},
+   a:()=>`Ask me about a hand, a concept, or how you're doing. These all work:\n\n• "16 v 10 at +2" or "should I split 8s against an ace"\n• "why do I stand on 12 vs 4" — the reasoning, not just the answer\n• "what is the true count if running is 9 with 3 decks left"\n• "what does 6:5 cost me" or "how much is H17 worth"\n• "what should I practise" — from your own drill record\n• "is my spread too aggressive" — from your bankroll and the analyzer\n• "what is N0" / "risk of ruin" / "the illustrious 18" / "wonging"`},
   {id:'hilo',k:['hi lo','hi-lo','counting system','how does counting work','card counting','running count'],
-   a:()=>`Hi-Lo tags every card: 2 through 6 are +1, 7 through 9 are zero, and tens and aces are −1. Add the tags of every card you see and that total is the running count.\n\nThe tags cancel to zero over a full deck, which is what makes the true-count conversion valid. A high count means the shoe still holds its tens and aces: more blackjacks at 3:2, more dealer breaks on stiff hands, better doubles.\n\nThe count does not predict the next card. It tracks the ratio of what is left, which is why the money comes from bet sizing rather than from any single hand.`},
+   a:()=>`Hi-Lo tags every card: 2 through 6 are +1, 7 through 9 are zero, and tens and aces are −1. Add the tags of every card you see and that total is the running count.\n\nThe tags cancel to zero over a full deck, which is what makes the true-count conversion valid. A high count means the shoe still holds its tens and aces: more blackjacks at 3:2, more dealer breaks on stiff hands, better doubles.\n\nThe count doesn't predict the next card. It tracks the ratio of what's left, which is why the money comes from bet sizing rather than from any one hand.`},
   {id:'truecount',k:['true count','convert the count','decks remaining','divide the count'],
-   a:()=>`True count = running count ÷ decks remaining. Running +9 with 3 decks left is a true +3; the same +9 with 1.5 decks left is +6 — twice the edge and a very different bet.\n\nRound toward zero, so +2.8 is a true 2 and −2.8 is a true −2. That keeps you from betting an edge you do not have.\n\nEstimate decks from the discard tray and be consistent — a systematic bias hurts more than random error. The True Count drill quizzes you from either direction.`},
+   a:()=>`True count = running count ÷ decks remaining. Running +9 with 3 decks left is a true +3; the same +9 with 1.5 decks left is +6 — twice the edge and a very different bet.\n\nRound toward zero, so +2.8 is a true 2 and −2.8 is a true −2. That keeps you from betting an edge you don't have.\n\nEstimate decks from the discard tray and be consistent — a systematic bias hurts more than random error. The True Count drill quizzes you from either direction.`},
   {id:'i18',k:['illustrious','deviation','index','index play','when do i deviate','fab 4','fab four'],
    a:()=>{
      const ill=INDICES.filter(e=>!e.fab).slice(0,6);
      return `Basic strategy is computed for a neutral shoe. When the count moves far enough, a different play becomes better — those are the indices, and the Illustrious 18 are the ones worth having.\n\nThe heavy hitters:\n${ill.map(e=>`• ${e.label}: ${e.dir==='>='?'at or above':'below'} ${idxNum(e.idx)} → ${e.play.toLowerCase()}`).join('\n')}\n\nInsurance at +3 is the single most valuable one. The full table with every index is in Charts → Hi-Lo Deviations, and the Deviations drill tests them.`;
    }},
   {id:'insurance',k:['insurance','insure','even money'],
-   a:()=>`Insurance is a side bet that the hole card is a ten. It pays 2:1, so it is profitable exactly when more than one card in three left is a ten — a true count of +3 or higher.\n\nAt +3 or above, take it whatever you are holding. Below that, never. "Insuring a good hand" is a myth: your own cards matter only as part of the count.\n\nEven money on a blackjack against an ace is the same bet wearing a disguise, so the same +3 rule applies.`},
+   a:()=>`Insurance is a side bet that the hole card is a ten. It pays 2:1, so it's profitable exactly when more than one card in three left is a ten — a true count of +3 or higher.\n\nAt +3 or above, take it whatever you're holding. Below that, never. "Insuring a good hand" is a myth: your own cards matter only as part of the count.\n\nEven money on a blackjack against an ace is the same bet wearing a disguise, so the same +3 rule applies.`},
   {id:'n0',k:['n0','n zero','how long until','long run','when does the edge show','break even point'],
    a:()=>{
      const a=state.an.last;
-     return `N₀ is how many rounds you must play before your expected win equals one standard deviation — roughly the point where skill starts to outweigh luck. It is variance ÷ edge², so a small edge with big swings takes a very long time.\n\n${a?`Your last analyzer run put you at ${money(a.ev)} an hour against ${money(a.sd)} of swing per hour, and it prints N₀ in hours in the Bankroll maths panel.`:'Run the EV & Risk analyzer and it will compute N₀ for your exact game and spread.'}\n\nThe practical version: hundreds of hours is normal. Judging a counting game on one weekend tells you nothing.`;
+     return `N₀ is how many rounds you must play before your expected win equals one standard deviation — roughly the point where skill starts to outweigh luck. It's variance ÷ edge², so a small edge with big swings takes a very long time.\n\n${a?`Your last analyzer run put you at ${money(a.ev)} an hour against ${money(a.sd)} of swing per hour, and it prints N₀ in hours in the Bankroll maths panel.`:'Run the EV & Risk analyzer and it will compute N₀ for your exact game and spread.'}\n\nThe practical version: hundreds of hours is normal. Judging a counting game on one weekend tells you nothing.`;
    }},
   {id:'ror',k:['risk of ruin','ror','go broke','lose my bankroll','how much bankroll','bankroll size'],
    a:()=>{
      const a=state.an.last;
-     return `Risk of ruin is the chance you lose the whole bankroll before the edge pulls you clear. It falls fast as the bankroll grows relative to your bet: roughly e^(−2 × bankroll × edge ÷ variance).\n\nA rule of thumb is a unit near 1/1000 of what you are willing to lose, but the analyzer does it properly — it reports lifetime risk, risk within your horizon, and the bankroll needed for a 10%, 5% or 1% risk at your exact spread.\n\n${a?`At your last run: ${money(a.ev)}/hr with ${money(a.sd)}/hr of swing.`:'Run EV & Risk once and those numbers become yours rather than general advice.'}`;
+     return `Risk of ruin is the chance you lose the whole bankroll before the edge pulls you clear. It falls fast as the bankroll grows relative to your bet: roughly e^(−2 × bankroll × edge ÷ variance).\n\nA rule of thumb is a unit near 1/1000 of what you're willing to lose, but the analyzer does it properly — it reports lifetime risk, risk within your horizon, and the bankroll needed for a 10%, 5% or 1% risk at your exact spread.\n\n${a?`At your last run: ${money(a.ev)}/hr with ${money(a.sd)}/hr of swing.`:'Run EV & Risk and it works them out for your game rather than the general case.'}`;
    }},
   {id:'spread',k:['spread','bet spread','how much should i bet','bet sizing','ramp','wong','wonging','back count'],
    a:()=>{
@@ -3292,15 +3296,15 @@ const JACK_TOPICS=[
      return `Your whole edge lives in the spread. A common shape is to bet (true count − 1) units, so you flat-bet at or below +1 and climb from there.\n\nA 1–8 spread in a decent six-deck game is roughly break-even to modestly positive; 1–12 is stronger and far more visible. Sitting out the negative counts — wonging — raises the edge a lot, but needs other players at the table to watch.${mine}${a?`\n\nThe analyzer last measured ${money(a.ev)} an hour from it.`:'\n\nRun EV & Risk to see what yours is actually worth.'}`;
    }},
   {id:'houseedge',k:['house edge','6:5','six to five','what do the rules cost','h17','s17','das','penetration','worst rule','rule cost'],
-   a:()=>`Rules, in order of what they cost you:\n\n• Blackjack at 6:5 instead of 3:2 — about 1.4%. More than every other rule combined. Do not play it.\n• Dealer hits soft 17 — about 0.22%\n• No double after split — about 0.14%\n• No late surrender — about 0.08%\n• Eight decks instead of six — about 0.02%\n\nPenetration is not on that list but matters more than most of it: a shoe cut at 50% barely lets a count develop, while 80% or deeper is where counting earns.\n\nThe Table Log stores rule sets and estimates the edge for each, and the Measure button plays it out to get the real number.`},
+   a:()=>`Rules, in order of what they cost you:\n\n• Blackjack at 6:5 instead of 3:2 — about 1.4%. More than every other rule combined. Do not play it.\n• Dealer hits soft 17 — about 0.22%\n• No double after split — about 0.14%\n• No late surrender — about 0.08%\n• Eight decks instead of six — about 0.02%\n\nPenetration isn't on that list but matters more than most of it: a shoe cut at 50% barely lets a count develop, while 80% or deeper is where counting earns.\n\nThe Table Log stores rule sets and estimates the edge for each, and the Measure button plays it out to get the real number.`},
   {id:'practice',k:['what should i practice','what should i practise','what am i bad at','my weakness','coach me','how am i doing','my stats','my progress','improve'],
    a:()=>{
      const {b,miss}=jackStats();
      if(!b.n) return `You haven't played a drill yet, so I've got nothing to go on. Start with Basic Strategy — a hundred hands and I can tell you where you stand.`;
      const acc=pct(b.c,b.n);
      const top=miss.slice(0,4);
-     let out=`You are at ${acc}% over ${b.n} hands, best streak ${b.best}.`;
-     if(acc<85) out+=`\n\nUnder about 90% means basic strategy is not automatic yet, and every count-based play is built on top of it. Stay on the Basic Strategy drill before touching deviations.`;
+     let out=`You're at ${acc}% over ${b.n} hands, best streak ${b.best}.`;
+     if(acc<85) out+=`\n\nUnder about 90% means basic strategy isn't automatic yet, and every count-based play is built on top of it. Stay on the Basic Strategy drill before touching deviations.`;
      else if(acc<95) out+=`\n\nThat is close. The last few percent are usually a handful of specific hands rather than general weakness.`;
      else out+=`\n\nThat is solid. Basic strategy is not what is costing you money.`;
      if(top.length){
@@ -3315,17 +3319,17 @@ const JACK_TOPICS=[
      return out;
    }},
   {id:'strategybasics',k:['basic strategy','how do i learn','memorise','memorize','chart','where do i start','beginner'],
-   a:()=>`Don't memorise 280 cells. Learn the shape and the rest follows:\n\n• Dealer 2–6 is weak. Stand on your stiffs (12–16) and let them break. The exception is 12 against a 2 or 3, where drawing is still better.\n• Dealer 7 through ace is strong. Hit your stiffs — you are not trying to beat a made 20, you are trying not to lose automatically.\n• Always split aces and eights, never split tens or fives.\n• Soft hands cannot bust on one card, which is why you double them against weak upcards instead of standing.\n\nThe Basic Strategy drill deals real hands and explains every miss. That teaches it faster than staring at the chart.`},
+   a:()=>`Don't memorise 280 cells. Learn the shape and the rest follows:\n\n• Dealer 2–6 is weak. Stand on your stiffs (12–16) and let them break. The exception is 12 against a 2 or 3, where drawing is still better.\n• Dealer 7 through ace is strong. Hit your stiffs — you're not trying to beat a made 20, you're trying not to lose automatically.\n• Always split aces and eights, never split tens or fives.\n• Soft hands can't bust on one card, which is why you double them against weak upcards instead of standing.\n\nThe Basic Strategy drill deals real hands and explains every miss. That teaches it faster than staring at the chart.`},
   {id:'surrender',k:['surrender','give up half','late surrender','early surrender'],
-   a:()=>`Late surrender gives up half the bet before you play the hand, and it is right when the hand loses more than half the time however you play it.\n\nWith late surrender in a six-deck game: 16 against 9, 10 or ace, and 15 against a 10 — plus 15 and 17 against an ace when the dealer hits soft 17. Never surrender anything else, and never surrender a pair of eights, which you split instead.\n\nEarly surrender, decided before the dealer checks for blackjack, is far more valuable and almost extinct. If you find it, use it.\n\nCount-based surrenders are the Fab 4 in Charts → Hi-Lo Deviations.`},
+   a:()=>`Late surrender gives up half the bet before you play the hand, and it's right when the hand loses more than half the time however you play it.\n\nWith late surrender in a six-deck game: 16 against 9, 10 or ace, and 15 against a 10 — plus 15, 17 and a pair of eights against an ace when the dealer hits soft 17. Eights are the one pair worth giving up; otherwise you split them.\n\nEarly surrender, decided before the dealer checks for blackjack, is far more valuable and almost extinct. If you find it, use it.\n\nCount-based surrenders are the Fab 4 in Charts → Hi-Lo Deviations.`},
   {id:'why',k:['why','explain','reason','how come'],needsHand:true,
    a:()=>null},
   {id:'privacy',k:['privacy','data','stored','track','send my','leave my browser','server'],
    a:()=>`Your drill record, tables, sessions and spreads are saved in this browser and nowhere else — no account, no server.\n\nThe catch is that they're only on this device, and clearing site data wipes them. The ⇅ button in the header exports the lot to a file and reads it back, which is how you move to another machine or keep a copy.`},
   {id:'site',k:['where is','how do i use','what is this site','navigate','find the','tabs'],
-   a:()=>`Seven screens:\n\n• Train — five drills: basic strategy, running count, true count, deviations, and a full simulator\n• Charts — rule-aware strategy tables and every Hi-Lo index\n• Course — fourteen lessons, shortest path from nothing to playing\n• Casinos — log tables and what their rules cost\n• Assist — me, and the live hand helper above\n• EV & Risk — deals millions of rounds of your exact game to measure EV, variance and risk of ruin\n• Dashboard — your session log against the model`},
+   a:()=>`Seven screens:\n\n• Train — five drills: basic strategy, running count, true count, deviations, and a full simulator\n• Charts — rule-aware strategy tables and every Hi-Lo index\n• Course — fourteen lessons, in order\n• Casinos — log tables and what their rules cost\n• Assist — me, and the live hand helper above\n• EV & Risk — what your game and your spread are actually worth\n• Dashboard — your session log against the model`},
   {id:'legal',k:['legal','illegal','allowed','casino rules','get caught','banned','barred','phone at the table'],
-   a:()=>`Counting in your head is not illegal anywhere I know of, but casinos are private property and can and do bar people for it.\n\nUsing a device is a different matter. Casinos prohibit it outright, and in some jurisdictions — Nevada among them — using one to help you play is a criminal offence, not a house rule. So this is built for practice, home play, and going over sessions afterwards.`}
+   a:()=>`Counting in your head isn't illegal anywhere I know of, but casinos are private property and can and do bar people for it.\n\nUsing a device is a different matter. Casinos prohibit it outright, and in some jurisdictions — Nevada among them — using one to help you play is a criminal offence, not a house rule. So this is built for practice, home play, and going over sessions afterwards.`}
 ];
 
 function jackAnswer(text){

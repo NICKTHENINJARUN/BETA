@@ -88,6 +88,25 @@ for (const t of topics) {
   ok(!/undefined|NaN|\[object/.test(a), `topic "${t}" is clean`);
 }
 
+// ---- Jack's prose must not contradict Jack's engine
+const surrTopic = await ask('when should I surrender');
+const eightsPlay = await p.evaluate(() => {
+  const B = window.__BJ, r = B.state.rules;
+  const cards = ['8','8'].map(x => B.card(x,'♠'));
+  return B.basicPlay(cards, B.card('A','♣'), r,
+    { canDouble:true, canSplit:true, canSurrender:r.surrender&&!r.enhc, das:r.das });
+});
+ok(!(eightsPlay === 'SURRENDER' && /never surrender a pair of eights/i.test(surrTopic)),
+   'the surrender advice agrees with the play the engine actually makes for 8,8 vs A');
+// only one total can be "the best" to double
+const d11 = await ask('11 v 6'), d10 = await ask('10 v 6');
+const bestClaims = [d11, d10].filter(t => /best total there is to double|is the best doubling total/.test(t)).length;
+ok(bestClaims <= 1, `only one total is called the best to double (${bestClaims} claim it)`);
+// a surrendered pair explains why it beats splitting
+const eights = await ask('8,8 vs A');
+if (eightsPlay === 'SURRENDER') ok(/one pair you give up|two fresh hands/i.test(eights),
+  'surrendering eights is explained against splitting them');
+
 // ---- identity: Jack must be honest about what he is
 const who = await ask('what are you');
 ok(/Jack/.test(who), 'Jack gives his name');
