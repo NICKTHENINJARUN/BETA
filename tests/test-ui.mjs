@@ -398,8 +398,10 @@ await p.locator('#asRC').fill('2'); await p.waitForTimeout(200);
 ok(/Decline/.test(await p.evaluate(() => document.querySelector('#asMeta').textContent)), 'insurance declined at +1');
 // Jack is built in, so he is present with no runtime check at all
 ok(await p.locator('#asAIBody').isVisible(), 'Jack is available with no external runtime');
-ok(/not a language model/.test(await p.evaluate(() => document.querySelector('#view-assist').textContent)),
-   'the page states plainly that Jack is not a language model');
+// the panel should sell the tool, not narrate how it was built
+const assistCopy = await p.evaluate(() => document.querySelector('#view-assist').textContent);
+ok(!/language model|nothing leaves this page|at no cost|verified engine/i.test(assistCopy),
+   'the assist tab does not explain its own plumbing');
 
 // ---- ANALYZER
 await p.click('#nav button[data-view="analyzer"]'); await p.waitForTimeout(250);

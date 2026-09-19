@@ -62,6 +62,18 @@ const agreement = await p.evaluate(() => {
 });
 ok(agreement.length === 0, `Jack matches the engine on every two-card hand (${agreement.length} mismatches: ${agreement.slice(0,3).join('; ')})`);
 
+// ---- a deviation must be explained as a deviation, not with the chart's reasoning
+const dev = await ask('16 v 10 at +2');
+ok(/STAND/.test(dev), 'the index applies');
+ok(!/stand against 2 through 6/i.test(dev),
+   'the count-driven stand is not explained with the weak-dealer rule');
+ok(/rich shoe|breaks more often/i.test(dev), 'the deviation gets its own reasoning');
+ok(!/\+0\b/.test(dev), 'a zero index prints as 0, not +0');
+const devHit = await ask('13 v 2 at -3');
+ok(/HIT/.test(devHit) && /small cards are still/i.test(devHit), 'a negative-count deviation reads correctly');
+const noDev = await ask('16 v 5');
+ok(/stand against 2 through 6/i.test(noDev), 'a plain basic-strategy stand keeps the chart reasoning');
+
 // ---- true count arithmetic
 const tc = await ask('what is the true count if running count is 9 with 3 decks left');
 ok(/\+3/.test(tc) && /÷ 3/.test(tc), `true count computed and shown (${tc.split('\n')[0]})`);
@@ -77,16 +89,21 @@ for (const t of topics) {
 }
 
 // ---- identity: Jack must be honest about what he is
-const who = await ask('are you chatgpt?');
-ok(/not a language model/i.test(who), 'Jack says plainly he is not a language model');
+const who = await ask('what are you');
 ok(/Jack/.test(who), 'Jack gives his name');
-ok(!/I am (ChatGPT|Claude|GPT)/i.test(who), 'Jack does not claim to be another assistant');
-const who2 = await ask('what are you');
-ok(/blackjack/i.test(who2), 'Jack explains the name');
+ok(/blackjack/i.test(who), 'Jack says what he is for');
+ok(who.length < 340, `the introduction is short, not a manifesto (${who.length} chars)`);
+ok(!/language model|nothing leaves|offline|no cost|engine/i.test(who),
+   'the introduction does not narrate the implementation');
+// asked directly he is still straight about it, in one line rather than an essay
+const model = await ask('are you chatgpt?');
+ok(/not one of the general chatbots/i.test(model), 'asked directly, Jack answers honestly');
+ok(!/I am (ChatGPT|Claude|GPT)\b/i.test(model), 'Jack does not claim to be another assistant');
+ok(model.length < 380, `and keeps it brief (${model.length} chars)`);
 
 // ---- coaching reads the real record
 const coachEmpty = await ask('what should I practise');
-ok(/not played a drill yet/i.test(coachEmpty), 'with no record Jack says so rather than inventing one');
+ok(/haven't played a drill yet/i.test(coachEmpty), 'with no record Jack says so rather than inventing one');
 await p.evaluate(() => {
   const B = window.__BJ;
   B.state.basic.n = 200; B.state.basic.c = 150; B.state.basic.best = 9;
@@ -100,13 +117,16 @@ ok(/before touching deviations/.test(coach), 'coaching gives the right priority 
 
 // ---- fallback is honest rather than bluffing
 const junk = await ask('what is the capital of France');
-ok(/not a general chatbot/i.test(junk), 'off-topic questions get an honest refusal');
+ok(/didn't land/i.test(junk), 'off-topic questions get a straight answer, not a bluff');
 ok(/16 v 10/.test(junk), 'the refusal shows what does work');
+ok(junk.length < 320, `the refusal is brief (${junk.length} chars)`);
 
 // ---- the chat UI end to end
 await p.click('#nav button[data-view="assist"]'); await p.waitForTimeout(200);
 ok(await p.locator('#asAIBody').isVisible(), 'Jack is available with no runtime check');
-ok(/Jack/.test(await p.evaluate(() => document.querySelector('#asChat').textContent)), 'Jack greets on arrival');
+const greeting = await p.evaluate(() => document.querySelector('#asChat').textContent);
+ok(/16 v 10/.test(greeting), 'the opening line shows how to ask');
+ok(greeting.length < 220, `the opening line is short (${greeting.length} chars)`);
 await p.locator('#asInput').fill('16 v 10 at +2');
 await p.click('#asSend');
 await p.waitForFunction(() => !document.querySelector('#asSend').disabled, { timeout: 15000 });

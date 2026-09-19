@@ -38,23 +38,19 @@ any particular casino's offering.
 
 ## Jack
 
-Jack — short for blackjack — is the coach built into the page. He is **not a
-language model and does not call one**: no API key, no account, no usage, no
-network. He parses the question and answers from the same verified engine the
-charts use.
+Jack — short for blackjack — is the assistant built into the page. He parses
+the question and answers from the same engine the charts use, so a play he
+quotes is worked out rather than recalled: it matches the tables exactly and
+follows whatever rules you have set.
 
-For this subject that is a feature rather than a compromise. Every play he
-quotes is computed, so he cannot misremember a chart cell, he answers
-instantly, he works offline, and nothing you type leaves the browser.
+He handles hands the way people type them (`16 v 10 at +2`, `should I split 8s
+against an ace`, `soft 18 vs 9`), true-count arithmetic, seventeen knowledge
+topics, and coaching read from your own drill record. A count-driven play gets
+the count's reasoning rather than the chart's.
 
-He handles hands in the shapes people actually type (`16 v 10 at +2`,
-`should I split 8s against an ace`, `soft 18 vs 9`), true-count arithmetic,
-sixteen knowledge topics, and coaching read from your own drill record. Asked
-what he is, he says so plainly. Asked something off-topic, he says he cannot
-help rather than bluffing.
-
-The one thing lost with the model is reading a photo of a rules sign — that
-needed vision. Rules go in by hand in the Table Log.
+There is no model call, no key and no account, so he costs nothing and works
+with the network off. The tradeoff is range: blackjack and this app are all he
+knows, and he says so rather than bluffing.
 
 ## Tests
 
