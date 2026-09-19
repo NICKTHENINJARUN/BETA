@@ -36,7 +36,17 @@ const handCases = [
   ['hard 12 v 4', /STAND/, '12 v 4 stands'],
   ['12 vs 3', /HIT/, '12 v 3 hits'],
   ['two aces against 6', /SPLIT/, 'pair of aces splits'],
-  ['what about 15 vs king', /hard 15.*dealer 10/i, 'face card maps to ten']
+  ['what about 15 vs king', /hard 15.*dealer 10/i, 'face card maps to ten'],
+  // the way people actually write it
+  ['my hand is an A and 3 and the dealer shows a King', /soft 14.*dealer 10/i, 'full sentence, spelled-out dealer'],
+  ['I have a king and a 3 against a 7', /hard 13.*dealer 7/i, 'articles are not mistaken for aces'],
+  ['i got 9 and 7, dealer showing 10', /hard 16.*dealer 10/i, '"dealer showing" phrasing'],
+  ['dealer has a 6 and I have two 8s', /pair of 8s.*dealer 6/i, 'dealer stated before the hand'],
+  ['my cards are 5 and 6, dealer is showing an ace, true count is 2', /hard 11.*dealer A/i, 'count inside a sentence'],
+  ['I have 16 and the dealer has a 10', /hard 16.*dealer 10/i, 'total plus dealer, no vs'],
+  ['holding a soft 18 with the dealer on 9', /soft 18.*dealer 9/i, 'a named total beats loose rank words'],
+  ['ive got 5, 4 and 3 against a 10', /hard 12.*dealer 10/i, 'three cards'],
+  ['dealer at 6 and I have 12', /hard 12.*dealer 6/i, '"dealer at" phrasing']
 ];
 for (const [q, re, label] of handCases) {
   const a = await ask(q);
@@ -73,6 +83,14 @@ const devHit = await ask('13 v 2 at -3');
 ok(/HIT/.test(devHit) && /small cards are still/i.test(devHit), 'a negative-count deviation reads correctly');
 const noDev = await ask('16 v 5');
 ok(/stand against 2 through 6/i.test(noDev), 'a plain basic-strategy stand keeps the chart reasoning');
+
+// ---- half a hand is a question, not a failure
+const noDealer = await ask('my hand is an A and 3');
+ok(/what is the dealer showing/i.test(noDealer), 'a hand with no upcard asks for the upcard');
+ok(/soft 14/.test(noDealer), 'and shows it understood the hand');
+const noHand = await ask('the dealer shows a king');
+ok(/what are you holding/i.test(noHand), 'an upcard with no hand asks for the hand');
+ok(!/didn't land/.test(noDealer) && !/didn't land/.test(noHand), 'neither falls through to the refusal');
 
 // ---- true count arithmetic
 const tc = await ask('what is the true count if running count is 9 with 3 decks left');
@@ -137,15 +155,16 @@ ok(/before touching deviations/.test(coach), 'coaching gives the right priority 
 // ---- fallback is honest rather than bluffing
 const junk = await ask('what is the capital of France');
 ok(/didn't land/i.test(junk), 'off-topic questions get a straight answer, not a bluff');
-ok(/16 v 10/.test(junk), 'the refusal shows what does work');
-ok(junk.length < 320, `the refusal is brief (${junk.length} chars)`);
+ok(/dealer shows a king/i.test(junk), 'the refusal shows a phrasing that does work');
+ok(/what should I practise/i.test(junk), 'and points at other things it can do');
+ok(junk.length < 460, `the refusal stays brief (${junk.length} chars)`);
 
 // ---- the chat UI end to end
 await p.click('#nav button[data-view="assist"]'); await p.waitForTimeout(200);
 ok(await p.locator('#asAIBody').isVisible(), 'Jack is available with no runtime check');
 const greeting = await p.evaluate(() => document.querySelector('#asChat').textContent);
-ok(/16 v 10/.test(greeting), 'the opening line shows how to ask');
-ok(greeting.length < 220, `the opening line is short (${greeting.length} chars)`);
+ok(/ace and a 3/i.test(greeting), 'the opening line shows a plain-English example');
+ok(greeting.length < 300, `the opening line stays short (${greeting.length} chars)`);
 await p.locator('#asInput').fill('16 v 10 at +2');
 await p.click('#asSend');
 await p.waitForFunction(() => !document.querySelector('#asSend').disabled, { timeout: 15000 });

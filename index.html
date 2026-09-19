@@ -668,7 +668,7 @@ h1{font-size:27px;line-height:1.1;margin:0 0 8px;font-weight:780;letter-spacing:
                 </div>
                 <div class="chatlog" id="asChat"></div>
                 <div class="chatbox">
-                  <textarea id="asInput" rows="2" placeholder="e.g. 16 v 10 at +2 · why do I stand on 12 vs 4 · what should I practise"></textarea>
+                  <textarea id="asInput" rows="2" placeholder="e.g. I have an ace and a 3, dealer shows a king · why do I stand on 12 vs 4"></textarea>
                   <div class="chatacts">
                     <span style="flex:1"></span>
                     <button class="btn ghost sm" id="asStop" hidden>Stop</button>
@@ -3142,8 +3142,9 @@ function renderAssist(){
    computed rather than recalled.
    ===================================================================== */
 const JACK_NAME='Jack';
-const RANK_WORDS={ace:'A',a:'A',one:'A',two:'2',three:'3',four:'4',five:'5',six:'6',seven:'7',
+const RANK_WORDS={ace:'A',a:'A',two:'2',three:'3',four:'4',five:'5',six:'6',seven:'7',
   eight:'8',nine:'9',ten:'10',jack:'10',queen:'10',king:'10',j:'10',q:'10',k:'10',t:'10',face:'10'};
+const RANK_RE='(?:aces|ace|a|10|ten|tens|jacks|jack|queens|queen|kings|king|faces|face|[2-9]|j|q|k|t)';
 const norm=t=>String(t||'').toLowerCase().replace(/[’']/g,'').replace(/\s+/g,' ').trim();
 
 /** Two cards that make a given hard total without being a pair. */
@@ -3160,56 +3161,101 @@ function hardCardsFor(total){
   return ['10','6'];
 }
 function rankToken(tok){
-  const t=norm(tok).replace(/s$/,'');
+  const t=norm(tok);
   if(RANK_WORDS[t]) return RANK_WORDS[t];
   if(/^(10|[2-9])$/.test(t)) return t;
+  if(t.endsWith('s')){                       // plurals only, so "as" is not an ace
+    const base=t.slice(0,-1);
+    if(/^(10|[2-9])$/.test(base)) return base;
+    if(['ace','ten','jack','queen','king','face'].includes(base)) return RANK_WORDS[base];
+  }
   return null;
 }
-/** Pull a hand, a dealer upcard and maybe a true count out of ordinary English. */
+/**
+ * Pull a hand, a dealer upcard and maybe a count out of ordinary English.
+ * People write "my hand is an A and 3 and the dealer shows a King" far more
+ * often than "A,3 v 10", so this works by finding and removing the dealer
+ * phrase, then reading whatever ranks are left, rather than demanding a
+ * particular shape. Returns whatever it found — a missing half is not a
+ * failure, it is something to ask about.
+ */
 function parseHand(text){
-  const q=norm(text);
-  const split=q.split(/\s(?:vs\.?|v\.?|versus|against|facing)\s/);
-  if(split.length<2) return null;
-  const left=split[0], right=split.slice(1).join(' ');
+  let q=norm(text);
+  if(!q) return null;
 
-  const upMatch=right.match(/\b(ace|a|10|[2-9]|ten|jack|queen|king|j|q|k|t|face)\b/);
-  if(!upMatch) return null;
-  const up=rankToken(upMatch[1]);
-  if(!up) return null;
-
+  // counts first, so their digits are never mistaken for cards
   let tc=null;
-  const tcM=q.match(/(?:true count|tc|count)\s*(?:of|is|=|:|at)?\s*([+-]?\d+)/)||q.match(/\bat\s*([+-]\d+)/);
-  if(tcM) tc=Number(tcM[1]);
+  for(const re of [/(?:true count|tc|running count|count)\s*(?:of|is|are|=|:|at)?\s*([+-]?\d+)/,
+                   /\bat\s*([+-]\d+)/]){
+    const m=q.match(re);
+    if(m){ tc=Number(m[1]); q=q.replace(m[0],' '); break; }
+  }
+  q=q.replace(/[\d.]+\s*decks?\b/g,' ');
 
-  let cards=null, forcedSoft=/\bsoft\b/.test(left), forcedHard=/\bhard\b/.test(left);
-  // explicit pair: "8,8" / "8 8" / "pair of 8s" / "two 8s"
-  const pairM=left.match(/(?:pair of|two|double)\s+(ace|a|10|[2-9]|ten|jack|queen|king|j|q|k|t)s?\b/);
+  // the dealer, in the shapes people actually write
+  let up=null;
+  for(const re of [
+    new RegExp(`(?:dealer|dealers|house)\\s*(?:is\\s+)?(?:shows?|showing|has|have|got|holds?|holding|with|on|at|up|upcard)?\\s*(?:an?\\s+)?(${RANK_RE})\\b`),
+    new RegExp(`(?:\\bvs\\b|\\bv\\b|\\bversus\\b|\\bagainst\\b|\\bfacing\\b)\\s*\\.?\\s*(?:an?\\s+)?(?:dealer\\s+)?(${RANK_RE})\\b`),
+    new RegExp(`\\b(${RANK_RE})\\s+(?:up|upcard|showing)\\b`)
+  ]){
+    const m=q.match(re);
+    if(m){ const r=rankToken(m[1]); if(r){ up=r; q=q.replace(m[0],' '); break; } }
+  }
+
+  const forcedSoft=/\bsoft\b/.test(q), forcedHard=/\bhard\b/.test(q);
+  let cards=null;
+
+  // a total the person named outright wins over loose rank words in the sentence
+  const named=q.match(/\b(soft|hard)\s+(\d{1,2})\b/);
+  if(named){
+    const n=Number(named[2]);
+    if(named[1]==='soft'&&n>=13&&n<=21) cards=['A',String(n-11)];
+    else if(n>=5&&n<=21) cards=hardCardsFor(n);
+  }
+
+  // an explicit pair
+  const pairM=q.match(new RegExp(`(?:pair of|pair|two|double|split(?:ting)?)\\s+(${RANK_RE})`));
   if(pairM){ const r=rankToken(pairM[1]); if(r) cards=[r,r]; }
   if(!cards){
-    // "split 8s", "splitting aces"
-    const sp=left.match(/\bsplit(?:ting)?\s+(ace|a|10|[2-9]|ten|jack|queen|king|j|q|k|t)s?\b/);
-    if(sp){ const r=rankToken(sp[1]); if(r) cards=[r,r]; }
-  }
-  if(!cards){
-    // a bare plural rank means a pair: "8s vs 10", "aces against 6"
-    const pl=left.match(/\b(ace|10|[2-9]|ten|jack|queen|king)s\b/);
+    const pl=q.match(/\b(aces|tens|jacks|queens|kings|(?:10|[2-9])s)\b/);
     if(pl){ const r=rankToken(pl[1]); if(r) cards=[r,r]; }
   }
+
+  // otherwise read every rank word left in the sentence
   if(!cards){
-    const two=left.match(/\b(ace|a|10|[2-9]|ten|jack|queen|king|j|q|k|t)\s*[,\/ ]\s*(ace|a|10|[2-9]|ten|jack|queen|king|j|q|k|t)\b/);
-    if(two){ const r1=rankToken(two[1]), r2=rankToken(two[2]); if(r1&&r2) cards=[r1,r2]; }
+    const words=q.split(/[^a-z0-9]+/).filter(Boolean);
+    const collect=articleAware=>{
+      const out=[];
+      for(let i=0;i<words.length;i++){
+        const r=rankToken(words[i]);
+        if(!r) continue;
+        // "a king" is an article; "a and 3" and "a,3" are an ace
+        if(articleAware&&words[i]==='a'&&words[i+1]&&rankToken(words[i+1])) continue;
+        out.push(r);
+      }
+      return out;
+    };
+    const withArticle=collect(true), withAce=collect(false);
+    const score=a=>a.length===2?3:a.length===3?2:a.length>=2?1:0;
+    const best=score(withAce)>score(withArticle)?withAce:withArticle;
+    if(best.length>=2) cards=best.slice(0,12);
   }
+
+  // a stated total, when no individual cards were named
   if(!cards){
-    const tot=left.match(/\b(\d{1,2})\b/);
+    const tot=q.match(/\b(\d{1,2})\b/);
     if(tot){
       const n=Number(tot[1]);
       if(forcedSoft&&n>=13&&n<=21) cards=['A',String(n-11)];
       else if(n>=5&&n<=21) cards=hardCardsFor(n);
-      else if(n>=2&&n<=10) cards=[String(n),String(n)];   // "8 vs 10" reads as a pair only if tiny
     }
   }
-  if(!cards) return null;
-  if(forcedHard&&cards[0]==='A') cards=hardCardsFor(handInfo(cards.map(r=>card(r))).total);
+  if(cards&&forcedHard&&cards.includes('A')){
+    const h=handInfo(cards.map(r=>card(r)));
+    if(h.soft) cards=hardCardsFor(h.total);
+  }
+  if(!cards&&!up) return null;
   return {cards,up,tc};
 }
 /** The engine's answer for a parsed hand, with the reasoning attached. */
@@ -3268,7 +3314,7 @@ const JACK_TOPICS=[
   {id:'model',k:['are you chatgpt','are you claude','are you gpt','what model','which ai','language model','llm','chatbot'],
    a:()=>`Not one of the general chatbots, no. I'm built for this site and blackjack is all I do.\n\nThat's mostly to your benefit here: the plays I give you are worked out rather than remembered, so they match the charts exactly and they're right for the rules you've set.`},
   {id:'help',k:['help','what can you do','what can i ask','commands','how do you work','options'],
-   a:()=>`Ask me about a hand, a concept, or how you're doing. These all work:\n\n• "16 v 10 at +2" or "should I split 8s against an ace"\n• "why do I stand on 12 vs 4" — the reasoning, not just the answer\n• "what is the true count if running is 9 with 3 decks left"\n• "what does 6:5 cost me" or "how much is H17 worth"\n• "what should I practise" — from your own drill record\n• "is my spread too aggressive" — from your bankroll and the analyzer\n• "what is N0" / "risk of ruin" / "the illustrious 18" / "wonging"`},
+   a:()=>`Ask me about a hand, a concept, or how you're doing. Plain English is fine — you don't have to write it in shorthand:\n\n• "my hand is an A and 3 and the dealer shows a king"\n• "I have 16 and the dealer has a 10", or "16 v 10 at +2" if you prefer it short\n• "should I split 8s against an ace"\n• "why do I stand on 12 vs 4"\n• "what's the true count if the running count is 9 with 3 decks left"\n• "what does 6:5 cost me" or "how much is H17 worth"\n• "what should I practise" — from your own drill record\n• "is my spread too aggressive" — from your bankroll and the analyzer\n• "what is N0" / "risk of ruin" / "the illustrious 18" / "wonging"`},
   {id:'hilo',k:['hi lo','hi-lo','counting system','how does counting work','card counting','running count'],
    a:()=>`Hi-Lo tags every card: 2 through 6 are +1, 7 through 9 are zero, and tens and aces are −1. Add the tags of every card you see and that total is the running count.\n\nThe tags cancel to zero over a full deck, which is what makes the true-count conversion valid. A high count means the shoe still holds its tens and aces: more blackjacks at 3:2, more dealer breaks on stiff hands, better doubles.\n\nThe count doesn't predict the next card. It tracks the ratio of what's left, which is why the money comes from bet sizing rather than from any one hand.`},
   {id:'truecount',k:['true count','convert the count','decks remaining','divide the count'],
@@ -3345,7 +3391,14 @@ function jackAnswer(text){
 
   // a hand mentioned anywhere wins — it is the most specific thing anyone asks
   const parsed=parseHand(text);
-  if(parsed) return jackPlay(parsed);
+  if(parsed&&parsed.cards&&parsed.up) return jackPlay(parsed);
+  if(parsed&&parsed.cards&&!parsed.up){
+    const h=handInfo(parsed.cards.map(r=>card(r)));
+    return `I have your ${h.pair?'pair of '+parsed.cards[0]+'s':(h.soft?'soft ':'')+h.total} — what is the dealer showing?\n\nThe upcard changes almost everything, so say something like "dealer has a 6" and I'll give you the play.`;
+  }
+  if(parsed&&!parsed.cards&&parsed.up){
+    return `Dealer's showing a ${parsed.up}. What are you holding?\n\nTell me the cards — "I have an ace and a 3" — or just the total, like "16".`;
+  }
 
   // "why this play" about whatever is on screen
   if(/\b(why|explain|reason)\b/.test(q)){
@@ -3371,7 +3424,7 @@ function jackAnswer(text){
   }
   if(best) return best.a();
 
-  return `That one didn't land. Blackjack and this site are all I know, so I need the question somewhere in that range.\n\nTry one of these:\n• "16 v 10 at +2" or "split 8s against an ace?"\n• "what should I practise"\n• "what does 6:5 cost me"\n• "running count 9 with 3 decks left"\n• "what can you do"`;
+  return `That one didn't land. Blackjack and this site are all I know, so I need the question somewhere in that range.\n\nIf you were asking about a hand, give me your cards and the dealer's upcard — "I have an ace and a 3, dealer shows a king" is plenty. Otherwise try:\n• "what should I practise"\n• "what does 6:5 cost me"\n• "running count 9 with 3 decks left"\n• "what can you do"`;
 }
 
 /* ---- rendering: Jack types his answer out ---------------------------- */
@@ -3433,7 +3486,7 @@ $('#asQuick').onclick=e=>{
 function jackGreet(){
   if($('#asChat').children.length) return;
   const b=jackBubble('ai','');
-  renderRich(b,`Give me a hand — "16 v 10 at +2" — and I'll tell you the play and why.\n\nI can also read your drill record and tell you what to work on next.`);
+  renderRich(b,`Tell me a hand however you'd say it out loud — "I have an ace and a 3 and the dealer shows a king" — and I'll give you the play and the reasoning.\n\nI can also read your drill record and tell you what to work on next.`);
 }
 
 /* ================================================================== INIT */

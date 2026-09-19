@@ -43,10 +43,13 @@ the question and answers from the same engine the charts use, so a play he
 quotes is worked out rather than recalled: it matches the tables exactly and
 follows whatever rules you have set.
 
-He handles hands the way people type them (`16 v 10 at +2`, `should I split 8s
-against an ace`, `soft 18 vs 9`), true-count arithmetic, seventeen knowledge
-topics, and coaching read from your own drill record. A count-driven play gets
-the count's reasoning rather than the chart's.
+He reads hands the way people actually write them — "my hand is an A and 3 and
+the dealer shows a King" as readily as `16 v 10 at +2` — by finding and
+removing the dealer phrase and then reading whatever ranks are left, rather
+than demanding a fixed shape. He also does true-count arithmetic, seventeen
+knowledge topics, and coaching from your own drill record. A count-driven play
+gets the count's reasoning rather than the chart's, and half a hand gets a
+question back instead of a refusal.
 
 There is no model call, no key and no account, so he costs nothing and works
 with the network off. The tradeoff is range: blackjack and this app are all he
