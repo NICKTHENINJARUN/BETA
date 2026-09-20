@@ -4,7 +4,7 @@
   "private": true,
   "description": "Blackjack strategy trainer, chart reference and EV analyzer. The app itself is index.html and has no dependencies; Playwright is here only because the tests drive the real page in a real browser.",
   "scripts": {
-    "test": "node tests/test-engine.mjs && node tests/test-jack.mjs && node tests/test-money.mjs && node tests/test-ui.mjs && node tests/test-sim.mjs"
+    "test": "node tests/test-engine.mjs && node tests/test-jack.mjs && node tests/test-money.mjs && node tests/test-ui.mjs && node tests/test-a11y.mjs && node tests/test-sim.mjs"
   },
   "devDependencies": {
     "playwright": "^1.56.1"

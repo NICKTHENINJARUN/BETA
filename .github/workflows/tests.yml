@@ -3,10 +3,19 @@
 # actually does. Playwright is the only dependency and it is a test-time one.
 name: tests
 
+# A branch with an open pull request is already covered by the pull_request
+# trigger, so an unscoped push trigger just runs the whole suite a second time
+# on the same commit. Pushes matter here only for main, where they deploy.
 on:
   push:
+    branches: [main]
   pull_request:
   workflow_dispatch:
+
+# A newer commit on main supersedes an in-flight deploy rather than racing it.
+concurrency:
+  group: pages
+  cancel-in-progress: false
 
 jobs:
   test:
@@ -61,7 +70,57 @@ jobs:
       - name: Interface
         run: node tests/test-ui.mjs
 
+      - name: Accessibility
+        run: node tests/test-a11y.mjs
+
       # Statistical, and bounded by its own standard error rather than a
-      # guessed tolerance. Slowest of the five at roughly 120M simulated rounds.
+      # guessed tolerance. Slowest of the six at roughly 120M simulated rounds.
       - name: Simulation
         run: node tests/test-sim.mjs
+
+  # Publish to GitHub Pages, but only from main and only once the suites above
+  # have passed — a red build should never reach the live site.
+  deploy:
+    needs: test
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    runs-on: ubuntu-latest
+
+    # Scoped to this job: the test job needs no write access to anything.
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # The app is index.html and nothing else. Ship that alone rather than the
+      # whole repository, so the tests, lockfile and README stay off the site.
+      - name: Assemble the site
+        run: |
+          mkdir -p _site
+          cp index.html _site/index.html
+          # Any unknown path serves the app, so a stale or mistyped link lands
+          # on the page instead of a 404.
+          cp index.html _site/404.html
+          # Tells Pages to serve the files as-is instead of running Jekyll over
+          # them, which would otherwise ignore anything starting with an underscore.
+          touch _site/.nojekyll
+
+      # enablement turns Pages on the first time this runs, so there is no
+      # settings toggle to remember. It is a no-op once Pages exists.
+      - uses: actions/configure-pages@v5
+        with:
+          enablement: true
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+      - name: Deploy
+        id: deployment
+        uses: actions/deploy-pages@v4
