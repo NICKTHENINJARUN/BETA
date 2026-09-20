@@ -55,6 +55,30 @@ There is no model call, no key and no account, so he costs nothing and works
 with the network off. The tradeoff is range: blackjack and this app are all he
 knows, and he says so rather than bluffing.
 
+## Accessibility
+
+The page targets WCAG 2.1 AA, and `tests/test-a11y.mjs` holds it there.
+
+Every control has a name and every field is tied to its visible label — the
+wiring happens at render time rather than by hand, so new fields inherit it.
+Drill feedback, the simulator's coaching and Jack's replies are live regions,
+so an answer you cannot see is still an answer you hear.
+
+Everything works from the keyboard. The section nav is a real tab set with
+arrow-key and Home/End support, a skip link jumps the nav, chart cells take
+focus and open on Enter or Space, and the dialog traps Tab, closes on Escape
+and hands focus back to whatever opened it.
+
+The strategy tables carry captions and scoped headers, so a cell read on its
+own still says which hand and which upcard it belongs to — and because the
+visible cell is a single letter, each one also carries a label spelling out
+the hand, the dealer's card and the play in full.
+
+All text meets AA contrast. The muted palette used to run between 2.4:1 and
+4.2:1, which is legible only if you already know what it says; the ramp was
+lifted and the test now measures every visible text node on every screen
+against its own computed background.
+
 ## Deployment
 
 The site is `index.html` and nothing else — no build, no server, no external
@@ -85,13 +109,15 @@ npm ci                      # Playwright, the only dependency, and a test-time o
 npx playwright install chromium
 node tests/test-engine.mjs  # 67 strategy/index/shoe assertions
 node tests/test-ui.mjs      # end-to-end pass over all seven screens
+node tests/test-a11y.mjs    # 38 accessibility checks: names, labels, live
+                            # regions, keyboard paths and WCAG AA contrast
 node tests/test-money.mjs   # 220 simulated hands reconciled against an
                             # independently computed settlement
 node tests/test-sim.mjs     # 120M rounds checked against published figures
 node tests/test-jack.mjs    # Jack's parsing, knowledge and engine agreement
 ```
 
-`npm test` runs all five in order. They also run in CI on every push and
+`npm test` runs all six in order. They also run in CI on every push and
 pull request — see `.github/workflows/tests.yml`, which installs Chromium
 and runs each suite as its own step so a red build names the one that
 broke.

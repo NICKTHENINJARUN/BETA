@@ -8,7 +8,7 @@
 <style>
 :root{
   --bg:#0b0b0b;--panel:#111211;--panel2:#151615;--line:#37302c;--line2:#49372e;
-  --text:#f3f2ef;--muted:#8d8c88;--muted2:#60615e;--orange:#f4752d;--orange2:#c95d25;
+  --text:#f3f2ef;--muted:#a3a29d;--muted2:#8d8c88;--orange:#f4752d;--orange2:#c95d25;
   --green:#26bd63;--green2:#159047;--red:#b61038;--red2:#6d0b25;--gold:#b28b37;
   --shadow:0 22px 80px rgba(0,0,0,.42);--r:8px;
 }
@@ -25,23 +25,34 @@ body:before{content:"";position:fixed;inset:0;pointer-events:none;background:lin
 button,input,select{font:inherit} button{cursor:pointer;color:inherit}
 button:disabled{cursor:not-allowed;opacity:.34}
 :focus-visible{outline:2px solid var(--orange);outline-offset:2px}
+/* Present to a screen reader, absent to everyone else. Not display:none, which
+   would take it out of the accessibility tree along with the layout. */
+.vh{position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);clip-path:inset(50%);white-space:nowrap;border:0}
+/* Offscreen until tabbed to, so a keyboard user can jump the nav instead of
+   tabbing through seven buttons on every screen. */
+.skip{position:absolute;left:8px;top:-60px;z-index:100;background:var(--orange);color:#14110f;font-weight:700;padding:10px 16px;border-radius:6px;text-decoration:none;transition:top .12s ease}
+.skip:focus{top:8px}
+/* Animation here is decoration; honour the system setting that asks for less. */
+@media(prefers-reduced-motion:reduce){
+  *,*:before,*:after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;scroll-behavior:auto!important}
+}
 .shell{width:min(100%,1240px);margin:auto;min-height:100vh;padding:22px 28px 70px}
 .topnav{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:34px;opacity:.97}
 .brand{display:flex;align-items:center;gap:10px;font-size:17px;font-weight:750}.brandmark{width:26px;height:35px;display:block;flex:none;filter:drop-shadow(0 0 14px rgba(244,117,45,.30)) drop-shadow(0 3px 6px rgba(0,0,0,.45));transform:rotate(-7deg);transition:transform .2s ease}
 .brandmark svg{width:100%;height:100%;display:block}
 .brand:hover .brandmark{transform:rotate(0deg)}
 .nav{display:flex;gap:4px;align-items:center;background:rgba(15,15,15,.68);border:1px solid #222;border-radius:9px;padding:4px;backdrop-filter:blur(10px)}
-.nav button{border:0;background:transparent;color:#777;padding:8px 11px;border-radius:6px;font-size:15px}.nav button:hover{color:#ddd}.nav button.active{background:#1a1a1a;color:#f2f2f2;box-shadow:inset 0 0 0 1px #282828}
+.nav button{border:0;background:transparent;color:#9a9995;padding:8px 11px;border-radius:6px;font-size:15px}.nav button:hover{color:#ddd}.nav button.active{background:#1a1a1a;color:#f2f2f2;box-shadow:inset 0 0 0 1px #282828}
 .headacts{display:flex;gap:6px;align-items:center}
-.iconbtn{border:1px solid #272727;background:#121212;width:31px;height:31px;border-radius:7px;color:#777;display:inline-grid;place-items:center}
+.iconbtn{border:1px solid #272727;background:#121212;width:31px;height:31px;border-radius:7px;color:#9a9995;display:inline-grid;place-items:center}
 .iconbtn:hover{color:#ddd;border-color:#3a3a3a}
 .view{display:none}.view.active{display:block;animation:fade .22s ease}@keyframes fade{from{opacity:0;transform:translateY(3px)}to{opacity:1;transform:none}}
 .content{width:min(100%,880px);margin:0 auto}.wide{width:min(100%,1020px);margin:0 auto}.narrow{width:min(100%,660px);margin:0 auto}
-h1{font-size:27px;line-height:1.1;margin:0 0 8px;font-weight:780;letter-spacing:-.02em}.sub{font-size:15px;color:#777;line-height:1.5;margin-bottom:22px}
+h1{font-size:27px;line-height:1.1;margin:0 0 8px;font-weight:780;letter-spacing:-.02em}.sub{font-size:15px;color:#9a9995;line-height:1.5;margin-bottom:22px}
 .panel{background:linear-gradient(180deg,rgba(20,20,20,.95),rgba(16,17,16,.97));border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow)}
 .btn{border:1px solid #39312d;background:#161616;border-radius:5px;padding:9px 14px;font-size:15px;font-weight:700}.btn.primary{background:linear-gradient(#f77c35,#e96b25);border-color:#f4752d;color:white}.btn.primary:hover:not(:disabled){filter:brightness(1.06)}.btn.ghost{background:#111;border-color:#242424;color:#aaa}.btn.danger{color:#e28199;border-color:#572131;background:#1a0d11}
 .btn.sm{padding:6px 9px;font-size:13px}
-.segment{display:flex;border:1px solid var(--line2);border-radius:6px;overflow:hidden;background:#141414}.segment button{flex:1;padding:8px 11px;background:transparent;border:0;color:#777;font-size:14px;position:relative}.segment button+button{border-left:1px solid #2a2623}.segment button.active{color:#f5f3ef;background:linear-gradient(180deg,#171717,#121212)}.segment button.active:after{content:"";position:absolute;left:12%;right:12%;bottom:0;height:1px;background:var(--orange);box-shadow:0 0 8px var(--orange)}
+.segment{display:flex;border:1px solid var(--line2);border-radius:6px;overflow:hidden;background:#141414}.segment button{flex:1;padding:8px 11px;background:transparent;border:0;color:#9a9995;font-size:14px;position:relative}.segment button+button{border-left:1px solid #2a2623}.segment button.active{color:#f5f3ef;background:linear-gradient(180deg,#171717,#121212)}.segment button.active:after{content:"";position:absolute;left:12%;right:12%;bottom:0;height:1px;background:var(--orange);box-shadow:0 0 8px var(--orange)}
 .nextbar{display:flex;align-items:center;justify-content:center;gap:12px;margin-top:14px;flex-wrap:wrap;animation:fade .18s ease}
 .nextbar .btn{position:relative;overflow:hidden}
 .nextbar .btn kbd{font-size:12px;opacity:.7;font-family:inherit;margin-left:4px}
@@ -54,24 +65,25 @@ h1{font-size:27px;line-height:1.1;margin:0 0 8px;font-weight:780;letter-spacing:
 .legend-sep{width:1px;height:16px;background:#2e2b28;padding:0}
 .d-idx{background:rgba(255,255,255,.65);width:8px;height:8px;border-radius:50%}
 .howto{font-size:13px;color:#83827e;line-height:1.75;margin:-6px 0 18px;padding:0 2px}
-.howto b{color:#c9c8c4;font-weight:700}.dot{width:22px;height:17px;border-radius:3px;display:inline-grid;place-items:center;font-size:12px;font-weight:700}.d-hit{background:#5b321f;color:#f6a26f}.d-stand{background:#5f0922;color:#e84f78}.d-double{background:#0c472d;color:#54d893}.d-split{background:#5f541f;color:#edd567}.d-surr{background:#4d1730;color:#e97caf}
-.chartbox{padding:18px 18px 16px}.charttitle{font-size:18px;font-weight:760;margin-bottom:15px;display:flex;justify-content:space-between;align-items:baseline;gap:10px}.charttitle small{font-size:13px;color:#6d6d69;font-weight:500}
-.strategy-table{width:100%;border-collapse:separate;border-spacing:4px;font-size:12px;table-layout:fixed}.strategy-table th{color:#b6b5b1;font-weight:650;padding:2px 0}.strategy-table td{text-align:center;padding:4px 2px;border-radius:3px;border:1px solid rgba(255,255,255,.03)}.strategy-table td.rowhead{background:transparent!important;color:#eee;border:0;text-align:left;font-weight:700;width:52px}
-.act-H{background:#59311f;color:#f39a69}.act-S{background:#590821;color:#e94d75}.act-D{background:#0b432c;color:#56d795}.act-P{background:#5b511d;color:#e8d264}.act-R{background:#4c132d;color:#e578a8}
+.howto b{color:#c9c8c4;font-weight:700}.dot{width:22px;height:17px;border-radius:3px;display:inline-grid;place-items:center;font-size:12px;font-weight:700}.d-hit{background:#5b321f;color:#f6a26f}.d-stand{background:#5f0922;color:#f2708f}.d-double{background:#0c472d;color:#54d893}.d-split{background:#5f541f;color:#edd567}.d-surr{background:#4d1730;color:#e97caf}
+.chartbox{padding:18px 18px 16px}.charttitle{font-size:18px;font-weight:760;margin-bottom:15px;display:flex;justify-content:space-between;align-items:baseline;gap:10px}.charttitle small{font-size:13px;color:#9a9995;font-weight:500}
+.strategy-table{width:100%;border-collapse:separate;border-spacing:4px;font-size:12px;table-layout:fixed}.strategy-table th{color:#b6b5b1;font-weight:650;padding:2px 0}.strategy-table td{text-align:center;padding:4px 2px;border-radius:3px;border:1px solid rgba(255,255,255,.03)}.strategy-table th.rowhead{background:transparent!important;color:#eee;border:0;text-align:left;font-weight:700;width:52px;padding:4px 2px}
+.act-H{background:#59311f;color:#f39a69}.act-S{background:#590821;color:#f2708f}.act-D{background:#0b432c;color:#56d795}.act-P{background:#5b511d;color:#e8d264}.act-R{background:#4c132d;color:#e578a8}
 .strategy-table td[data-cell]{cursor:pointer}
 .strategy-table td[data-cell]:hover{outline:1px solid rgba(255,255,255,.35);outline-offset:-1px}
+.strategy-table td[data-cell]:focus-visible{outline:2px solid var(--orange);outline-offset:-2px}
 .strategy-table td.has-idx{position:relative}
 .strategy-table td.has-idx:after{content:"";position:absolute;top:2px;right:2px;width:4px;height:4px;border-radius:50%;background:rgba(255,255,255,.65)}
 .strategy-table td.ruled{box-shadow:inset 0 0 0 2px var(--orange)}
 .cellhand{display:flex;align-items:center;gap:6px;margin:4px 0 14px}
-.cellvs{font-size:12px;color:#6d6d69;margin:0 2px}
+.cellvs{font-size:12px;color:#9a9995;margin:0 2px}
 .cellplay{font-size:30px;font-weight:800;letter-spacing:-.02em;line-height:1.1}
-.cellplay.a-HIT{color:#f39a69}.cellplay.a-STAND{color:#e94d75}.cellplay.a-DOUBLE{color:#56d795}
+.cellplay.a-HIT{color:#f39a69}.cellplay.a-STAND{color:#f2708f}.cellplay.a-DOUBLE{color:#56d795}
 .cellplay.a-SPLIT{color:#e8d264}.cellplay.a-SURRENDER{color:#e578a8}
 .cellcode{font-size:12px;color:#8a8a87;margin-top:5px}
 .cellwhy{font-size:13px;color:#b4b3af;line-height:1.7;margin:12px 0 14px}
 .evhead{font-size:12px;color:#c9c8c4;font-weight:700;margin:16px 0 8px;display:flex;justify-content:space-between;align-items:baseline}
-.evhead small{font-size:11px;color:#6d6d69;font-weight:500}
+.evhead small{font-size:11px;color:#9a9995;font-weight:500}
 .evbody{display:grid;gap:5px}
 .evrow{display:grid;grid-template-columns:88px 1fr 58px 52px;gap:8px;align-items:center;font-size:12px;color:#9a9995;padding:4px 0}
 .evrow.best{color:#e9e8e4}
@@ -79,17 +91,17 @@ h1{font-size:27px;line-height:1.1;margin:0 0 8px;font-weight:780;letter-spacing:
 .evbar{height:9px;border-radius:3px;background:#191919;overflow:hidden}
 .evbar i{display:block;height:100%;border-radius:3px}
 .evnum{text-align:right;font-variant-numeric:tabular-nums}
-.evgap{text-align:right;font-size:11px;color:#6d6d69;font-variant-numeric:tabular-nums}
+.evgap{text-align:right;font-size:11px;color:#9a9995;font-variant-numeric:tabular-nums}
 .rulebar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;font-size:13px;color:#8a8a87}
 .chip{border:1px solid #33302c;background:#141414;border-radius:99px;padding:5px 10px;font-size:13px;color:#9c9b97;display:inline-flex;align-items:center;gap:6px}
 .chip.on{border-color:#54362c;color:#f0cdb5;background:#1a1311}
 .chip.tog{cursor:pointer}
-.note{font-size:13px;color:#6d6d69;line-height:1.6;margin-top:10px}
+.note{font-size:13px;color:#9a9995;line-height:1.6;margin-top:10px}
 /* training menu */
-.traincards{display:grid;grid-template-columns:repeat(5,1fr);gap:14px;align-items:center;min-height:54vh}.traincard{min-height:220px;padding:27px 17px 18px;text-align:center;border:1px solid #252525;background:linear-gradient(180deg,#151515,#111);border-radius:7px;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;transition:.2s}.traincard:hover{transform:translateY(-2px);border-color:#493127}.traincard.featured{border-color:#54362c;box-shadow:0 0 30px rgba(244,117,45,.08)}.trainicon{width:57px;height:57px;border-radius:50%;display:grid;place-items:center;margin-bottom:23px;color:#ab5126;font-size:32px;background:radial-gradient(circle,rgba(244,117,45,.12),transparent 66%)}.traincard.featured .trainicon{color:var(--orange);box-shadow:0 0 30px rgba(244,117,45,.14)}.traincard h3{font-size:17px;margin:0 0 12px}.traincard p{font-size:14px;color:#6e6e6b;line-height:1.55;min-height:46px;margin:0 0 18px}.traincard .btn{margin-top:auto;width:100%}
-.traincard .stat{font-size:12px;color:#5c5c59;margin-bottom:10px;min-height:11px}
+.traincards{display:grid;grid-template-columns:repeat(5,1fr);grid-auto-rows:min-content;gap:14px;align-items:stretch;align-content:center;min-height:54vh}.traincard{min-height:220px;padding:27px 17px 18px;text-align:center;border:1px solid #252525;background:linear-gradient(180deg,#151515,#111);border-radius:7px;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;transition:.2s}.traincard:hover{transform:translateY(-2px);border-color:#493127}.traincard.featured{border-color:#54362c;box-shadow:0 0 30px rgba(244,117,45,.08)}.trainicon{width:57px;height:57px;border-radius:50%;display:grid;place-items:center;margin-bottom:23px;color:#ab5126;font-size:32px;background:radial-gradient(circle,rgba(244,117,45,.12),transparent 66%)}.traincard.featured .trainicon{color:var(--orange);box-shadow:0 0 30px rgba(244,117,45,.14)}.traincard h2{font-size:17px;margin:0 0 12px}.traincard p{font-size:14px;color:#9a9995;line-height:1.55;min-height:46px;margin:0 0 18px}.traincard .btn{margin-top:auto;width:100%}
+.traincard .stat{font-size:12px;color:#8d8c88;margin-bottom:10px;min-height:11px}
 /* basic trainer */
-.trainerstage{min-height:60vh;display:flex;align-items:center;justify-content:center;text-align:center}.dealerlabel,.playerlabel{font-size:13px;color:#777;margin-bottom:8px}.playerlabel{margin-top:18px}.cardrow{display:flex;gap:8px;justify-content:center;flex-wrap:wrap}
+.trainerstage{min-height:60vh;display:flex;align-items:center;justify-content:center;text-align:center}.dealerlabel,.playerlabel{font-size:13px;color:#9a9995;margin-bottom:8px}.playerlabel{margin-top:18px}.cardrow{display:flex;gap:8px;justify-content:center;flex-wrap:wrap}
 .playing-card{width:74px;height:104px;background:#f7f7f5;border-radius:6px;color:#111;position:relative;text-align:left;box-shadow:0 5px 14px rgba(0,0,0,.35);padding:7px;font-weight:800;font-size:21px;flex:none}
 .playing-card.red{color:#b41a33}.playing-card .big-suit{font-size:38px;position:absolute;left:50%;top:52%;transform:translate(-50%,-50%);opacity:.26}.playing-card .corner2{position:absolute;right:7px;bottom:6px;transform:rotate(180deg)}
 .playing-card.back{background:repeating-linear-gradient(45deg,#3a2019,#3a2019 5px,#4a291f 5px,#4a291f 10px);border:1px solid #6a3c2c}
@@ -98,17 +110,17 @@ h1{font-size:27px;line-height:1.1;margin:0 0 8px;font-weight:780;letter-spacing:
 .actions .btn kbd{font-size:12px;opacity:.7;font-family:inherit;margin-left:4px}
 .feedback{min-height:36px;margin-top:16px;font-size:15px;color:#9a9a96;line-height:1.6}.feedback.good{color:#42d47c}.feedback.bad{color:#e45b78}
 .feedback em{display:block;font-style:normal;color:#7e7e7a;font-size:13px;margin-top:4px}
-.handline{font-size:13px;color:#6d6d69;margin-top:10px}
+.handline{font-size:13px;color:#9a9995;margin-top:10px}
 /* drill */
-.drilltop{display:flex;align-items:center;gap:18px;margin-bottom:16px;font-size:14px;color:#aaa;flex-wrap:wrap}.back{border:0;background:transparent;color:#777;padding:0}.back:hover{color:#ddd}.drilltitle{font-size:17px;font-weight:750;color:#eee;margin-right:auto}.pillstat{display:flex;align-items:center;gap:6px;color:#8a8a87}.statusdot{width:6px;height:6px;border-radius:50%;background:#666}.statusdot.orange{background:var(--orange)}.statusdot.green{background:var(--green)}
-.drillpanel{padding:27px 31px;min-height:310px}.drillpanel h2{text-align:center;margin:0 0 7px;font-size:21px}.drillpanel .hint{text-align:center;color:#6d6d69;font-size:13px;margin-bottom:25px;line-height:1.6}.range-row{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center;margin:13px 0}.range-row label{font-size:13px;color:#ddd}.range-row small{font-size:12px;color:#62625f}.range-row input[type=range]{grid-column:1/-1;width:100%;accent-color:var(--orange);height:4px}.drillcard{margin:22px auto 13px;min-height:104px;align-items:center}.drillmeta{display:grid;grid-template-columns:repeat(3,1fr);margin-top:22px;border-top:1px solid #202020;padding-top:13px;text-align:center}.drillmeta b{display:block;font-size:17px}.drillmeta span{font-size:12px;color:#666}
+.drilltop{display:flex;align-items:center;gap:18px;margin-bottom:16px;font-size:14px;color:#aaa;flex-wrap:wrap}.back{border:0;background:transparent;color:#9a9995;padding:0}.back:hover{color:#ddd}.drilltitle{font-size:17px;font-weight:750;color:#eee;margin-right:auto}.pillstat{display:flex;align-items:center;gap:6px;color:#8a8a87}.statusdot{width:6px;height:6px;border-radius:50%;background:#666}.statusdot.orange{background:var(--orange)}.statusdot.green{background:var(--green)}
+.drillpanel{padding:27px 31px;min-height:310px}.drillpanel h2{text-align:center;margin:0 0 7px;font-size:21px}.drillpanel .hint{text-align:center;color:#9a9995;font-size:13px;margin-bottom:25px;line-height:1.6}.range-row{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center;margin:13px 0}.range-row label{font-size:13px;color:#ddd}.range-row small{font-size:12px;color:#62625f}.range-row input[type=range]{grid-column:1/-1;width:100%;accent-color:var(--orange);height:4px}.drillcard{margin:22px auto 13px;min-height:104px;align-items:center}.drillmeta{display:grid;grid-template-columns:repeat(3,1fr);margin-top:22px;border-top:1px solid #202020;padding-top:13px;text-align:center}.drillmeta b{display:block;font-size:17px}.drillmeta span{font-size:12px;color:#8d8c88}
 .inputline{display:flex;gap:8px;justify-content:center;margin-top:14px}.inputline input{width:130px;background:#0f0f0f;border:1px solid #333;color:#fff;border-radius:5px;padding:9px;text-align:center}
 .seqreview{display:flex;gap:4px;justify-content:center;flex-wrap:wrap;margin-top:12px}
 .seqreview i{font-style:normal;font-size:12px;border:1px solid #2a2a2a;border-radius:3px;padding:3px 5px;color:#999}
 .seqreview i.plus{border-color:#2d5c3d;color:#6bd095}.seqreview i.minus{border-color:#5c2d3d;color:#e77a97}
 /* course */
 .course-card{padding:17px 18px;margin-bottom:12px}.course-card .row{display:flex;justify-content:space-between;gap:12px;align-items:flex-start}.course-card h3{font-size:16px;margin:0 0 5px}.course-card .percent{font-size:15px;color:var(--orange)}.bar{height:4px;border-radius:99px;background:#242424;overflow:hidden;margin:11px 0 12px}.bar i{display:block;height:100%;background:linear-gradient(90deg,#ed6a29,#f39255);transition:width .3s ease}.lessons{display:grid;gap:8px}
-.lesson{font-size:13px;color:#777}
+.lesson{font-size:13px;color:#9a9995}
 .lesson-head{display:flex;align-items:center;justify-content:space-between;gap:10px;cursor:pointer;padding:4px 0}
 .lesson-head:hover{color:#c9c9c5}
 .lesson-left{display:flex;gap:7px;align-items:center;text-align:left}
@@ -125,7 +137,7 @@ h1{font-size:27px;line-height:1.1;margin:0 0 8px;font-weight:780;letter-spacing:
 .map:before{content:"";position:absolute;width:520px;height:520px;border-radius:50%;border:2px solid rgba(112,164,255,.65);left:-35px;top:-22px;box-shadow:0 0 28px rgba(89,130,255,.5),inset -28px 0 80px rgba(0,0,0,.75);background:radial-gradient(circle at 37% 45%,rgba(61,76,85,.32),rgba(20,23,25,.75) 59%,#050607 75%);pointer-events:none}
 .land{position:absolute;background:#2d3538;opacity:.45;filter:blur(.2px);border-radius:45% 55% 50% 40%;z-index:1;pointer-events:none}.l1{width:260px;height:145px;left:105px;top:145px;transform:rotate(12deg);clip-path:polygon(0 26%,20% 8%,46% 15%,65% 0,88% 18%,100% 45%,81% 68%,66% 100%,42% 86%,19% 95%,4% 66%)}.l2{width:120px;height:120px;left:290px;top:280px;transform:rotate(18deg);clip-path:polygon(14% 0,70% 10%,100% 35%,78% 62%,67% 100%,28% 80%,0 50%)}
 .node{position:absolute;z-index:3;border-radius:50%;background:#2fbd61;border:2px solid #b2f2c8;color:white;font-size:14px;display:grid;place-items:center;box-shadow:0 3px 9px rgba(0,0,0,.35);transition:.18s;padding:0}
-.node.empty{background:#243029;border-color:#38553f;color:#6d8a76}
+.node.empty{background:#243029;border-color:#38553f;color:#9cc0a7}
 .node:hover{transform:scale(1.12)}
 .node.sel{background:var(--orange);border-color:#ffd2b4;box-shadow:0 0 0 4px rgba(244,117,45,.22)}
 .nodelabel{position:absolute;z-index:4;font-size:12px;color:#93a6a0;pointer-events:none;white-space:nowrap;transform:translateX(-50%)}
@@ -133,12 +145,12 @@ h1{font-size:27px;line-height:1.1;margin:0 0 8px;font-weight:780;letter-spacing:
 .mapzoom{position:absolute;left:12px;bottom:12px;z-index:5;display:flex;gap:5px}
 .mapzoom button{background:#151515;border:1px solid #333;color:#aaa;border-radius:5px;width:26px;height:26px;font-size:15px;display:grid;place-items:center}
 .casinoside{background:#141414;padding:18px;max-height:520px;overflow:auto}.casinoside h3{font-size:15px;margin:0 0 15px;display:flex;justify-content:space-between;align-items:center;gap:8px}
-.casinoside h3 button{background:none;border:0;color:#666;font-size:12px;padding:0}
+.casinoside h3 button{background:none;border:0;color:#8d8c88;font-size:12px;padding:0}
 .casinoside h3 button:hover{color:#bbb}
 .region{border-bottom:1px solid #1d1d1d;font-size:13px}
 .region-head{width:100%;background:none;border:0;padding:10px 2px;font-size:13px;color:#bbb;display:flex;justify-content:space-between;align-items:center;gap:8px;text-align:left}
 .region-head:hover{color:#fff}
-.region-head .cnt{color:#5d5d5a}
+.region-head .cnt{color:#8d8c88}
 .region-body{display:none;padding:2px 2px 12px 12px}
 .region.open .region-body{display:block}
 .region.sel .region-head{color:var(--orange)}
@@ -148,10 +160,10 @@ h1{font-size:27px;line-height:1.1;margin:0 0 8px;font-weight:780;letter-spacing:
 .venue-edge{font-size:14px;color:#e0a06f;white-space:nowrap}
 .venue-rules{font-size:12px;color:#6f6f6c;margin-top:5px;line-height:1.6}
 .venue-acts{display:flex;gap:6px;margin-top:8px}
-.empty{font-size:13px;color:#5f5f5c;line-height:1.7;padding:6px 0}
+.empty{font-size:13px;color:#8d8c88;line-height:1.7;padding:6px 0}
 /* dashboard */
 .dashhead{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px;gap:12px;flex-wrap:wrap}.bankselect{display:flex;gap:6px;align-items:center}.bankselect select{background:#101010;border:1px solid #242424;color:#a6a6a3;border-radius:5px;padding:7px 10px;font-size:13px}
-.metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}.metric{min-height:95px;padding:18px;border:1px solid #4d3128;border-radius:7px;background:rgba(18,18,18,.7)}.metric:nth-child(2){border-color:#3f312c}.metric:nth-child(3){border-color:#263d30}.metric .ico{font-size:15px;color:#3c5d49;margin-bottom:7px}.metric strong{display:block;font-size:21px;color:#1d7b48;margin-bottom:3px}.metric small{font-size:12px;color:#535451}
+.metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}.metric{min-height:95px;padding:18px;border:1px solid #4d3128;border-radius:7px;background:rgba(18,18,18,.7)}.metric:nth-child(2){border-color:#3f312c}.metric:nth-child(3){border-color:#263d30}.metric .ico{font-size:15px;color:#7ea68d;margin-bottom:7px}.metric strong{display:block;font-size:21px;color:#1d7b48;margin-bottom:3px}.metric small{font-size:12px;color:#8d8c88}
 .metric strong.pos{color:#26bd63}.metric strong.neg{color:#d4436a}.metric strong.neutral{color:#c9c8c4}
 .chartpanel{margin-top:18px;padding:18px}.chartpanel h3{font-size:15px;margin:0 0 12px;display:flex;justify-content:space-between;align-items:center}.chartpanel svg{width:100%;height:230px;display:block;overflow:visible}
 .gridline{stroke:#222;stroke-width:1}.zeroline{stroke:#4a4a4a;stroke-width:1;stroke-dasharray:4 4}.axistext{fill:#555;font-size:13px}.trend{fill:none;stroke:#e0703a;stroke-width:2;stroke-linejoin:round}.trendfill{fill:rgba(224,112,58,.10)}
@@ -197,33 +209,33 @@ h1{font-size:27px;line-height:1.1;margin:0 0 8px;font-weight:780;letter-spacing:
 .checkline{display:flex;gap:14px;flex-wrap:wrap;margin-bottom:11px}
 .checkline label{font-size:13px;color:#b4b4b0;display:flex;align-items:center;gap:6px;text-transform:none;letter-spacing:normal}
 .checkline input{accent-color:var(--orange)}
-.footer{text-align:center;font-size:12px;color:#4f504d;margin-top:34px;line-height:1.6}
+.footer{text-align:center;font-size:12px;color:#8d8c88;margin-top:34px;line-height:1.6}
 .toast{position:fixed;left:50%;bottom:25px;transform:translateX(-50%) translateY(20px);background:#151515;border:1px solid #3b312d;color:#ddd;padding:10px 14px;border-radius:6px;font-size:14px;opacity:0;pointer-events:none;transition:.2s;z-index:30}.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 @media(max-width:850px){.shell{padding:16px 14px 50px}.topnav{margin-bottom:24px}.nav{overflow:auto;max-width:70vw}.nav button{white-space:nowrap}.traincards{grid-template-columns:1fr 1fr}.casino-wrap{grid-template-columns:1fr}.casinoside{max-height:360px}.metrics{grid-template-columns:1fr}.sim-grid{grid-template-columns:1fr}.strategy-table{font-size:12px}.chartbox{padding:12px}.map{min-height:500px}}
 @media(max-width:600px){
   .strategy-table td[data-code]{font-size:0}
   .strategy-table td[data-code]:before{content:attr(data-code);font-size:14px;font-weight:700}
   .strategy-table{font-size:12px}
-  .strategy-table td.rowhead{width:40px}
+  .strategy-table th.rowhead{width:40px}
 }
 @media(max-width:700px){.map{overflow-x:auto}}
 @media(max-width:520px){.brand span{display:none}.nav{max-width:82vw}.traincards{grid-template-columns:1fr}.traincard{min-height:165px}.segment button{padding:8px 4px;font-size:13px}.legend{gap:8px}.playing-card{width:62px;height:86px;font-size:18px}.playing-card .big-suit{font-size:30px}.actions .btn{min-width:62px;padding:9px 10px}.drillpanel{padding:20px 16px}.map{min-height:470px}.chartpanel{padding:10px}.sim-table{padding:10px}.felt{padding:18px 10px}.sessionrow{grid-template-columns:auto 1fr auto auto;font-size:12px}}
 /* ---------------------------------------------------------- assist view */
 .assist-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;align-items:start}
 .as-label{font-size:13px;color:#8c8b87;margin:14px 0 7px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
-.linkbtn{background:none;border:0;color:#6d6d69;font-size:13px;padding:0;text-decoration:underline}
+.linkbtn{background:none;border:0;color:#9a9995;font-size:13px;padding:0;text-decoration:underline}
 .linkbtn:hover{color:#ddd}
 .pickrow{display:flex;gap:5px;flex-wrap:wrap}
 .pickrow button{flex:1 1 auto;min-width:34px;padding:9px 0;background:#121212;border:1px solid #2a2724;border-radius:5px;font-size:15px;font-weight:700;color:#c9c8c4}
 .pickrow button:hover{border-color:#54362c;color:#fff}
 .pickrow button.sel{background:linear-gradient(#f77c35,#e96b25);border-color:#f4752d;color:#fff}
 .as-hand{margin-top:10px;min-height:44px;display:flex;gap:6px;flex-wrap:wrap;align-items:center}
-.as-empty{font-size:13px;color:#5f5f5c}
+.as-empty{font-size:13px;color:#8d8c88}
 .mini-card{width:36px;height:50px;border-radius:4px;background:#f7f7f5;color:#111;display:grid;place-items:center;font-weight:800;font-size:17px;box-shadow:0 3px 8px rgba(0,0,0,.35)}
 .as-total{font-size:14px;color:#9a9995;margin-left:6px}
 .verdict{margin-top:16px;padding:16px;border-radius:8px;border:1px solid #3a3330;background:rgba(10,10,10,.6);text-align:center}
-.v-act{font-size:36px;font-weight:800;letter-spacing:-.02em;line-height:1.1;color:#5f5f5c}
-.v-act.a-HIT{color:#f39a69}.v-act.a-STAND{color:#e94d75}.v-act.a-DOUBLE{color:#56d795}
+.v-act{font-size:36px;font-weight:800;letter-spacing:-.02em;line-height:1.1;color:#8d8c88}
+.v-act.a-HIT{color:#f39a69}.v-act.a-STAND{color:#f2708f}.v-act.a-DOUBLE{color:#56d795}
 .v-act.a-SPLIT{color:#e8d264}.v-act.a-SURRENDER{color:#e578a8}
 .v-why{font-size:14px;color:#9a9995;margin-top:9px;line-height:1.6}
 .v-meta{margin-top:10px;display:grid;gap:6px}
@@ -233,7 +245,7 @@ h1{font-size:27px;line-height:1.1;margin:0 0 8px;font-weight:780;letter-spacing:
 .jackmark{display:inline-grid;place-items:center;width:18px;height:18px;border-radius:5px;margin-right:7px;
   background:linear-gradient(#f77c35,#e96b25);color:#fff;font-size:14px;font-weight:800;vertical-align:-3px}
 .bubble b.jk{color:#f0cdb5}
-.bubble.ai.think{color:#6d6d69;font-style:italic}
+.bubble.ai.think{color:#9a9995;font-style:italic}
 .quickrow{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
 .chatlog{max-height:340px;overflow-y:auto;display:grid;gap:10px;margin-bottom:12px}
 .chatlog:empty{display:none}
@@ -241,7 +253,7 @@ h1{font-size:27px;line-height:1.1;margin:0 0 8px;font-weight:780;letter-spacing:
 .bubble.me{background:#1a1311;border:1px solid #33302c;color:#e6e5e1;justify-self:end;max-width:88%}
 .bubble.ai{background:#101010;border:1px solid #232323;color:#c4c3bf}
 .bubble.err{background:#1a0d11;border:1px solid #572131;color:#e28199}
-.bubble .think{color:#6d6d69;font-style:italic}
+.bubble .think{color:#9a9995;font-style:italic}
 .chatbox textarea{width:100%;background:#0d0d0d;border:1px solid #2a2724;color:#eee;border-radius:6px;padding:9px 10px;font-size:15px;resize:vertical;font-family:inherit}
 .chatacts{display:flex;gap:6px;align-items:center;margin-top:8px}
 @media(max-width:980px){.assist-grid{grid-template-columns:1fr}}
@@ -251,14 +263,14 @@ h1{font-size:27px;line-height:1.1;margin:0 0 8px;font-weight:780;letter-spacing:
 .an-col{display:grid;gap:14px;align-content:start}
 .an-panel{padding:16px 18px}
 .an-panel h3{font-size:16px;margin:0 0 14px;color:var(--orange);font-weight:760;letter-spacing:.01em}
-.an-panel h3 .r{float:right;color:#5f5f5c;font-weight:500;font-size:13px;letter-spacing:0}
+.an-panel h3 .r{float:right;color:#8d8c88;font-weight:500;font-size:13px;letter-spacing:0}
 .fgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px 12px}
 .fgrid.one{grid-template-columns:1fr}
 .f{display:grid;gap:5px}
 .f>label{font-size:13px;color:#8c8b87;letter-spacing:.02em}
 .f input,.f select{background:#0d0d0d;border:1px solid #2a2724;color:#eee;border-radius:5px;padding:9px 10px;font-size:15px;width:100%}
 .f input:focus,.f select:focus{border-color:#54362c}
-.f .unit{font-size:12px;color:#5b5b58}
+.f .unit{font-size:12px;color:#8d8c88}
 .switchrow{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 0;border-top:1px solid #1c1a19}
 .switchrow:first-of-type{border-top:0}
 .switchrow span{font-size:14px;color:#c9c8c4}
@@ -269,41 +281,41 @@ h1{font-size:27px;line-height:1.1;margin:0 0 8px;font-weight:780;letter-spacing:
 /* bet spread */
 .spread{display:grid;gap:3px}
 .spread-head,.spread-row{display:grid;grid-template-columns:52px 1fr 86px;gap:8px;align-items:center}
-.spread-head{font-size:12px;color:#6d6d69;text-transform:uppercase;letter-spacing:.09em;margin-bottom:5px;text-align:center}
+.spread-head{font-size:12px;color:#9a9995;text-transform:uppercase;letter-spacing:.09em;margin-bottom:5px;text-align:center}
 .spread-row .tc{font-size:15px;font-weight:800;text-align:center;border-radius:4px;padding:5px 0}
 .tc-neg{color:#e0607f;background:rgba(182,16,56,.09)}
 .tc-zero{color:#c9c8c4;background:rgba(255,255,255,.04)}
 .tc-pos{color:#4fd08a;background:rgba(38,189,99,.09)}
 .spread-row input{background:#0d0d0d;border:1px solid #2a2724;color:#eee;border-radius:5px;padding:7px 9px;font-size:15px;width:100%;text-align:center}
-.spread-row input.sitout{color:#6d6d69;border-style:dashed}
+.spread-row input.sitout{color:#9a9995;border-style:dashed}
 .handtog{display:flex;gap:4px;justify-content:flex-end}
-.handtog button{border:1px solid #2a2724;background:#111;color:#5f5f5c;border-radius:4px;padding:5px 7px;font-size:12px;font-weight:700;min-width:36px}
+.handtog button{border:1px solid #2a2724;background:#111;color:#8d8c88;border-radius:4px;padding:5px 7px;font-size:12px;font-weight:700;min-width:36px}
 .handtog button.on{border-color:#54362c;color:var(--orange);background:#1a1311}
 .spread-tools{display:flex;gap:6px;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap}
-.spread-note{font-size:12px;color:#5b5b58;line-height:1.6;margin-top:10px}
+.spread-note{font-size:12px;color:#8d8c88;line-height:1.6;margin-top:10px}
 /* results */
 .an-metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:14px}
 .an-metric{padding:15px 16px;border:1px solid #4d3128;border-radius:8px;background:rgba(18,18,18,.72);text-align:center}
 .an-metric:nth-child(2){border-color:#3f312c}.an-metric:nth-child(3){border-color:#4a2b33}.an-metric:nth-child(4){border-color:#263d30}
-.an-metric .lab{font-size:12px;color:#6d6d69;text-transform:uppercase;letter-spacing:.09em;margin-bottom:8px}
+.an-metric .lab{font-size:12px;color:#9a9995;text-transform:uppercase;letter-spacing:.09em;margin-bottom:8px}
 .an-metric .val{font-size:25px;font-weight:800;letter-spacing:-.02em;line-height:1.1}
-.an-metric .sub2{font-size:12px;color:#5b5b58;margin-top:6px;line-height:1.5}
+.an-metric .sub2{font-size:12px;color:#8d8c88;margin-top:6px;line-height:1.5}
 .v-pos{color:#3fca77}.v-neg{color:#e0546f}.v-warn{color:#e0a06f}.v-plain{color:#e9e8e4}
 .runbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:4px}
 .progress{flex:1;min-width:120px;height:5px;border-radius:99px;background:#1d1d1d;overflow:hidden}
 .progress i{display:block;height:100%;width:0;background:linear-gradient(90deg,#2f9e5c,#e0703a);transition:width .12s linear}
-.runstat{font-size:13px;color:#6d6d69;white-space:nowrap}
+.runstat{font-size:13px;color:#9a9995;white-space:nowrap}
 .varbox{padding:16px 18px;margin-top:14px}
 .varbox svg{width:100%;height:250px;display:block;overflow:visible}
 .band{fill:rgba(224,112,58,.10)}.band2{fill:rgba(224,112,58,.16)}
 .medline{fill:none;stroke:#e0703a;stroke-width:2}
 .pathline{fill:none;stroke-width:1;opacity:.55}
 .ruinline{stroke:#b61038;stroke-width:1;stroke-dasharray:4 3}
-.varlegend{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:#6d6d69;margin-top:10px}
+.varlegend{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:#9a9995;margin-top:10px}
 .varlegend i{display:inline-block;width:10px;height:3px;border-radius:2px;margin-right:5px;vertical-align:middle}
 /* per-count table */
 .cnt-table{width:100%;border-collapse:collapse;font-size:13px;margin-top:4px}
-.cnt-table th{text-align:right;color:#6d6d69;font-weight:600;padding:5px 6px;border-bottom:1px solid #222;font-size:12px;text-transform:uppercase;letter-spacing:.06em}
+.cnt-table th{text-align:right;color:#9a9995;font-weight:600;padding:5px 6px;border-bottom:1px solid #222;font-size:12px;text-transform:uppercase;letter-spacing:.06em}
 .cnt-table th:first-child,.cnt-table td:first-child{text-align:left}
 .cnt-table td{text-align:right;padding:5px 6px;border-bottom:1px solid #161616;color:#a9a8a4}
 .cnt-table tr:hover td{background:rgba(255,255,255,.02)}
@@ -311,7 +323,7 @@ h1{font-size:27px;line-height:1.1;margin:0 0 8px;font-weight:780;letter-spacing:
 .cnt-bar i{position:absolute;left:0;top:50%;transform:translateY(-50%);height:11px;border-radius:2px;opacity:.5}
 .cnt-bar span{position:relative}
 .hint-i{display:inline-grid;place-items:center;width:12px;height:12px;border-radius:50%;border:1px solid #3a3733;color:#77756f;font-size:12px;margin-left:5px;cursor:help;vertical-align:middle}
-.an-note{font-size:13px;color:#63635f;line-height:1.7;margin-top:12px}
+.an-note{font-size:13px;color:#8d8c88;line-height:1.7;margin-top:12px}
 .an-warn{font-size:13px;line-height:1.7;margin-top:10px;padding:9px 11px;border-radius:6px;border:1px solid #57402a;background:rgba(224,160,111,.06);color:#d3a679}
 .cmp-row{display:grid;grid-template-columns:1fr auto;gap:10px;font-size:14px;padding:7px 0;border-bottom:1px solid #1b1b1b;color:#9a9995}
 .cmp-row b{color:#e9e8e4}
@@ -320,6 +332,7 @@ h1{font-size:27px;line-height:1.1;margin:0 0 8px;font-weight:780;letter-spacing:
 </style>
 </head>
 <body>
+<a class="skip" href="#main">Skip to content</a>
 <div class="shell">
   <header class="topnav">
     <div class="brand">
@@ -333,32 +346,33 @@ h1{font-size:27px;line-height:1.1;margin:0 0 8px;font-weight:780;letter-spacing:
       </span>
       <span>BLACKJACK ACADEMY</span>
     </div>
-    <nav class="nav" id="nav">
-      <button data-view="train" class="active">Train</button>
-      <button data-view="strategy">Charts</button>
-      <button data-view="course">Course</button>
-      <button data-view="casinos">Casinos</button>
-      <button data-view="assist">Assist</button>
-      <button data-view="analyzer">EV &amp; Risk</button>
-      <button data-view="dashboard">Dashboard</button>
+    <nav class="nav" id="nav" role="tablist" aria-label="Sections">
+      <button id="tab-train" data-view="train" class="active" role="tab" aria-selected="true" aria-controls="view-train">Train</button>
+      <button id="tab-strategy" data-view="strategy" role="tab" aria-selected="false" aria-controls="view-strategy">Charts</button>
+      <button id="tab-course" data-view="course" role="tab" aria-selected="false" aria-controls="view-course">Course</button>
+      <button id="tab-casinos" data-view="casinos" role="tab" aria-selected="false" aria-controls="view-casinos">Casinos</button>
+      <button id="tab-assist" data-view="assist" role="tab" aria-selected="false" aria-controls="view-assist">Assist</button>
+      <button id="tab-analyzer" data-view="analyzer" role="tab" aria-selected="false" aria-controls="view-analyzer">EV &amp; Risk</button>
+      <button id="tab-dashboard" data-view="dashboard" role="tab" aria-selected="false" aria-controls="view-dashboard">Dashboard</button>
     </nav>
     <div class="headacts">
-      <button class="iconbtn" id="dataBtn" title="Back up or restore your progress">⇅</button>
-      <button class="iconbtn" id="resetAll" title="Reset all saved progress">↻</button>
+      <button class="iconbtn" id="dataBtn" title="Back up or restore your progress" aria-label="Back up or restore your progress"><span aria-hidden="true">⇅</span></button>
+      <button class="iconbtn" id="resetAll" title="Reset all saved progress" aria-label="Reset all saved progress"><span aria-hidden="true">↻</span></button>
     </div>
-    <input type="file" id="importFile" accept="application/json,.json" hidden>
+    <input type="file" id="importFile" accept="application/json,.json" aria-label="Choose a backup file to restore" hidden>
   </header>
 
-  <main>
+  <main id="main" tabindex="-1">
     <!-- ================= TRAIN ================= -->
-    <section id="view-train" class="view active">
+    <section id="view-train" class="view active" role="tabpanel" tabindex="-1" aria-labelledby="tab-train">
       <div class="wide" id="trainMenu">
+        <h1 class="vh">Train</h1>
         <div class="traincards">
-          <article class="traincard featured"><div class="trainicon">◎</div><h3>Basic Strategy</h3><p>Practice optimal plays<br>for every hand</p><div class="stat" id="statBasic"></div><button class="btn primary" data-mode="basic">Start</button></article>
-          <article class="traincard"><div class="trainicon">ϟ</div><h3>Running Count</h3><p>Hi-Lo card counting<br>speed drill</p><div class="stat" id="statRun"></div><button class="btn primary" data-mode="running">Start</button></article>
-          <article class="traincard"><div class="trainicon">▦</div><h3>True Count</h3><p>Convert running count<br>to true count</p><div class="stat" id="statTrue"></div><button class="btn primary" data-mode="true">Start</button></article>
-          <article class="traincard"><div class="trainicon">⌁</div><h3>Deviations</h3><p>When the count<br>changes the play</p><div class="stat" id="statDev"></div><button class="btn primary" data-mode="deviation">Start</button></article>
-          <article class="traincard"><div class="trainicon">♧</div><h3>Simulation</h3><p>Full blackjack practice<br>session</p><div class="stat" id="statSim"></div><button class="btn primary" data-mode="simulation">Start</button></article>
+          <article class="traincard featured"><div class="trainicon" aria-hidden="true">◎</div><h2>Basic Strategy</h2><p>Practice optimal plays<br>for every hand</p><div class="stat" id="statBasic"></div><button class="btn primary" data-mode="basic">Start</button></article>
+          <article class="traincard"><div class="trainicon" aria-hidden="true">ϟ</div><h2>Running Count</h2><p>Hi-Lo card counting<br>speed drill</p><div class="stat" id="statRun"></div><button class="btn primary" data-mode="running">Start</button></article>
+          <article class="traincard"><div class="trainicon" aria-hidden="true">▦</div><h2>True Count</h2><p>Convert running count<br>to true count</p><div class="stat" id="statTrue"></div><button class="btn primary" data-mode="true">Start</button></article>
+          <article class="traincard"><div class="trainicon" aria-hidden="true">⌁</div><h2>Deviations</h2><p>When the count<br>changes the play</p><div class="stat" id="statDev"></div><button class="btn primary" data-mode="deviation">Start</button></article>
+          <article class="traincard"><div class="trainicon" aria-hidden="true">♧</div><h2>Simulation</h2><p>Full blackjack practice<br>session</p><div class="stat" id="statSim"></div><button class="btn primary" data-mode="simulation">Start</button></article>
         </div>
         <div class="rulebar" style="justify-content:center;margin-top:20px">
           <span>House rules in use:</span><span class="chip" id="ruleChipTrain"></span>
@@ -388,7 +402,7 @@ h1{font-size:27px;line-height:1.1;margin:0 0 8px;font-weight:780;letter-spacing:
               <button class="btn" data-a="SPLIT">Split<kbd>P</kbd></button>
               <button class="btn" data-a="SURRENDER">Surrender<kbd>R</kbd></button>
             </div>
-            <div id="basicFeedback" class="feedback"></div>
+            <div id="basicFeedback" class="feedback" role="status" aria-live="polite" aria-atomic="true"></div>
             <div class="nextbar" id="basicNext" hidden><button class="btn primary" data-next="basic">Next hand <kbd>↵</kbd></button><span class="nexthint"></span></div>
             <div class="rulebar" style="justify-content:center">
               <span class="chip" id="ruleChipBasic"></span>
@@ -421,7 +435,7 @@ h1{font-size:27px;line-height:1.1;margin:0 0 8px;font-weight:780;letter-spacing:
             <div class="hint" id="showingCard" style="margin-bottom:6px">&nbsp;</div>
             <div id="runCard" class="drillcard cardrow"></div>
             <div class="inputline"><input id="runAnswer" type="number" placeholder="Count" inputmode="numeric"><button class="btn primary" id="submitRun">Submit</button></div>
-            <div class="feedback" id="runFeedback"></div>
+            <div class="feedback" id="runFeedback" role="status" aria-live="polite" aria-atomic="true"></div>
             <div class="seqreview" id="runSeq"></div>
             <div class="nextbar" id="runNext" hidden><button class="btn primary" data-next="run">Next round <kbd>↵</kbd></button><span class="nexthint"></span></div>
             <div class="drillmeta"><div><span>Round</span><b id="runRounds">0</b></div><div><span>Correct</span><b id="runCorrect" style="color:var(--green)">0</b></div><div><span>Cards Seen</span><b id="runSeen">0</b></div></div>
@@ -446,7 +460,7 @@ h1{font-size:27px;line-height:1.1;margin:0 0 8px;font-weight:780;letter-spacing:
             <div class="metric"><small id="tcDecksLabel">DECKS REMAINING</small><strong id="tcDecks" class="neutral">2.0</strong></div>
           </div>
           <div class="inputline"><input id="tcAnswer" type="number" step="1" placeholder="True count" inputmode="numeric"><button class="btn primary" id="tcSubmit">Submit</button></div>
-          <div class="feedback" id="tcFeedback"></div>
+          <div class="feedback" id="tcFeedback" role="status" aria-live="polite" aria-atomic="true"></div>
           <div class="nextbar" id="trueNext" hidden><button class="btn primary" data-next="true">Next question <kbd>↵</kbd></button><span class="nexthint"></span></div>
           <div class="checkline" style="justify-content:center;margin-top:10px">
             <label><input type="checkbox" id="tcEstimate"> Estimate decks from a discard tray instead</label>
@@ -476,7 +490,7 @@ h1{font-size:27px;line-height:1.1;margin:0 0 8px;font-weight:780;letter-spacing:
             <button class="btn primary" data-d="SURRENDER">Surrender<kbd>R</kbd></button>
             <button class="btn primary" data-d="INSURE">Insure<kbd>I</kbd></button>
           </div>
-          <div class="feedback" id="devFeedback"></div>
+          <div class="feedback" id="devFeedback" role="status" aria-live="polite" aria-atomic="true"></div>
           <div class="nextbar" id="devNext" hidden><button class="btn primary" data-next="dev">Next play <kbd>↵</kbd></button><span class="nexthint"></span></div>
         </div>
       </div>
@@ -499,7 +513,7 @@ h1{font-size:27px;line-height:1.1;margin:0 0 8px;font-weight:780;letter-spacing:
               <div class="betline" id="simBetLine">
                 <span style="font-size:13px;color:#8fb3a0">Bet</span>
                 <button class="chipbtn" data-chipdelta="-25">−25</button>
-                <input id="simBet" type="number" min="1" step="5" value="25" inputmode="numeric">
+                <input id="simBet" type="number" min="1" step="5" value="25" inputmode="numeric" aria-label="Bet for the next hand">
                 <button class="chipbtn" data-chipdelta="25">+25</button>
                 <button class="btn primary" id="simDeal">Deal</button>
               </div>
@@ -514,11 +528,11 @@ h1{font-size:27px;line-height:1.1;margin:0 0 8px;font-weight:780;letter-spacing:
                 <button class="btn primary" data-i="yes">Take insurance</button>
                 <button class="btn primary" data-i="no">No insurance</button>
               </div>
-              <div class="feedback" id="simFeedback"></div>
+              <div class="feedback" id="simFeedback" role="status" aria-live="polite" aria-atomic="true"></div>
             </div>
           </div>
           <aside class="simside">
-            <div class="panel simstat"><label>Bankroll</label><strong id="simBank">$500</strong><div style="font-size:12px;color:#666;margin-top:4px" id="simSession"></div></div>
+            <div class="panel simstat"><label>Bankroll</label><strong id="simBank">$500</strong><div style="font-size:12px;color:#8d8c88;margin-top:4px" id="simSession"></div></div>
             <div class="panel simstat row2">
               <div><label>Running Count</label><strong id="simRC">0</strong></div>
               <div><label>True Count</label><strong id="simTC">+0.0</strong></div>
@@ -526,7 +540,7 @@ h1{font-size:27px;line-height:1.1;margin:0 0 8px;font-weight:780;letter-spacing:
             <div class="panel simstat">
               <label>Shoe <span id="simShoeLabel" style="float:right;text-transform:none;letter-spacing:0"></span></label>
               <div class="pen"><i id="simPen" style="width:0%"></i></div>
-              <div style="font-size:12px;color:#666;margin-top:6px" id="simSeenLine">0 cards seen</div>
+              <div style="font-size:12px;color:#8d8c88;margin-top:6px" id="simSeenLine">0 cards seen</div>
             </div>
             <div class="panel simstat">
               <label>Practice aids</label>
@@ -545,7 +559,7 @@ h1{font-size:27px;line-height:1.1;margin:0 0 8px;font-weight:780;letter-spacing:
             <div class="panel simstat">
               <label>Suggested bet at this count</label>
               <strong id="simBetSuggest" style="font-size:18px">—</strong>
-              <div style="font-size:12px;color:#666;margin-top:5px;line-height:1.6">Taken from the spread you set in <b>EV &amp; Risk</b>.</div>
+              <div style="font-size:12px;color:#8d8c88;margin-top:5px;line-height:1.6">Taken from the spread you set in <b>EV &amp; Risk</b>.</div>
             </div>
           </aside>
         </div>
@@ -553,7 +567,7 @@ h1{font-size:27px;line-height:1.1;margin:0 0 8px;font-weight:780;letter-spacing:
     </section>
 
     <!-- ================= CHARTS ================= -->
-    <section id="view-strategy" class="view">
+    <section id="view-strategy" class="view" role="tabpanel" tabindex="-1" aria-labelledby="tab-strategy">
       <div class="content">
         <h1>Strategy Charts</h1>
         <div class="sub">Every decision, for the rules you actually play. Change the rules and the tables change with them.</div>
@@ -587,14 +601,14 @@ h1{font-size:27px;line-height:1.1;margin:0 0 8px;font-weight:780;letter-spacing:
         <div class="howto" id="chartHow">
           <b>Reading it:</b> find your total down the left, the dealer's upcard across the top, and take the cell where they meet.
           Every cell is a move you can actually make — where a table doesn't allow doubling or surrender, the chart already shows what to do instead.
-          <b>Click any cell</b> and it will deal that hand out 60,000 times to show what each option is worth and what the second-best choice costs you.
+          <b>Open any cell</b> — click it, or tab to it and press Enter — and it will deal that hand out 60,000 times to show what each option is worth and what the second-best choice costs you.
         </div>
         <div id="chartArea"></div>
       </div>
     </section>
 
     <!-- ================= COURSE ================= -->
-    <section id="view-course" class="view">
+    <section id="view-course" class="view" role="tabpanel" tabindex="-1" aria-labelledby="tab-course">
       <div class="content">
         <h1>Course Portal</h1>
         <div class="sub">Fourteen lessons, in order. Open one to read it, then mark it done.</div>
@@ -610,7 +624,7 @@ h1{font-size:27px;line-height:1.1;margin:0 0 8px;font-weight:780;letter-spacing:
     </section>
 
     <!-- ================= CASINOS ================= -->
-    <section id="view-casinos" class="view">
+    <section id="view-casinos" class="view" role="tabpanel" tabindex="-1" aria-labelledby="tab-casinos">
       <div class="wide">
         <div class="dashhead">
           <div><h1>Table Log</h1><div class="sub" style="margin:0">Keep the rules of the tables you play, see what each set costs you, and load any of them into the charts and trainer.</div></div>
@@ -635,12 +649,12 @@ h1{font-size:27px;line-height:1.1;margin:0 0 8px;font-weight:780;letter-spacing:
     </section>
 
     <!-- ================= DASHBOARD ================= -->
-    <section id="view-dashboard" class="view">
+    <section id="view-dashboard" class="view" role="tabpanel" tabindex="-1" aria-labelledby="tab-dashboard">
       <div class="content">
         <div class="dashhead">
           <div><h1>Dashboard</h1><div class="sub" style="margin:0">Track every session.</div></div>
           <div class="bankselect">
-            <select id="dashBank"></select>
+            <select id="dashBank" aria-label="Which bankroll to show"></select>
             <button class="iconbtn" id="addSession" title="Log a session">＋</button>
             <button class="iconbtn" id="exportSessions" title="Export CSV">⤓</button>
             <button class="iconbtn" id="clearSessions" title="Clear this bankroll">⌫</button>
@@ -652,7 +666,7 @@ h1{font-size:27px;line-height:1.1;margin:0 0 8px;font-weight:780;letter-spacing:
           <div class="metric"><div class="ico">◷</div><strong id="hours" class="neutral">0.0</strong><small>Hours played</small></div>
         </div>
         <div class="panel chartpanel">
-          <h3>Bankroll Performance <span style="font-size:13px;color:#666" id="chartHint"></span></h3>
+          <h3>Bankroll Performance <span style="font-size:13px;color:#8d8c88" id="chartHint"></span></h3>
           <svg id="dashChart" viewBox="0 0 760 230" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Cumulative bankroll result by session"></svg>
         </div>
         <div class="panel chartbox" style="margin-top:12px">
@@ -664,7 +678,7 @@ h1{font-size:27px;line-height:1.1;margin:0 0 8px;font-weight:780;letter-spacing:
 
 
     <!-- ================= ASSIST ================= -->
-    <section id="view-assist" class="view">
+    <section id="view-assist" class="view" role="tabpanel" tabindex="-1" aria-labelledby="tab-assist">
       <div class="wide">
         <div class="dashhead">
           <div>
@@ -704,7 +718,7 @@ h1{font-size:27px;line-height:1.1;margin:0 0 8px;font-weight:780;letter-spacing:
 
           <div class="an-col">
             <div class="panel an-panel" id="asAIPanel">
-              <h3><span class="jackmark">J</span>Jack <span class="r">blackjack assistant</span></h3>
+              <h3><span class="jackmark" aria-hidden="true">J</span>Jack <span class="r">blackjack assistant</span></h3>
               <div id="asAIBody">
                 <div class="quickrow" id="asQuick">
                   <button class="chip tog" data-ask="Why this play?">Why this play?</button>
@@ -713,7 +727,7 @@ h1{font-size:27px;line-height:1.1;margin:0 0 8px;font-weight:780;letter-spacing:
                   <button class="chip tog" data-ask="What does 6:5 cost me?">What rules cost</button>
                   <button class="chip tog" data-ask="What can you do?">What can you do?</button>
                 </div>
-                <div class="chatlog" id="asChat"></div>
+                <div class="chatlog" id="asChat" role="log" aria-live="polite" aria-label="Conversation with Jack"></div>
                 <div class="chatbox">
                   <textarea id="asInput" rows="2" placeholder="e.g. I have an ace and a 3, dealer shows a king · why do I stand on 12 vs 4"></textarea>
                   <div class="chatacts">
@@ -729,7 +743,7 @@ h1{font-size:27px;line-height:1.1;margin:0 0 8px;font-weight:780;letter-spacing:
     </section>
 
     <!-- ================= ANALYZER ================= -->
-    <section id="view-analyzer" class="view">
+    <section id="view-analyzer" class="view" role="tabpanel" tabindex="-1" aria-labelledby="tab-analyzer">
       <div class="wide">
         <div class="dashhead">
           <div>
@@ -801,7 +815,7 @@ h1{font-size:27px;line-height:1.1;margin:0 0 8px;font-weight:780;letter-spacing:
             <div class="panel an-panel">
               <h3>Bet Spread</h3>
               <div class="spread-tools">
-                <select id="anTemplate" style="flex:1;min-width:120px;background:#0d0d0d;border:1px solid #2a2724;color:#c9c8c4;border-radius:5px;padding:7px 9px;font-size:14px"></select>
+                <select id="anTemplate" aria-label="Saved bet spread" style="flex:1;min-width:120px;background:#0d0d0d;border:1px solid #2a2724;color:#c9c8c4;border-radius:5px;padding:7px 9px;font-size:14px"></select>
                 <button class="btn ghost sm" id="anSaveTpl">Save</button>
                 <button class="btn ghost sm" id="anDelTpl">Delete</button>
               </div>
@@ -845,7 +859,7 @@ h1{font-size:27px;line-height:1.1;margin:0 0 8px;font-weight:780;letter-spacing:
   <div class="footer">Training and educational software. Blackjack involves financial risk and no counting or strategy system guarantees profit.</div>
 </div>
 
-<div class="modal" id="modal"><div class="modal-box" id="modalBox"></div></div>
+<div class="modal" id="modal"><div class="modal-box" id="modalBox" role="dialog" aria-modal="true" aria-labelledby="modalTitle" tabindex="-1"></div></div>
 <div class="toast" id="toast"></div>
 <script>
 (()=>{
@@ -1110,7 +1124,14 @@ function showView(v,push=true){
   currentView=v;
   $$('.view').forEach(x=>x.classList.remove('active'));
   $('#view-'+v).classList.add('active');
-  $$('#nav button').forEach(b=>b.classList.toggle('active',b.dataset.view===v));
+  $$('#nav button').forEach(b=>{
+    const on = b.dataset.view===v;
+    b.classList.toggle('active',on);
+    b.setAttribute('aria-selected',on?'true':'false');
+    /* Roving tabindex: Tab reaches the tab set once and lands on the selected
+       tab; the arrow keys move within it. */
+    b.tabIndex = on?0:-1;
+  });
   if(push&&location.hash.slice(1)!==v) history.replaceState(null,'','#'+v);
   window.scrollTo({top:0,behavior:'smooth'});
   if(v==='casinos') renderVenues();
@@ -1118,8 +1139,26 @@ function showView(v,push=true){
   if(v==='analyzer') renderAnalyzer();
   if(v==='assist') renderAssist();
   if(v==='train') renderMenuStats();
+  labelControls($('#view-'+v));
 }
 $$('#nav button').forEach(b=>b.onclick=()=>showView(b.dataset.view));
+/* A tab set is driven by the arrow keys, not by Tab. Home and End jump to the
+   ends. Moving focus selects, which is the expected behaviour when switching
+   costs nothing. */
+$('#nav').addEventListener('keydown',e=>{
+  const keys={ArrowRight:1,ArrowLeft:-1,Home:'first',End:'last'};
+  if(!(e.key in keys)) return;
+  const tabs=$$('#nav button');
+  const i=tabs.indexOf(document.activeElement);
+  if(i<0) return;
+  e.preventDefault();
+  const step=keys[e.key];
+  const next = step==='first' ? 0
+             : step==='last'  ? tabs.length-1
+             : (i+step+tabs.length)%tabs.length;
+  showView(tabs[next].dataset.view);
+  tabs[next].focus();
+});
 $$('[data-view-link]').forEach(b=>b.onclick=()=>showView(b.dataset.viewLink));
 window.addEventListener('hashchange',()=>showView(location.hash.slice(1)||'train',false));
 
@@ -1757,12 +1796,17 @@ function buildTable(kind){
              : kind==='soft'?[20,19,18,17,16,15,14,13]
              : [11,10,9,8,7,6,5,4,3,2];
   const rules=ruleFromSeg();
-  let html='<table class="strategy-table"><thead><tr><th>Hand</th>'+DEALER_COLS.map(x=>`<th>${x}</th>`).join('')+'</tr></thead><tbody>';
+  const KIND_NAME={hard:'Hard totals',soft:'Soft totals',pair:'Pairs'};
+  let html='<table class="strategy-table">'
+    +`<caption class="vh">${KIND_NAME[kind]||kind}. Your hand runs down the first column, the dealer's upcard across the top; each cell is the play, and can be opened for the numbers behind it.</caption>`
+    +'<thead><tr><th scope="col">Hand</th>'
+    +DEALER_COLS.map(x=>`<th scope="col"><span class="vh">Dealer shows </span>${x}</th>`).join('')
+    +'</tr></thead><tbody>';
   for(const r of rows){
     const label = kind==='soft' ? `A,${r-11}`
       : kind==='pair' ? (r===11?'A,A':`${r},${r}`)
       : (r===18?'18–21':r===8?'5–8':String(r));
-    html+=`<tr><td class="rowhead">${label}</td>`;
+    html+=`<tr><th scope="row" class="rowhead">${label}</th>`;
     for(let col=0;col<10;col++){
       const code=codeFor(kind,r,col,rules);
       const ctx={
@@ -1774,14 +1818,20 @@ function buildTable(kind){
         const pv=r, hardTotal=pv===11?12:pv*2;
         move=pv===11?'HIT':resolve(codeFor('hard',clamp(hardTotal,5,21),col,rules),{canDouble:true,canSplit:false,das:rules.das,canSurrender:false})||'HIT';
       }
-      const title=`${label} vs ${DEALER_COLS[col]} — ${CODE_NOTE[code]||move}. Click for the numbers.`;
+      const title=`${label} vs ${DEALER_COLS[col]} — ${CODE_NOTE[code]||move}. Open for the numbers.`;
       const cardList=(kind==='pair'?[r===11?'A':String(r),r===11?'A':String(r)]
                      :kind==='soft'?['A',String(r-11)]
                      :hardCardsFor(r));
       const idx=(move!=='SPLIT'||(kind==='pair'&&r===10))
         ?findIndexFor(cardList.map(x=>card(x)),card(DEALER_COLS[col])):null;
       const diff=DIFF_CELLS&&DIFF_CELLS.has(`${kind}:${r}:${col}`);
+      /* The cell shows a single letter, which tells a screen reader nothing. The
+         label spells out the hand, the upcard and the play in full, and says
+         when the count can change it. */
+      const aria=`${label} against dealer ${DEALER_COLS[col]}: ${(CODE_NOTE[code]||move).toLowerCase()}.`
+        +(idx?' Changes with the count.':'')+' Open for the expected value of every option.';
       html+=`<td class="act-${ACT_CLASS[move]||'H'}${idx?' has-idx':''}${diff?' ruled':''}" data-cell
+        role="button" tabindex="0" aria-label="${esc(aria)}"
         data-code="${ACT_CLASS[move]||'H'}" data-cards="${cardList.join(',')}" data-up="${DEALER_COLS[col]}"
         data-kind="${kind}" data-row="${r}" title="${esc(title)}">${ACT_SHORT[move]||move}</td>`;
     }
@@ -2278,12 +2328,42 @@ $('#clearSessions').onclick=()=>{
 };
 
 /* ================================================================= MODAL */
+let _modalReturn=null;
 function openModal(html){
-  $('#modalBox').innerHTML=html;
+  const box=$('#modalBox');
+  box.innerHTML=html;
+  /* Name the dialog from its own heading, so a screen reader announces what
+     opened instead of just "dialog". */
+  const h=box.querySelector('h1,h2,h3');
+  if(h) h.id='modalTitle';
+  box.setAttribute(h?'aria-labelledby':'aria-label', h?'modalTitle':'Dialog');
+  _modalReturn=document.activeElement;
   $('#modal').classList.add('show');
-  const f=$('#modalBox input,#modalBox select'); if(f) setTimeout(()=>f.focus(),30);
+  labelControls(box);
+  /* Focus has to land inside, or a keyboard user is still out on the page
+     behind it. Prefer the first field, fall back to the dialog itself. */
+  const f=box.querySelector('input:not([type=hidden]),select,textarea,button');
+  setTimeout(()=>(f||box).focus(),30);
 }
-function closeModal(){ $('#modal').classList.remove('show'); $('#modalBox').innerHTML=''; }
+function closeModal(){
+  $('#modal').classList.remove('show');
+  $('#modalBox').innerHTML='';
+  /* Put focus back where it came from, rather than dumping it at the top. */
+  if(_modalReturn&&document.contains(_modalReturn)) _modalReturn.focus();
+  _modalReturn=null;
+}
+/* Keep Tab inside the dialog while it is open. Without this, tabbing walks out
+   into the page behind and there is no way back except the mouse. */
+document.addEventListener('keydown',e=>{
+  if(e.key!=='Tab') return;
+  const modal=$('#modal');
+  if(!modal.classList.contains('show')) return;
+  const f=$$('#modalBox a[href],#modalBox button:not([disabled]),#modalBox input:not([type=hidden]):not([disabled]),#modalBox select:not([disabled]),#modalBox textarea:not([disabled]),#modalBox [tabindex]:not([tabindex="-1"])');
+  if(!f.length) return;
+  const first=f[0], last=f[f.length-1];
+  if(e.shiftKey&&document.activeElement===first){ e.preventDefault(); last.focus(); }
+  else if(!e.shiftKey&&document.activeElement===last){ e.preventDefault(); first.focus(); }
+},true);
 $('#modal').addEventListener('click',e=>{
   if(e.target.id==='modal'||e.target.closest('[data-close]')) closeModal();
 });
@@ -3785,6 +3865,58 @@ $('#chartArea').addEventListener('click',e=>{
   const td=e.target.closest('td[data-cards]');
   if(td) openCell(td);
 });
+/* Cells are reachable by keyboard, so Enter and Space have to open them the
+   way a click does. Space would otherwise scroll the page instead. */
+$('#chartArea').addEventListener('keydown',e=>{
+  if(e.key!=='Enter'&&e.key!==' ') return;
+  const td=e.target.closest('td[data-cards]');
+  if(!td) return;
+  e.preventDefault();
+  openCell(td);
+});
+
+/* ------------------------------------------------- accessible names */
+/* Nearly every field in here has a visible <label> that was never tied to its
+   control, so a screen reader announced "edit text" with no idea what it was
+   for. Wiring them up here rather than by hand on each one keeps them tied
+   together as screens get rebuilt. */
+let _ctlId=0;
+function labelControls(root=document){
+  $$('label:not([for])',root).forEach(l=>{
+    if(l.querySelector('input,select,textarea')) return;       // already wraps its control
+    const box=l.parentElement; if(!box) return;
+    const ctl=box.querySelector('input,select,textarea');
+    if(!ctl||ctl.type==='hidden') return;
+    if(!ctl.id) ctl.id='ctl'+(++_ctlId);
+    l.setAttribute('for',ctl.id);
+  });
+  /* The little "i" badges open a tooltip, which a screen reader and a keyboard
+     never reach. Hide the glyph and put the text itself in the page instead. */
+  $$('.hint-i[title]',root).forEach(h=>{
+    if(h.dataset.aDone) return;
+    h.dataset.aDone='1';
+    const t=h.getAttribute('title');
+    h.setAttribute('aria-hidden','true');
+    const say=document.createElement('span');
+    say.className='vh'; say.textContent=' '+t;
+    h.after(say);
+  });
+  $$('.switchrow',root).forEach(row=>{
+    const sw=row.querySelector('.switch'), txt=row.querySelector('span');
+    if(!sw||!txt) return;
+    if(!txt.id) txt.id='swl'+(++_ctlId);
+    sw.setAttribute('aria-labelledby',txt.id);
+  });
+  /* Anything still without a name falls back to whatever text it does carry. */
+  $$('input,select,textarea',root).forEach(c=>{
+    if(c.type==='hidden') return;
+    if(c.getAttribute('aria-label')||c.getAttribute('aria-labelledby')) return;
+    if(c.id&&$(`label[for="${CSS.escape(c.id)}"]`)) return;
+    if(c.closest('label')) return;
+    const t=c.getAttribute('placeholder')||c.getAttribute('title')||c.name;
+    if(t) c.setAttribute('aria-label',t);
+  });
+}
 
 /* ================================================================== INIT */
 renderCharts();
@@ -3793,6 +3925,7 @@ renderAnalyzer();
 renderAssist();
 jackGreet();
 renderVenues();
+labelControls();
 renderDash();
 hideModes();
 updateBasicStats(); updateTCStats(); updateDevStats(); runStats();

@@ -214,7 +214,8 @@ const cellFor = (label, dealer) => p.evaluate(({label, dealer}) => {
     const head = tr.querySelector('.rowhead');
     if (head && head.textContent.trim() === label) {
       const cols = ['2','3','4','5','6','7','8','9','10','A'];
-      return tr.querySelectorAll('td')[cols.indexOf(dealer) + 1].textContent.trim();
+      // The row label is a <th scope="row">, so the <td>s are the play cells alone.
+      return tr.querySelectorAll('td')[cols.indexOf(dealer)].textContent.trim();
     }
   }
   return null;

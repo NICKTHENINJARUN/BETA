@@ -66,8 +66,11 @@ jobs:
       - name: Interface
         run: node tests/test-ui.mjs
 
+      - name: Accessibility
+        run: node tests/test-a11y.mjs
+
       # Statistical, and bounded by its own standard error rather than a
-      # guessed tolerance. Slowest of the five at roughly 120M simulated rounds.
+      # guessed tolerance. Slowest of the six at roughly 120M simulated rounds.
       - name: Simulation
         run: node tests/test-sim.mjs
 
