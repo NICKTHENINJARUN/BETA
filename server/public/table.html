@@ -293,7 +293,7 @@ function cardEl(name) {
   const s = document.createElement('span');
   s.setAttribute('aria-hidden', 'true');
   s.textContent = pip;
-  s.style.fontSize = '11px';
+  s.style.fontSize = '12px';   // the page's own floor; nothing on it goes under
   d.append(s);
   const names = { s: 'spades', h: 'hearts', d: 'diamonds', c: 'clubs' };
   d.setAttribute('aria-label', `${rank} of ${names[suit] || suit}`);

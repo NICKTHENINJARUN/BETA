@@ -195,6 +195,113 @@ const glyphs = await p.evaluate(() =>
   [...document.querySelectorAll('.trainicon, .jackmark')].filter(el => el.getAttribute('aria-hidden') !== 'true').length);
 ok(glyphs === 0, `decorative glyphs are hidden from screen readers (${glyphs} exposed)`);
 
+/* ==================================================== the multiplayer table */
+/* The table is a second page on a real server, so it has to be held to the
+   same bar rather than assumed to meet it. It was checked by hand when it was
+   written, which is exactly the kind of check that quietly stops being true. */
+{
+  const { server, table } = await import('../server/index.mjs');
+  const addr = await new Promise(res => server.listen(0, () => res(server.address())));
+  const BASE = `http://127.0.0.1:${addr.port}`;
+  const t = await b.newPage({ viewport: { width: 1100, height: 920 } });
+
+  await t.goto(BASE + '/');
+  await t.waitForTimeout(300);
+
+  ok(await t.getAttribute('html', 'lang') === 'en', 'table: html carries a lang');
+  ok(await t.locator('a.skip').count() === 1, 'table: there is a skip link');
+  ok(await t.locator('main#main').count() === 1, 'table: there is a main landmark');
+
+  await t.keyboard.press('Tab');
+  ok(await t.evaluate(() => document.activeElement.classList.contains('skip')),
+     'table: the skip link is the first tab stop');
+
+  // Sign in and sit down, so the felt and its controls are on screen — the
+  // signed-out form alone would miss most of the page.
+  await t.click('#tabUp');
+  await t.fill('#upName', 'A11y');
+  await t.fill('#upEmail', `a11y-${Date.now()}@example.com`);
+  await t.fill('#upPass', 'password123');
+  await t.click('#formUp button[type=submit]');
+  await t.waitForSelector('#tablePanel:not([hidden])', { timeout: 8000 });
+  await t.click('#seats button');
+  await t.waitForTimeout(400);
+  await t.click('#chips button');
+  await t.waitForTimeout(300);
+  table.tick(Date.now() + 10 ** 7);          // close betting now, not in 15s
+  await t.waitForSelector('#dealerHand .card', { timeout: 8000 });
+  await t.waitForTimeout(400);
+
+  const r = await t.evaluate(() => {
+    const named = el => !!(el.getAttribute('aria-label') || el.getAttribute('aria-labelledby')
+      || el.textContent.trim() || el.title);
+    const shown = el => !!el.offsetParent;
+    const lum = ([r, g, bl]) => {
+      const f = c => { c /= 255; return c <= .03928 ? c / 12.92 : Math.pow((c + .055) / 1.055, 2.4); };
+      return .2126 * f(r) + .7152 * f(g) + .0722 * f(bl);
+    };
+    const parse = s => (s.match(/[\d.]+/g) || []).slice(0, 3).map(Number);
+    const bgOf = el => {
+      for (let n = el; n && n !== document.documentElement; n = n.parentElement) {
+        const c = getComputedStyle(n).backgroundColor;
+        const a = (c.match(/[\d.]+/g) || [])[3];
+        const m = parse(c);
+        if (m.length === 3 && (a === undefined || +a > .85)) return m;
+      }
+      return [11, 11, 11];
+    };
+
+    const unnamed = [...document.querySelectorAll('button,a[href],[role=button],[role=tab]')]
+      .filter(el => shown(el) && !named(el)).map(el => el.tagName + (el.id ? '#' + el.id : ''));
+    const unlabelled = [...document.querySelectorAll('input,select,textarea')].filter(el => {
+      if (el.type === 'hidden' || !shown(el)) return false;
+      if (el.getAttribute('aria-label') || el.getAttribute('aria-labelledby')) return false;
+      if (el.id && document.querySelector(`label[for="${CSS.escape(el.id)}"]`)) return false;
+      return !el.closest('label');
+    }).map(el => el.tagName + (el.id ? '#' + el.id : ''));
+
+    const small = [], low = [];
+    document.querySelectorAll('*').forEach(el => {
+      if (!shown(el)) return;
+      const txt = [...el.childNodes].filter(n => n.nodeType === 3 && n.textContent.trim())
+        .map(n => n.textContent.trim()).join(' ');
+      if (!txt) return;
+      const st = getComputedStyle(el);
+      const size = parseFloat(st.fontSize);
+      if (size < 12) small.push(`${size}px "${txt.slice(0, 28)}"`);
+      const fg = parse(st.color); if (fg.length < 3) return;
+      const L1 = lum(fg), L2 = lum(bgOf(el));
+      const ratio = (Math.max(L1, L2) + .05) / (Math.min(L1, L2) + .05);
+      const need = (size >= 24 || (size >= 18.66 && +st.fontWeight >= 700)) ? 3 : 4.5;
+      if (ratio < need) low.push(`${ratio.toFixed(2)}<${need} ${st.color} ${size}px "${txt.slice(0, 28)}"`);
+    });
+
+    // Cards carry a rank and a suit glyph; a screen reader needs the whole name.
+    const cards = [...document.querySelectorAll('.card')];
+    const unlabelledCards = cards.filter(c => !c.getAttribute('aria-label')).length;
+
+    return {
+      unnamed, unlabelled, small, low: [...new Set(low)],
+      live: document.querySelectorAll('[aria-live],[role=status],[role=alert],[role=log]').length,
+      cards: cards.length, unlabelledCards,
+    };
+  });
+
+  ok(r.unnamed.length === 0, `table: every control has a name (missing: ${r.unnamed.join(', ')})`);
+  ok(r.unlabelled.length === 0, `table: every field has a label (missing: ${r.unlabelled.join(', ')})`);
+  ok(r.small.length === 0, `table: no desktop text under 12px (${r.small.slice(0, 3).join(' | ')})`);
+  ok(r.low.length === 0, `table: all text meets AA contrast (${r.low.slice(0, 3).join(' | ')})`);
+  ok(r.live >= 4, `table: outputs announce themselves (${r.live} live regions)`);
+  // Assert there is something to check before checking it, so this cannot
+  // quietly pass on an empty felt.
+  ok(r.cards > 0, `table: cards are on the felt when audited (${r.cards})`);
+  ok(r.unlabelledCards === 0,
+     `table: every card names its rank and suit (${r.unlabelledCards} of ${r.cards} unlabelled)`);
+
+  await t.close();
+  server.close();
+}
+
 await b.close();
 
 console.log(`accessibility checks run: ${checks}`);
