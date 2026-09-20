@@ -41,7 +41,9 @@ h1{font-size:27px;line-height:1.1;margin:0 0 8px;font-weight:780;letter-spacing:
 .btn.sm{padding:6px 9px;font-size:13px}
 .segment{display:flex;border:1px solid var(--line2);border-radius:6px;overflow:hidden;background:#141414}.segment button{flex:1;padding:8px 11px;background:transparent;border:0;color:#777;font-size:14px;position:relative}.segment button+button{border-left:1px solid #2a2623}.segment button.active{color:#f5f3ef;background:linear-gradient(180deg,#171717,#121212)}.segment button.active:after{content:"";position:absolute;left:12%;right:12%;bottom:0;height:1px;background:var(--orange);box-shadow:0 0 8px var(--orange)}
 .nextbar{display:flex;align-items:center;justify-content:center;gap:12px;margin-top:14px;flex-wrap:wrap;animation:fade .18s ease}
+.nextbar .btn{position:relative;overflow:hidden}
 .nextbar .btn kbd{font-size:12px;opacity:.7;font-family:inherit;margin-left:4px}
+.nextbar .btn .cd{position:absolute;left:0;bottom:0;height:3px;width:0;background:rgba(255,255,255,.6);pointer-events:none}
 .nexthint{font-size:13px;color:#7e7e7a}
 .prefline{display:flex;align-items:center;gap:6px;font-size:13px;color:#8a8a87}
 .prefline input{accent-color:var(--orange)}
@@ -324,7 +326,7 @@ h1{font-size:27px;line-height:1.1;margin:0 0 8px;font-weight:780;letter-spacing:
         <div class="rulebar" style="justify-content:center;margin-top:20px">
           <span>House rules in use:</span><span class="chip" id="ruleChipTrain"></span>
           <button class="btn ghost sm" data-view-link="strategy">Change in Charts</button>
-          <label class="prefline"><input type="checkbox" id="prefAuto" checked> Move on automatically when you get one right</label>
+          <label class="prefline"><input type="checkbox" id="prefAuto" checked> Move on by itself when you get one right</label>
         </div>
       </div>
 
@@ -1131,16 +1133,41 @@ $('#prefAuto').onchange=e=>{ state.prefs.autoAdvance=e.target.checked; save(); }
    turned off.
    --------------------------------------------------------------------- */
 const pending={key:null,fn:null,timer:null};
+const FEEDBACK_FOR={basic:'#basicFeedback',run:'#runFeedback',true:'#tcFeedback',dev:'#devFeedback'};
+/** A correct answer still carries a reason to read, so the pause is sized to
+    the words actually on screen rather than to a fixed beat. */
+function readingMs(key){
+  const el=$(FEEDBACK_FOR[key]);
+  const words=el?el.textContent.trim().split(/\s+/).filter(Boolean).length:0;
+  return clamp(1200+words*130,2400,9000);
+}
+function countdownEl(key){
+  const bar=$('#'+key+'Next'); if(!bar) return null;
+  const btn=bar.querySelector('[data-next]'); if(!btn) return null;
+  let cd=btn.querySelector('.cd');
+  if(!cd){ cd=document.createElement('i'); cd.className='cd'; btn.appendChild(cd); }
+  return cd;
+}
 function queueNext(key,fn,ok){
   clearTimeout(pending.timer);
-  pending.key=key; pending.fn=fn;
+  pending.key=key; pending.fn=fn; pending.timer=null;
   const bar=$('#'+key+'Next');
-  if(bar){
-    bar.hidden=false;
-    const hint=bar.querySelector('.nexthint');
-    if(hint) hint.textContent='';
+  if(bar) bar.hidden=false;
+  const cd=countdownEl(key);
+  if(cd){ cd.style.transition='none'; cd.style.width='0%'; }
+  if(ok&&state.prefs.autoAdvance){
+    const ms=readingMs(key);
+    // the bar makes the wait visible, so it never feels like the page jumped
+    if(cd) requestAnimationFrame(()=>{ if(pending.timer){ cd.style.transition=`width ${ms}ms linear`; cd.style.width='100%'; } });
+    pending.timer=setTimeout(()=>advanceNext(key),ms);
   }
-  if(ok&&state.prefs.autoAdvance) pending.timer=setTimeout(()=>advanceNext(key),state.prefs.advanceMs);
+}
+/** Reading it is reason enough to stop the clock. */
+function holdNext(){
+  if(!pending.key||!pending.timer) return;
+  clearTimeout(pending.timer); pending.timer=null;
+  const cd=countdownEl(pending.key);
+  if(cd){ const w=cd.getBoundingClientRect().width; cd.style.transition='none'; cd.style.width=w+'px'; }
 }
 function advanceNext(key){
   if(pending.key!==key||!pending.fn) return;
@@ -1156,6 +1183,18 @@ function clearPending(){
   $$('.nextbar').forEach(b=>b.hidden=true);
 }
 $$('[data-next]').forEach(b=>b.onclick=()=>advanceNext(b.dataset.next));
+/* Moving the pointer over the explanation cancels the auto-advance. This
+   listens for mousemove rather than mouseenter on purpose: answering with the
+   mouse makes the feedback grow under a stationary cursor, which fires
+   mouseenter and would otherwise cancel every countdown before it started.
+   Layout arriving under a still pointer is not reading; moving is. */
+for(const key in FEEDBACK_FOR){
+  for(const sel of [FEEDBACK_FOR[key],'#'+key+'Next']){
+    const el=$(sel); if(!el) continue;
+    el.addEventListener('mousemove',holdNext);
+    el.addEventListener('touchstart',holdNext,{passive:true});
+  }
+}
 
 /* ======================================================= BASIC STRATEGY */
 let basicCur=null,basicStart=0,basicLock=false;

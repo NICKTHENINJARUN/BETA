@@ -339,6 +339,48 @@ ok((await p.evaluate(() => document.querySelector('#basicPlayer').innerHTML)) ==
    'with auto-advance off, even a correct answer waits');
 await p.evaluate(() => { window.__BJ.state.prefs.autoAdvance = true; });
 await p.click('[data-next="basic"]'); await p.waitForTimeout(200);
+
+// a correct answer carries a reason to read, so it must not flash past.
+// clicking with the MOUSE must still auto-advance: the feedback growing under
+// a stationary cursor used to cancel every countdown before it started.
+const correctFor = () => p.evaluate(() => {
+  const rank = el => el.getAttribute('aria-label').split(' ')[0];
+  const B = window.__BJ;
+  const up = rank(document.querySelector('#basicDealer .playing-card'));
+  const cards = [...document.querySelectorAll('#basicPlayer .playing-card')].map(rank);
+  const hi = B.handInfo(cards.map(r => B.card(r, '♠'))), r = B.state.rules;
+  return B.basicPlay(cards.map(x => B.card(x, '♠')), B.card(up, '♣'), r,
+    { canDouble: true, canSplit: hi.pair, canSurrender: r.surrender && !r.enhc, das: r.das });
+});
+{
+  const want = await correctFor();
+  const handBefore = await p.evaluate(() => document.querySelector('#basicPlayer').innerHTML);
+  await p.click(`#basicActions [data-a="${want}"]`);          // a real mouse click
+  await p.waitForTimeout(150);
+  ok(/^Correct/.test(await txt('#basicFeedback')), 'the answer was graded correct');
+  ok(await p.evaluate(() => !!window.__BJ.pending.timer), 'clicking with the mouse does not cancel the countdown');
+  await p.waitForTimeout(2600);
+  ok(await p.evaluate(h => document.querySelector('#basicPlayer').innerHTML === h, handBefore),
+     'a correct answer is still readable after 2.5s');
+  await p.waitForFunction(h => document.querySelector('#basicPlayer').innerHTML !== h, handBefore, { timeout: 15000 });
+  ok(true, 'and it does move on by itself eventually');
+}
+{
+  // moving the pointer onto the explanation stops the clock for good
+  const want = await correctFor();
+  const handBefore = await p.evaluate(() => document.querySelector('#basicPlayer').innerHTML);
+  await p.click(`#basicActions [data-a="${want}"]`);
+  await p.waitForTimeout(150);
+  await p.hover('#basicFeedback');
+  await p.mouse.move(2, 2, { steps: 2 });
+  await p.hover('#basicFeedback');
+  await p.waitForTimeout(9000);
+  ok(await p.evaluate(h => document.querySelector('#basicPlayer').innerHTML === h, handBefore),
+     'reading the explanation cancels the auto-advance');
+  ok(await p.locator('#basicNext').isVisible(), 'and the Next control is still there');
+  await p.click('[data-next="basic"]'); await p.waitForTimeout(250);
+  ok(await p.evaluate(h => document.querySelector('#basicPlayer').innerHTML !== h, handBefore), 'Next still works');
+}
 await back();
 
 // the other three drills share the pacing
