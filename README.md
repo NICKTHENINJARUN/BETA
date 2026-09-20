@@ -90,10 +90,16 @@ never reaches the live site. Only `index.html` is published; the tests,
 lockfile and this README stay off the server. Unknown paths serve the app
 rather than a 404.
 
-The deploy job turns Pages on itself the first time it runs, so there is no
-settings toggle to remember. The one requirement it cannot satisfy on its own
-is that the repository be **public**, or the account be on a plan that serves
-Pages from private repositories.
+Two things have to be true before the first deploy, and neither can be done
+from the workflow:
+
+- **Settings → Pages → Source: GitHub Actions.** Creating a Pages site needs
+  repository admin, which the workflow token does not have — it can deploy to
+  Pages but not switch it on.
+- The repository must be **public**, or the account on a plan that serves
+  Pages from private repositories.
+
+After that first switch, deploys are automatic.
 
 The published URL is `https://<owner>.github.io/<repo>/`. A custom domain goes
 in Settings → Pages, with a `CNAME` file added to the `_site` assembly step.
