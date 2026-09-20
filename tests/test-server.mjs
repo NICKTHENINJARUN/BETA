@@ -165,10 +165,16 @@ function client() {
   const first = new TextDecoder().decode(value);
   ok(first.startsWith('event: state'), 'the stream opens with the current state');
   if (table.phase === 'acting' || table.phase === 'insurance') {
+    /* Parsed, not scanned. Searching the frame for the hole card's name is
+       wrong in a six-deck shoe: the same name belongs to six different cards,
+       so a player holding one of the others looked like a leak roughly 6% of
+       the time — which is what failed CI while the server was behaving. */
     const { cardName } = await import('../server/engine.mjs');
-    const hole = table.dealer.cards[1];
-    ok(!first.includes(`"${cardName(hole)}"`), 'the opening frame does not contain the hole card');
-  } else { checks++; }
+    const payload = JSON.parse(first.slice(first.indexOf('data: ') + 6).split('\n')[0]);
+    eq(payload.dealer.cards.length, 1, 'the opening frame publishes one dealer card');
+    eq(payload.dealer.cards[0], cardName(table.dealer.cards[0]), 'and it is the upcard');
+    eq(payload.dealer.hidden, table.dealer.cards.length - 1, 'the rest are counted, not sent');
+  } else { checks += 3; }
   ctrl.abort();
   await reader.cancel().catch(() => {});
 }
