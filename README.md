@@ -95,7 +95,9 @@ one thing here that would want revisiting before anything else did.
 
 ## Accessibility
 
-The page targets WCAG 2.1 AA, and `tests/test-a11y.mjs` holds it there.
+Both pages target WCAG 2.1 AA, and `tests/test-a11y.mjs` holds them there —
+the trainer across all seven screens, and the table with a hand actually dealt,
+since an empty felt would let the card checks pass on nothing.
 
 Every control has a name and every field is tied to its visible label — the
 wiring happens at render time rather than by hand, so new fields inherit it.
@@ -154,8 +156,9 @@ node tests/test-engine.mjs  # 67 strategy/index/shoe assertions
 node tests/test-table.mjs   # the multiplayer table: money, turns, fairness
 node tests/test-server.mjs  # the HTTP/SSE layer in front of it
 node tests/test-ui.mjs      # end-to-end pass over all seven screens
-node tests/test-a11y.mjs    # 38 accessibility checks: names, labels, live
-                            # regions, keyboard paths and WCAG AA contrast
+node tests/test-a11y.mjs    # 49 accessibility checks across the trainer and
+                            # the table: names, labels, live regions, keyboard
+                            # paths and WCAG AA contrast
 node tests/test-money.mjs   # 220 simulated hands reconciled against an
                             # independently computed settlement
 node tests/test-sim.mjs     # 120M rounds checked against published figures
