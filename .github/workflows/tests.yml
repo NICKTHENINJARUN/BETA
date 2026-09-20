@@ -1,0 +1,67 @@
+# The app is a single static file with no build step, so there is nothing to
+# compile here — the suites open index.html in a real browser and check what it
+# actually does. Playwright is the only dependency and it is a test-time one.
+name: tests
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      # npm ci, so the version is whatever package-lock.json pins and the browser
+      # step below fetches the binary that matches it.
+      - name: Install Playwright
+        run: npm ci --no-audit --no-fund
+
+      # Cache the browser binary rather than the package: it is the slow part,
+      # and it is keyed to the Playwright version so a bump fetches a fresh one.
+      - name: Resolve Playwright version
+        id: pw
+        run: echo "version=$(node -p "require('playwright/package.json').version")" >> "$GITHUB_OUTPUT"
+
+      - name: Cache Chromium
+        id: browser-cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ steps.pw.outputs.version }}
+
+      - name: Install Chromium
+        if: steps.browser-cache.outputs.cache-hit != 'true'
+        run: npx playwright install --with-deps chromium
+
+      # A cached browser still needs its system libraries on a fresh runner.
+      - name: Install browser system dependencies
+        if: steps.browser-cache.outputs.cache-hit == 'true'
+        run: npx playwright install-deps chromium
+
+      # Run as separate steps so a red build names the suite that broke
+      # instead of making you read the log to find out.
+      - name: Strategy engine
+        run: node tests/test-engine.mjs
+
+      - name: Jack
+        run: node tests/test-jack.mjs
+
+      - name: Bankroll accounting
+        run: node tests/test-money.mjs
+
+      - name: Interface
+        run: node tests/test-ui.mjs
+
+      # Statistical, and bounded by its own standard error rather than a
+      # guessed tolerance. Slowest of the five at roughly 120M simulated rounds.
+      - name: Simulation
+        run: node tests/test-sim.mjs

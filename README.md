@@ -61,7 +61,8 @@ The strategy engine is what every other screen depends on, so it is covered by
 an automated suite that drives the real page in Chromium:
 
 ```
-npm i -D playwright         # if it isn't already available
+npm ci                      # Playwright, the only dependency, and a test-time one
+npx playwright install chromium
 node tests/test-engine.mjs  # 67 strategy/index/shoe assertions
 node tests/test-ui.mjs      # end-to-end pass over all seven screens
 node tests/test-money.mjs   # 220 simulated hands reconciled against an
@@ -70,10 +71,15 @@ node tests/test-sim.mjs     # 120M rounds checked against published figures
 node tests/test-jack.mjs    # Jack's parsing, knowledge and engine agreement
 ```
 
+`npm test` runs all five in order. They also run in CI on every push and
+pull request — see `.github/workflows/tests.yml`, which installs Chromium
+and runs each suite as its own step so a red build names the one that
+broke.
+
 `test-jack.mjs` checks the thing that matters most about Jack: for every one of
 the 1,000 two-card hands against every upcard, the play he quotes is compared
 against the engine's own answer. They agree on all of them. It also covers
-seventeen phrasings, all sixteen knowledge topics, that he follows the app's
+twenty-six phrasings, all seventeen knowledge topics, that he follows the app's
 current rule set rather than assuming one game, and that nothing reaches the
 network.
 
