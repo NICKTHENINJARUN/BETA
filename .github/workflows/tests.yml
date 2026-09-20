@@ -82,7 +82,10 @@ jobs:
   # have passed — a red build should never reach the live site.
   deploy:
     needs: test
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    # workflow_dispatch is here so a deploy can be re-run by hand without an
+    # empty commit — which is exactly what was needed the first time Pages was
+    # switched on after this workflow already existed.
+    if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
     runs-on: ubuntu-latest
 
     # Scoped to this job: the test job needs no write access to anything.
