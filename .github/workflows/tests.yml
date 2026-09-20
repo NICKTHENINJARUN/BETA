@@ -3,8 +3,12 @@
 # actually does. Playwright is the only dependency and it is a test-time one.
 name: tests
 
+# A branch with an open pull request is already covered by the pull_request
+# trigger, so an unscoped push trigger just runs the whole suite a second time
+# on the same commit. Pushes matter here only for main, where they deploy.
 on:
   push:
+    branches: [main]
   pull_request:
   workflow_dispatch:
 
