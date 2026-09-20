@@ -55,6 +55,26 @@ There is no model call, no key and no account, so he costs nothing and works
 with the network off. The tradeoff is range: blackjack and this app are all he
 knows, and he says so rather than bluffing.
 
+## Deployment
+
+The site is `index.html` and nothing else — no build, no server, no external
+request — so it can be hosted anywhere that serves a static file.
+
+GitHub Pages is wired up in `.github/workflows/tests.yml`. A push to `main`
+runs the five suites first and deploys only if they all pass, so a red build
+never reaches the live site. Only `index.html` is published; the tests,
+lockfile and this README stay off the server. Unknown paths serve the app
+rather than a 404.
+
+Two settings have to be set once, by hand, before the first deploy:
+
+- **Settings → Pages → Source: GitHub Actions.**
+- The repository must be **public**, or the account needs GitHub Pro — Pages
+  does not serve private repositories on the free plan.
+
+The published URL is `https://<owner>.github.io/<repo>/`. A custom domain goes
+in Settings → Pages, with a `CNAME` file added to the `_site` assembly step.
+
 ## Tests
 
 The strategy engine is what every other screen depends on, so it is covered by
