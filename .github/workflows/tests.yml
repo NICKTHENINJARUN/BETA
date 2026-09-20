@@ -82,7 +82,10 @@ jobs:
   # have passed — a red build should never reach the live site.
   deploy:
     needs: test
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    # workflow_dispatch is here so a deploy can be re-run by hand without an
+    # empty commit — which is exactly what was needed the first time Pages was
+    # switched on after this workflow already existed.
+    if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
     runs-on: ubuntu-latest
 
     # Scoped to this job: the test job needs no write access to anything.
@@ -111,11 +114,11 @@ jobs:
           # them, which would otherwise ignore anything starting with an underscore.
           touch _site/.nojekyll
 
-      # enablement turns Pages on the first time this runs, so there is no
-      # settings toggle to remember. It is a no-op once Pages exists.
+      # No enablement flag: creating a Pages site needs repository admin, which
+      # the workflow token does not have ("Resource not accessible by
+      # integration"). Pages has to be switched on once by hand; after that
+      # this step just reads the existing configuration.
       - uses: actions/configure-pages@v5
-        with:
-          enablement: true
 
       - uses: actions/upload-pages-artifact@v3
         with:
