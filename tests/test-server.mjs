@@ -197,6 +197,138 @@ function client() {
   ok((await page.text()).includes('BLACKJACK ACADEMY'), 'and it is the right page');
 }
 
+/* ============================================================ health check */
+{
+  const r = await fetch(BASE + '/healthz');
+  const body = await r.json();
+  eq(r.status, 200, 'the health check answers');
+  eq(body.ok, true, 'and reports healthy while the database is open');
+  ok(typeof body.uptime === 'number', 'and says how long it has been up');
+  // It must touch storage, not just return 200 — an instance that has lost its
+  // disk should report unhealthy rather than serve a broken table.
+  ok('phase' in body, 'and reports the table phase, so it reflects real state');
+}
+
+/* ==================================================== cookies and proxies */
+{
+  // Over plain HTTP with no proxy in front, the session cookie must NOT be
+  // marked Secure, or the browser discards it and nobody can ever sign in.
+  const r = await fetch(BASE + '/api/login', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ email: 'ann@example.com', password: 'password123' }),
+  });
+  const setCookie = r.headers.get('set-cookie') || '';
+  ok(setCookie.includes('HttpOnly'), 'the session cookie is HttpOnly');
+  ok(setCookie.includes('SameSite=Strict'), 'and SameSite=Strict');
+  ok(!/;\s*Secure/i.test(setCookie),
+     `and not Secure over plain http, which would discard it (${setCookie})`);
+
+  // Forwarded headers are ignored unless something is actually in front of us
+  // saying so — otherwise any caller could claim any address or scheme.
+  const spoofed = await fetch(BASE + '/api/login', {
+    method: 'POST',
+    headers: {
+      'content-type': 'application/json',
+      'x-forwarded-proto': 'https',
+      'x-forwarded-host': 'evil.example',
+    },
+    body: JSON.stringify({ email: 'ann@example.com', password: 'password123' }),
+  });
+  const spoofedCookie = spoofed.headers.get('set-cookie') || '';
+  ok(!/;\s*Secure/i.test(spoofedCookie),
+     'a forwarded-proto header is ignored when TRUST_PROXY is off');
+}
+
+/* ======================================= the deployment config, for real */
+/* TRUST_PROXY is what the Dockerfile and fly.toml set, and it changes how the
+ * Secure flag, the Origin check and the rate-limit key are decided. Testing it
+ * means a second process with that environment, because the flag is read once
+ * at startup — and config nobody exercises is how a deploy fails on the day. */
+{
+  const { spawn } = await import('node:child_process');
+  const PROXY_PORT = 8899;
+  const child = spawn(process.execPath, ['server/index.mjs'], {
+    env: { ...process.env, PORT: String(PROXY_PORT), HOST: '127.0.0.1', TRUST_PROXY: '1', DB_PATH: ':memory:' },
+    stdio: ['ignore', 'pipe', 'pipe'],
+  });
+
+  const up = await new Promise(resolve => {
+    const done = setTimeout(() => resolve(false), 8000);
+    child.stdout.on('data', d => {
+      if (String(d).includes('listening')) { clearTimeout(done); resolve(true); }
+    });
+    child.on('error', () => { clearTimeout(done); resolve(false); });
+  });
+  ok(up, 'the server starts with the deployment environment');
+
+  if (up) {
+    const P = `http://127.0.0.1:${PROXY_PORT}`;
+
+    const health = await fetch(P + '/healthz').then(r => r.json());
+    eq(health.ok, true, 'proxied: the health check passes');
+
+    await fetch(P + '/api/signup', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ email: 'proxy@example.com', password: 'password123', display: 'Prox' }),
+    });
+
+    // With something in front declaring TLS, the cookie must now be Secure —
+    // otherwise a session issued over https is sent back over http.
+    const tls = await fetch(P + '/api/login', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', 'x-forwarded-proto': 'https' },
+      body: JSON.stringify({ email: 'proxy@example.com', password: 'password123' }),
+    });
+    ok(/;\s*Secure/i.test(tls.headers.get('set-cookie') || ''),
+       'proxied: a session issued over https is marked Secure');
+
+    // And still not Secure when the same proxy reports a plain request.
+    const plain = await fetch(P + '/api/login', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', 'x-forwarded-proto': 'http' },
+      body: JSON.stringify({ email: 'proxy@example.com', password: 'password123' }),
+    });
+    ok(!/;\s*Secure/i.test(plain.headers.get('set-cookie') || ''),
+       'proxied: a plain request still gets a cookie the browser will keep');
+
+    // The Origin check must compare against the forwarded host, or every
+    // request through the proxy would look cross-origin and be refused.
+    const cookie = (tls.headers.get('set-cookie') || '').split(';')[0];
+    const matched = await fetch(P + '/api/sit', {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json', cookie,
+        origin: 'https://table.example', 'x-forwarded-host': 'table.example',
+      },
+      body: JSON.stringify({ seat: 0 }),
+    });
+    ok(matched.status !== 403, `proxied: a request from the real public host is not refused (${matched.status})`);
+
+    const crossed = await fetch(P + '/api/bet', {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json', cookie,
+        origin: 'https://evil.example', 'x-forwarded-host': 'table.example',
+      },
+      body: JSON.stringify({ cents: 500 }),
+    });
+    eq(crossed.status, 403, 'proxied: a genuinely cross-origin post is still refused');
+
+    // SIGTERM has to be handled, or the platform kills it mid-write.
+    const exit = await new Promise(resolve => {
+      const done = setTimeout(() => resolve('timeout'), 8000);
+      child.on('exit', code => { clearTimeout(done); resolve(code); });
+      child.kill('SIGTERM');
+    });
+    eq(exit, 0, 'proxied: SIGTERM shuts down cleanly rather than being killed');
+  } else {
+    child.kill('SIGKILL');
+    checks += 6;
+  }
+}
+
 /* ================================================ the ledger still balances */
 {
   const drift = accounts.audit();

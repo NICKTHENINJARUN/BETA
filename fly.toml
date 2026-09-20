@@ -1,0 +1,53 @@
+# Fly is the default here for one reason: the accounts and balances live in a
+# SQLite file, so the deployment needs a persistent disk. Several free tiers
+# elsewhere give you a container with no durable storage, which would reset
+# every account on each deploy.
+#
+# Nothing below is Fly-specific except this file. The image is a plain
+# Dockerfile, so moving to Railway, Render or anywhere else that mounts a
+# volume is a config change rather than a port.
+
+app = "blackjack-academy-table"
+primary_region = "iad"          # change to the region nearest your players
+
+[build]
+  dockerfile = "Dockerfile"
+
+[env]
+  PORT = "8080"
+  HOST = "0.0.0.0"
+  DB_PATH = "/data/table.db"
+  TRUST_PROXY = "1"             # Fly terminates TLS, so the Secure cookie flag
+                                # and the real client IP come from forwarded headers
+
+[[mounts]]
+  source = "table_data"         # created by: fly volumes create table_data --size 1
+  destination = "/data"
+
+[http_service]
+  internal_port = 8080
+  force_https = true
+  auto_stop_machines = "suspend"
+  auto_start_machines = true
+  # One machine, deliberately. The table lives in this process's memory and the
+  # ledger is a file on this machine's disk; a second instance would be a second
+  # table with a second database, and players would silently be at different
+  # tables. Scaling past one means moving the table state and the database out
+  # of the process, which is a real piece of work and not needed yet.
+  min_machines_running = 0
+
+  [http_service.concurrency]
+    type = "connections"
+    # Each watcher holds an open Server-Sent Events response for as long as they
+    # are at the table, so the useful limit here is open connections, not
+    # requests per second.
+    soft_limit = 180
+    hard_limit = 220
+
+[checks.health]
+  type = "http"
+  port = 8080
+  path = "/healthz"
+  interval = "30s"
+  timeout = "4s"
+  grace_period = "5s"

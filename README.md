@@ -93,6 +93,59 @@ a driver, so the server has no runtime dependency either. `node:sqlite` is
 still flagged experimental in Node 22; it is fine for play money and is the
 one thing here that would want revisiting before anything else did.
 
+## Hosting the table
+
+The trainer is static and deploys itself to GitHub Pages. The table is a
+server, so it needs somewhere to run and — this is the part that rules several
+free tiers out — **a persistent disk**, because the accounts and the ledger are
+a SQLite file. A container with no durable storage would reset every balance on
+each deploy.
+
+The image is a plain `Dockerfile`, so it runs anywhere. `fly.toml` is included
+because Fly mounts a volume without much ceremony, but nothing about the app is
+tied to it; moving providers is a config change.
+
+```
+fly launch --no-deploy          # accepts the fly.toml already here
+fly volumes create table_data --size 1
+fly deploy
+```
+
+Environment it expects, all set in the Dockerfile and `fly.toml`:
+
+| | |
+| --- | --- |
+| `PORT` / `HOST` | what to listen on; `0.0.0.0` inside a container |
+| `DB_PATH` | the SQLite file, **on the mounted volume** |
+| `TRUST_PROXY=1` | the platform terminates TLS, so the real scheme, host and client address arrive in forwarded headers |
+
+`TRUST_PROXY` is off by default and deliberately so. With it on, the server
+believes `X-Forwarded-Proto`, `X-Forwarded-Host` and `X-Forwarded-For` — which
+is correct behind a load balancer that sets them and wrong anywhere else,
+since otherwise any caller could claim any address. It decides three things:
+whether the session cookie is marked `Secure`, what the Origin check compares
+against, and what the rate limiter counts per client.
+
+`/healthz` queries the database rather than just returning 200, so an instance
+that has lost its disk reports unhealthy instead of serving a broken table.
+`SIGTERM` stops the listener, ends the open event streams and closes the
+database before exiting — a signal arriving mid-write is how a SQLite file
+gets corrupted.
+
+**One instance, deliberately.** The table lives in the process's memory and the
+ledger is a file on that machine's disk. A second instance would be a second
+table with a second database, and players would quietly be sitting at different
+tables. Going past one means moving both out of the process, which is real work
+and not needed yet.
+
+`tests/test-server.mjs` starts a second process with that exact environment and
+checks it: the cookie is `Secure` when the proxy reports https and not when it
+reports http, the Origin check uses the forwarded host, a genuinely
+cross-origin post is still refused, and `SIGTERM` exits 0. The image itself has
+not been built here — this sandbox has no container daemon — but the server was
+run under the Dockerfile's environment against a file database, restarted, and
+the accounts were still there.
+
 ## Accessibility
 
 Both pages target WCAG 2.1 AA, and `tests/test-a11y.mjs` holds them there —

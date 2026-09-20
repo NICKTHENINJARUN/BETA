@@ -1,0 +1,12 @@
+# Everything the server does not need at runtime. Keeps the image small and
+# keeps the tests, the trainer and any local database out of it.
+node_modules
+tests
+.github
+.git
+*.db
+*.db-wal
+*.db-shm
+index.html
+README.md
+package-lock.json
