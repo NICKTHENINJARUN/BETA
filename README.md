@@ -1,6 +1,6 @@
 # Blackjack Academy Helper
 
-A single-file blackjack training app: basic-strategy drills, Hi-Lo counting
+A blackjack training app in a single file, plus a multiplayer play-money table: basic-strategy drills, Hi-Lo counting
 practice, rule-aware strategy charts, a playable simulator, a course, a table
 log and a session dashboard. No build step, no dependencies — open
 `index.html` in a browser.
@@ -55,6 +55,44 @@ There is no model call, no key and no account, so he costs nothing and works
 with the network off. The tradeoff is range: blackjack and this app are all he
 knows, and he says so rather than bluffing.
 
+## The table (play money)
+
+`index.html` is a trainer: the browser holds the shoe, because nothing is at
+stake. `server/` is a different thing — a multiplayer table where several
+people sit down together and the server holds everything.
+
+```
+npm run serve            # http://localhost:8787
+DB_PATH=./table.db npm run serve    # keep accounts across restarts
+```
+
+Balances are **play money**. There are no deposits, no withdrawals and nothing
+redeemable, and there is no code here that could take a payment. Real-money
+play is a licensing question, not a software one, and it is not what this is.
+
+What the server decides, and the client is never asked: the shoe and its order,
+the hole card, whose turn it is, what a hand is worth, which actions are legal,
+and who gets paid. The client sends intent — sit, bet, hit — and is told what
+happened. The hole card is not sent-and-hidden; it is left out of the payload
+until the dealer turns it over, so it is not in devtools either.
+
+**Money is integer cents and moves only through an append-only ledger.** The
+stored balance is a cache of that ledger, never the other way round, and both
+`test-table` and `test-server` assert they agree for every account. The ledger
+is the part you cannot retrofit, so it is right from the start.
+
+**Provably fair.** Before a shoe is shuffled the server publishes
+`sha256(serverSeed)`. The shuffle is a Fisher-Yates driven by
+`HMAC(serverSeed, clientSeed:nonce)` with rejection sampling, so there is no
+modulo bias. When the shoe is retired the seed is published, and anyone can
+rebuild the exact shoe and check it against the cards they saw — and check the
+published fingerprint against the revealed seed.
+
+It is Server-Sent Events rather than WebSockets, and `node:sqlite` rather than
+a driver, so the server has no runtime dependency either. `node:sqlite` is
+still flagged experimental in Node 22; it is fine for play money and is the
+one thing here that would want revisiting before anything else did.
+
 ## Accessibility
 
 The page targets WCAG 2.1 AA, and `tests/test-a11y.mjs` holds it there.
@@ -85,7 +123,7 @@ The site is `index.html` and nothing else — no build, no server, no external
 request — so it can be hosted anywhere that serves a static file.
 
 GitHub Pages is wired up in `.github/workflows/tests.yml`. A push to `main`
-runs the six suites first and deploys only if they all pass, so a red build
+runs the eight suites first and deploys only if they all pass, so a red build
 never reaches the live site. Only `index.html` is published; the tests,
 lockfile and this README stay off the server. Unknown paths serve the app
 rather than a 404.
@@ -113,6 +151,8 @@ an automated suite that drives the real page in Chromium:
 npm ci                      # Playwright, the only dependency, and a test-time one
 npx playwright install chromium
 node tests/test-engine.mjs  # 67 strategy/index/shoe assertions
+node tests/test-table.mjs   # the multiplayer table: money, turns, fairness
+node tests/test-server.mjs  # the HTTP/SSE layer in front of it
 node tests/test-ui.mjs      # end-to-end pass over all seven screens
 node tests/test-a11y.mjs    # 38 accessibility checks: names, labels, live
                             # regions, keyboard paths and WCAG AA contrast
@@ -122,7 +162,7 @@ node tests/test-sim.mjs     # 120M rounds checked against published figures
 node tests/test-jack.mjs    # Jack's parsing, knowledge and engine agreement
 ```
 
-`npm test` runs all six in order. They also run in CI on every pull request
+`npm test` runs all eight in order. They also run in CI on every pull request
 and on every push to `main` — see `.github/workflows/tests.yml`, which
 installs Chromium and runs each suite as its own step so a red build names
 the one that broke. A branch with an open pull request is covered by the

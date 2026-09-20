@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Blackjack Academy — Table</title>
+<style>
+  /* Same tokens as the trainer, so the two do not look like different products.
+     Text colours are the lifted ramp: everything here clears WCAG AA. */
+  :root{
+    --bg:#0b0b0b; --panel:#111211; --panel2:#151615; --line:#37302c;
+    --text:#f3f2ef; --muted:#a3a29d; --muted2:#8d8c88;
+    --orange:#f4752d; --green:#26bd63; --red:#f2708f; --gold:#b28b37;
+    --r:8px;
+  }
+  *{box-sizing:border-box}
+  html{color-scheme:dark}
+  body{margin:0;background:var(--bg);color:var(--text);
+       font:15px/1.55 Inter,system-ui,-apple-system,"Segoe UI",sans-serif}
+  button,input,select{font:inherit}
+  button{cursor:pointer;color:inherit}
+  button:disabled{cursor:not-allowed;opacity:.34}
+  :focus-visible{outline:2px solid var(--orange);outline-offset:2px}
+  .vh{position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;
+      clip:rect(0 0 0 0);clip-path:inset(50%);white-space:nowrap;border:0}
+  .skip{position:absolute;left:8px;top:-60px;z-index:100;background:var(--orange);color:#14110f;
+        font-weight:700;padding:10px 16px;border-radius:6px;text-decoration:none;transition:top .12s ease}
+  .skip:focus{top:8px}
+  @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important}}
+
+  .shell{width:min(100%,1080px);margin:auto;padding:20px 22px 60px}
+  header{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:22px;flex-wrap:wrap}
+  .brand{display:flex;align-items:center;gap:10px;font-size:17px;font-weight:750;letter-spacing:.02em}
+  .brandmark{width:24px;height:32px;flex:none;transform:rotate(-7deg)}
+  .whoami{display:flex;align-items:center;gap:14px;font-size:14px}
+  .bal{font-variant-numeric:tabular-nums;font-weight:750;color:var(--orange);font-size:17px}
+
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:18px}
+  .panel + .panel{margin-top:16px}
+  h1{font-size:22px;margin:0 0 6px}
+  h2{font-size:15px;margin:0 0 12px;color:var(--muted)}
+  .sub{color:var(--muted);font-size:14px;margin:0 0 16px}
+
+  /* ------------------------------------------------------------- the felt */
+  .felt{background:linear-gradient(180deg,#132a1d,#0d1c14);border:1px solid #21402c;
+        border-radius:12px;padding:22px 18px;margin-bottom:16px}
+  .dealer{text-align:center;padding-bottom:18px;border-bottom:1px dashed #23402f;margin-bottom:18px}
+  .label{font-size:12px;letter-spacing:.09em;text-transform:uppercase;color:var(--muted2);margin-bottom:8px}
+  .hand{display:flex;gap:6px;justify-content:center;flex-wrap:wrap;min-height:62px;align-items:center}
+  .card{width:42px;height:60px;border-radius:5px;background:#f7f7f5;color:#14110f;
+        display:grid;place-items:center;font-weight:800;font-size:15px;
+        box-shadow:0 2px 6px rgba(0,0,0,.5);font-variant-numeric:tabular-nums}
+  .card.red{color:#b3123a}
+  .card.back{background:repeating-linear-gradient(45deg,#7a2418,#7a2418 4px,#5d1b12 4px,#5d1b12 8px);
+             border:2px solid #f7f7f5}
+  .total{margin-top:8px;font-size:14px;color:var(--muted);font-variant-numeric:tabular-nums}
+
+  .seats{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px}
+  .seat{background:rgba(0,0,0,.28);border:1px solid #22412e;border-radius:8px;padding:12px;min-height:150px}
+  .seat.mine{border-color:var(--orange);box-shadow:0 0 0 1px rgba(244,117,45,.3)}
+  .seat.turn{border-color:var(--gold);box-shadow:0 0 0 2px rgba(178,139,55,.45)}
+  .seat .who{font-weight:700;font-size:14px;margin-bottom:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .seat .stake{font-size:12px;color:var(--muted2);margin-bottom:8px;font-variant-numeric:tabular-nums}
+  .seat .hand{justify-content:flex-start;min-height:44px}
+  .seat .card{width:32px;height:46px;font-size:13px}
+  .seat.empty{display:grid;place-items:center;border-style:dashed;color:var(--muted2)}
+  .outcome{font-size:12px;font-weight:700;margin-top:6px}
+  .outcome.win,.outcome.blackjack{color:var(--green)}
+  .outcome.lose,.outcome.bust{color:var(--red)}
+  .outcome.push,.outcome.surrender{color:var(--muted)}
+
+  /* ----------------------------------------------------------- controls */
+  .bar{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+  .btn{padding:10px 18px;border-radius:6px;border:1px solid var(--line);
+       background:var(--panel2);font-weight:650;font-size:14px}
+  .btn:hover:not(:disabled){border-color:#54362c}
+  .btn.primary{background:var(--orange);border-color:var(--orange);color:#14110f}
+  .btn.ghost{background:transparent}
+  .chips{display:flex;gap:8px;flex-wrap:wrap}
+  .chip{width:52px;height:52px;border-radius:50%;border:2px dashed #55514b;background:#191817;
+        font-weight:800;font-size:13px;font-variant-numeric:tabular-nums}
+  .chip:hover:not(:disabled){border-color:var(--orange);color:var(--orange)}
+  .clock{font-variant-numeric:tabular-nums;color:var(--gold);font-weight:700;font-size:14px}
+  .phase{font-size:13px;color:var(--muted);text-transform:capitalize}
+
+  .field{margin-bottom:12px}
+  .field label{display:block;font-size:13px;color:var(--muted);margin-bottom:5px}
+  .field input{width:100%;padding:10px 12px;border-radius:6px;border:1px solid var(--line);
+               background:#0d0d0d;color:var(--text)}
+  .err{color:var(--red);font-size:14px;min-height:20px;margin-top:8px}
+  .ok{color:var(--green)}
+  .tabs{display:flex;gap:6px;margin-bottom:16px}
+  .tabs button{padding:8px 16px;border-radius:6px;border:1px solid var(--line);background:transparent;font-size:14px}
+  .tabs button[aria-selected=true]{background:var(--panel2);border-color:var(--orange);color:var(--orange)}
+
+  .fair{font-size:13px;color:var(--muted);word-break:break-all;line-height:1.7}
+  .fair code{background:#0d0d0d;padding:2px 6px;border-radius:4px;font-size:12px;color:var(--muted)}
+  .warn{background:#1c1410;border:1px solid #4a2c1c;border-radius:6px;padding:12px 14px;
+        font-size:13px;color:#e8c9b4;margin-bottom:16px}
+  footer{margin-top:28px;text-align:center;color:var(--muted2);font-size:12px;line-height:1.7}
+  [hidden]{display:none!important}
+</style>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<div class="shell">
+
+  <header>
+    <div class="brand">
+      <svg class="brandmark" viewBox="0 0 24 32" role="img" aria-label="Blackjack Academy">
+        <rect x=".6" y=".6" width="22.8" height="30.8" rx="3.4" fill="#f7f7f5" stroke="#d8d5cf" stroke-width=".8"/>
+        <path d="M12 7.4C9.6 10.6 5.6 13.4 5.6 16.5c0 2.5 2 3.9 3.9 3.2.9-.3 1.6-.9 2-1.5-.3 2.7-1.2 4.8-2.3 6.1h5.6c-1.1-1.3-2-3.4-2.3-6.1.4.6 1.1 1.2 2 1.5 1.9.7 3.9-.7 3.9-3.2 0-3.1-4-5.9-6.4-9.1z" fill="#14110f"/>
+      </svg>
+      <span>BLACKJACK ACADEMY</span>
+    </div>
+    <div class="whoami" id="whoami" hidden>
+      <span id="displayName"></span>
+      <span class="bal" id="balance" aria-live="polite">—</span>
+      <button class="btn ghost" id="signOut">Sign out</button>
+    </div>
+  </header>
+
+  <main id="main" tabindex="-1">
+
+    <!-- ===================================================== signed out -->
+    <section class="panel" id="authPanel">
+      <h1>Play at the table</h1>
+      <p class="sub">Multiplayer blackjack against the house, up to five seats.
+        Play money — there are no deposits and nothing to cash out.</p>
+
+      <div class="tabs" role="tablist" aria-label="Sign in or create an account">
+        <button role="tab" id="tabIn" aria-selected="true" aria-controls="formIn">Sign in</button>
+        <button role="tab" id="tabUp" aria-selected="false" aria-controls="formUp">Create account</button>
+      </div>
+
+      <form id="formIn" role="tabpanel" aria-labelledby="tabIn">
+        <div class="field"><label for="inEmail">Email</label>
+          <input id="inEmail" type="email" autocomplete="email" required></div>
+        <div class="field"><label for="inPass">Password</label>
+          <input id="inPass" type="password" autocomplete="current-password" required></div>
+        <button class="btn primary" type="submit">Sign in</button>
+      </form>
+
+      <form id="formUp" role="tabpanel" aria-labelledby="tabUp" hidden>
+        <div class="field"><label for="upName">Name at the table</label>
+          <input id="upName" autocomplete="nickname" maxlength="24" required></div>
+        <div class="field"><label for="upEmail">Email</label>
+          <input id="upEmail" type="email" autocomplete="email" required></div>
+        <div class="field"><label for="upPass">Password <span style="color:var(--muted2)">— at least 8 characters</span></label>
+          <input id="upPass" type="password" autocomplete="new-password" minlength="8" required></div>
+        <button class="btn primary" type="submit">Create account</button>
+      </form>
+
+      <div class="err" id="authErr" role="alert"></div>
+    </section>
+
+    <!-- ======================================================= the table -->
+    <section id="tablePanel" hidden>
+      <div class="warn">
+        Play money. Balances here are not redeemable, cannot be bought, and are worth nothing outside this page.
+      </div>
+
+      <div class="felt">
+        <div class="dealer">
+          <div class="label">Dealer</div>
+          <div class="hand" id="dealerHand" aria-live="polite" aria-label="Dealer's hand"></div>
+          <div class="total" id="dealerTotal"></div>
+        </div>
+        <div class="seats" id="seats"></div>
+      </div>
+
+      <div class="panel">
+        <div class="bar" style="justify-content:space-between;margin-bottom:14px">
+          <span class="phase" id="phase">Connecting…</span>
+          <span class="clock" id="clock" aria-live="off"></span>
+        </div>
+
+        <div id="betControls" hidden>
+          <h2 id="chipLabel">Place your bet</h2>
+          <div class="chips" role="group" aria-labelledby="chipLabel" id="chips"></div>
+        </div>
+
+        <div class="bar" id="actControls" role="group" aria-label="Your move" hidden></div>
+
+        <div class="bar" id="insControls" hidden>
+          <span>Dealer shows an ace. Insurance?</span>
+          <button class="btn" data-ins="1">Take insurance</button>
+          <button class="btn ghost" data-ins="0">No thanks</button>
+        </div>
+
+        <div class="bar" id="sitControls">
+          <span class="phase">Pick a seat above to join.</span>
+        </div>
+
+        <div class="err" id="tableErr" role="alert"></div>
+        <div id="result" role="status" aria-live="polite"></div>
+      </div>
+
+      <div class="panel">
+        <h2>Provably fair</h2>
+        <p class="fair">
+          Before this shoe was shuffled the server published a fingerprint of the seed that governs it.
+          When the shoe is retired the seed itself is published, so you can rebuild the exact shoe and
+          check it against the cards you were dealt — and check the fingerprint against the seed.
+        </p>
+        <p class="fair">Shoe fingerprint: <code id="commit">—</code></p>
+        <p class="fair" id="revealed" hidden>Last shoe's seed: <code id="revealSeed"></code></p>
+        <p class="fair">Cards left before the shuffle: <span id="cardsLeft">—</span></p>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    Play money only. No deposits, no withdrawals, nothing redeemable.<br>
+    Training and educational software. Blackjack involves financial risk and no counting or strategy system guarantees profit.
+  </footer>
+</div>
+
+<script type="module">
+const $ = s => document.querySelector(s);
+const money = c => '$' + (c / 100).toFixed(2);
+
+let me = null, state = null, mySeat = null, lastActions = [];
+
+/* ------------------------------------------------------------- transport */
+async function api(path, body) {
+  const r = await fetch(path, {
+    method: body === undefined ? 'GET' : 'POST',
+    headers: body === undefined ? {} : { 'content-type': 'application/json' },
+    body: body === undefined ? undefined : JSON.stringify(body),
+  });
+  const data = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(data.error || `request failed (${r.status})`);
+  return data;
+}
+
+const showErr = (el, msg) => { el.textContent = msg; if (msg) setTimeout(() => { if (el.textContent === msg) el.textContent = ''; }, 6000); };
+
+/* ------------------------------------------------------------------ auth */
+for (const [tab, panel, other, otherPanel] of [
+  ['#tabIn', '#formIn', '#tabUp', '#formUp'],
+  ['#tabUp', '#formUp', '#tabIn', '#formIn'],
+]) {
+  $(tab).onclick = () => {
+    $(tab).setAttribute('aria-selected', 'true');
+    $(other).setAttribute('aria-selected', 'false');
+    $(panel).hidden = false;
+    $(otherPanel).hidden = true;
+  };
+}
+
+$('#formIn').onsubmit = async e => {
+  e.preventDefault();
+  try {
+    const { user } = await api('/api/login', { email: $('#inEmail').value, password: $('#inPass').value });
+    enter(user);
+  } catch (err) { showErr($('#authErr'), err.message); }
+};
+
+$('#formUp').onsubmit = async e => {
+  e.preventDefault();
+  try {
+    const { user } = await api('/api/signup', {
+      email: $('#upEmail').value, password: $('#upPass').value, display: $('#upName').value,
+    });
+    enter(user);
+  } catch (err) { showErr($('#authErr'), err.message); }
+};
+
+$('#signOut').onclick = async () => { await api('/api/logout', {}); location.reload(); };
+
+function enter(user) {
+  me = user;
+  $('#authPanel').hidden = true;
+  $('#tablePanel').hidden = false;
+  $('#whoami').hidden = false;
+  $('#displayName').textContent = user.display;
+  setBalance(user.balance);
+  connect();
+}
+
+const setBalance = c => { $('#balance').textContent = money(c); };
+
+/* ----------------------------------------------------------------- cards */
+function cardEl(name) {
+  const d = document.createElement('div');
+  d.className = 'card';
+  if (name === '??') { d.className += ' back'; d.setAttribute('aria-label', 'face down'); return d; }
+  const rank = name.slice(0, -1), suit = name.slice(-1);
+  const pip = { s: '♠', h: '♥', d: '♦', c: '♣' }[suit] || '';
+  if (suit === 'h' || suit === 'd') d.classList.add('red');
+  d.textContent = rank;
+  const s = document.createElement('span');
+  s.setAttribute('aria-hidden', 'true');
+  s.textContent = pip;
+  s.style.fontSize = '11px';
+  d.append(s);
+  const names = { s: 'spades', h: 'hearts', d: 'diamonds', c: 'clubs' };
+  d.setAttribute('aria-label', `${rank} of ${names[suit] || suit}`);
+  return d;
+}
+
+const renderHand = (el, cards, hidden = 0) => {
+  el.replaceChildren(...cards.map(cardEl), ...Array.from({ length: hidden }, () => cardEl('??')));
+};
+
+/* ----------------------------------------------------------------- table */
+function render() {
+  if (!state) return;
+  $('#phase').textContent = {
+    waiting: 'Waiting for players', betting: 'Place your bets', dealing: 'Dealing',
+    insurance: 'Insurance', acting: 'In play', dealer: 'Dealer plays', payout: 'Paying out',
+  }[state.phase] || state.phase;
+
+  renderHand($('#dealerHand'), state.dealer.cards, state.dealer.hidden);
+  $('#dealerTotal').textContent = state.dealer.cards.length
+    ? (state.dealer.hidden ? `showing ${state.dealer.total}` : `${state.dealer.total}`) : '';
+
+  $('#commit').textContent = state.commit || '—';
+  $('#cardsLeft').textContent = state.cardsLeft ?? '—';
+
+  mySeat = state.seats.findIndex(s => s && s.display === me.display);
+  if (mySeat < 0) mySeat = null;
+
+  // seats
+  const wrap = $('#seats');
+  wrap.replaceChildren(...state.seats.map((s, i) => {
+    const d = document.createElement('div');
+    if (!s) {
+      d.className = 'seat empty';
+      const b = document.createElement('button');
+      b.className = 'btn ghost';
+      b.textContent = `Sit — seat ${i + 1}`;
+      b.disabled = mySeat !== null;
+      b.onclick = () => api('/api/sit', { seat: i }).catch(e => showErr($('#tableErr'), e.message));
+      d.append(b);
+      return d;
+    }
+    d.className = 'seat' + (i === mySeat ? ' mine' : '') + (state.active?.seat === i ? ' turn' : '');
+    const who = document.createElement('div');
+    who.className = 'who';
+    who.textContent = s.display + (i === mySeat ? ' (you)' : '');
+    const stake = document.createElement('div');
+    stake.className = 'stake';
+    stake.textContent = s.bet ? money(s.bet) : 'no bet';
+    d.append(who, stake);
+
+    s.hands.forEach((h, hi) => {
+      const hand = document.createElement('div');
+      hand.className = 'hand';
+      renderHand(hand, h.cards);
+      const t = document.createElement('div');
+      t.className = 'total';
+      t.textContent = h.bust ? `${h.total} — bust` : (h.natural ? 'blackjack' : h.total)
+        + (h.surrendered ? ' — surrendered' : '') + (h.doubled ? ' — doubled' : '');
+      d.append(hand, t);
+    });
+    return d;
+  }));
+
+  // controls
+  const seat = mySeat !== null ? state.seats[mySeat] : null;
+  $('#sitControls').hidden = mySeat !== null;
+  $('#betControls').hidden = !(state.phase === 'betting' && seat && !seat.bet);
+  $('#insControls').hidden = !(state.phase === 'insurance' && seat?.inRound);
+  const myTurn = state.phase === 'acting' && state.active?.seat === mySeat;
+  $('#actControls').hidden = !myTurn;
+  if (myTurn) renderActions(lastActions);
+}
+
+function renderActions(actions) {
+  const wrap = $('#actControls');
+  wrap.replaceChildren(...actions.map(a => {
+    const b = document.createElement('button');
+    b.className = 'btn' + (a === 'hit' || a === 'stand' ? ' primary' : '');
+    b.textContent = a[0].toUpperCase() + a.slice(1);
+    b.onclick = () => {
+      wrap.querySelectorAll('button').forEach(x => x.disabled = true);   // no double-send
+      api('/api/act', { action: a })
+        .then(r => setBalance(r.balance))
+        .catch(e => { showErr($('#tableErr'), e.message); render(); });
+    };
+    return b;
+  }));
+  wrap.querySelector('button')?.focus();
+}
+
+// chips
+$('#chips').replaceChildren(...[100, 500, 1000, 2500, 10000].map(c => {
+  const b = document.createElement('button');
+  b.className = 'chip';
+  b.textContent = c >= 1000 ? `$${c / 100}` : `$${c / 100}`;
+  b.setAttribute('aria-label', `Bet ${money(c)}`);
+  b.onclick = () => api('/api/bet', { cents: c })
+    .then(r => { setBalance(r.balance); state = r.state; render(); })
+    .catch(e => showErr($('#tableErr'), e.message));
+  return b;
+}));
+
+$('#insControls').onclick = e => {
+  const t = e.target.closest('[data-ins]');
+  if (!t) return;
+  api('/api/insurance', { take: t.dataset.ins === '1' })
+    .then(r => setBalance(r.balance))
+    .catch(err => showErr($('#tableErr'), err.message));
+};
+
+/* --------------------------------------------------------- the countdown */
+setInterval(() => {
+  if (!state?.deadline) { $('#clock').textContent = ''; return; }
+  const left = Math.max(0, Math.ceil((state.deadline - Date.now()) / 1000));
+  $('#clock').textContent = left ? `${left}s` : '';
+}, 250);
+
+/* ------------------------------------------------------------ the stream */
+function connect() {
+  const es = new EventSource('/api/stream');
+
+  const onState = e => { state = JSON.parse(e.data); render(); };
+  for (const type of ['state', 'phase', 'dealt', 'dealer', 'bet', 'insurance', 'seat.taken', 'seat.left']) {
+    es.addEventListener(type, ev => {
+      const d = JSON.parse(ev.data);
+      if (d.seats) onState(ev); else api('/api/table').then(s => { state = s; render(); });
+    });
+  }
+
+  es.addEventListener('acted', ev => {
+    const d = JSON.parse(ev.data);
+    if (d.state) { state = d.state; render(); }
+  });
+
+  es.addEventListener('turn', ev => {
+    const d = JSON.parse(ev.data);
+    lastActions = d.actions || [];
+    if (d.state) state = d.state;
+    if (state) { state.active = { seat: d.seatNo, hand: d.hand }; state.deadline = d.deadline; }
+    render();
+  });
+
+  es.addEventListener('payout', ev => {
+    const d = JSON.parse(ev.data);
+    const mine = d.results.find(r => r.seatNo === mySeat);
+    if (mine) {
+      setBalance(mine.balance);
+      const net = mine.net;
+      $('#result').innerHTML = '';
+      const p = document.createElement('p');
+      p.className = 'outcome ' + (net > 0 ? 'win' : net < 0 ? 'lose' : 'push');
+      p.textContent = net > 0 ? `You won ${money(net)}` : net < 0 ? `You lost ${money(-net)}` : 'Push — your stake is returned';
+      $('#result').append(p);
+    }
+    api('/api/table').then(s => { state = s; render(); });
+  });
+
+  es.addEventListener('shoe.revealed', ev => {
+    const d = JSON.parse(ev.data);
+    $('#revealed').hidden = false;
+    $('#revealSeed').textContent = d.serverSeed;
+  });
+
+  es.onerror = () => { $('#phase').textContent = 'Reconnecting…'; };
+}
+
+/* --------------------------------------------------------------- startup */
+api('/api/me').then(r => enter(r.user)).catch(() => { /* signed out; show the form */ });
+</script>
+</body>
+</html>

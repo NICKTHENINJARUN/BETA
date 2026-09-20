@@ -67,6 +67,14 @@ jobs:
       - name: Bankroll accounting
         run: node tests/test-money.mjs
 
+      # The table and the server need no browser, so they run before the slow
+      # ones: a broken ledger should fail the build in seconds, not minutes.
+      - name: Table
+        run: node tests/test-table.mjs
+
+      - name: Server
+        run: node tests/test-server.mjs
+
       - name: Interface
         run: node tests/test-ui.mjs
 
