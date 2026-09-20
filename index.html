@@ -27,7 +27,9 @@ button:disabled{cursor:not-allowed;opacity:.34}
 :focus-visible{outline:2px solid var(--orange);outline-offset:2px}
 .shell{width:min(100%,1240px);margin:auto;min-height:100vh;padding:22px 28px 70px}
 .topnav{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:34px;opacity:.97}
-.brand{display:flex;align-items:center;gap:10px;font-size:17px;font-weight:750}.brandmark{width:28px;height:28px;border-radius:50%;display:grid;place-items:center;border:1px solid rgba(244,117,45,.45);background:rgba(244,117,45,.08);color:var(--orange);box-shadow:0 0 22px rgba(244,117,45,.14)}
+.brand{display:flex;align-items:center;gap:10px;font-size:17px;font-weight:750}.brandmark{width:26px;height:35px;display:block;flex:none;filter:drop-shadow(0 0 14px rgba(244,117,45,.30)) drop-shadow(0 3px 6px rgba(0,0,0,.45));transform:rotate(-7deg);transition:transform .2s ease}
+.brandmark svg{width:100%;height:100%;display:block}
+.brand:hover .brandmark{transform:rotate(0deg)}
 .nav{display:flex;gap:4px;align-items:center;background:rgba(15,15,15,.68);border:1px solid #222;border-radius:9px;padding:4px;backdrop-filter:blur(10px)}
 .nav button{border:0;background:transparent;color:#777;padding:8px 11px;border-radius:6px;font-size:15px}.nav button:hover{color:#ddd}.nav button.active{background:#1a1a1a;color:#f2f2f2;box-shadow:inset 0 0 0 1px #282828}
 .headacts{display:flex;gap:6px;align-items:center}
@@ -48,11 +50,36 @@ h1{font-size:27px;line-height:1.1;margin:0 0 8px;font-weight:780;letter-spacing:
 .prefline{display:flex;align-items:center;gap:6px;font-size:13px;color:#8a8a87}
 .prefline input{accent-color:var(--orange)}
 /* strategy */
-.controls{display:grid;gap:12px;margin-bottom:16px}.legend{display:flex;gap:16px;align-items:center;justify-content:center;padding:13px 15px;margin-bottom:18px;flex-wrap:wrap}.legend span{font-size:13px;color:#aaa;display:flex;align-items:center;gap:5px}.dot{width:22px;height:17px;border-radius:3px;display:inline-grid;place-items:center;font-size:12px;font-weight:700}.d-hit{background:#5b321f;color:#f6a26f}.d-stand{background:#5f0922;color:#e84f78}.d-double{background:#0c472d;color:#54d893}.d-split{background:#5f541f;color:#edd567}.d-surr{background:#4d1730;color:#e97caf}
+.controls{display:grid;gap:12px;margin-bottom:16px}.legend{display:flex;gap:16px;align-items:center;justify-content:center;padding:13px 15px;margin-bottom:18px;flex-wrap:wrap}.legend span{font-size:13px;color:#aaa;display:flex;align-items:center;gap:5px}
+.legend-sep{width:1px;height:16px;background:#2e2b28;padding:0}
+.d-idx{background:rgba(255,255,255,.65);width:8px;height:8px;border-radius:50%}
+.howto{font-size:13px;color:#83827e;line-height:1.75;margin:-6px 0 18px;padding:0 2px}
+.howto b{color:#c9c8c4;font-weight:700}.dot{width:22px;height:17px;border-radius:3px;display:inline-grid;place-items:center;font-size:12px;font-weight:700}.d-hit{background:#5b321f;color:#f6a26f}.d-stand{background:#5f0922;color:#e84f78}.d-double{background:#0c472d;color:#54d893}.d-split{background:#5f541f;color:#edd567}.d-surr{background:#4d1730;color:#e97caf}
 .chartbox{padding:18px 18px 16px}.charttitle{font-size:18px;font-weight:760;margin-bottom:15px;display:flex;justify-content:space-between;align-items:baseline;gap:10px}.charttitle small{font-size:13px;color:#6d6d69;font-weight:500}
 .strategy-table{width:100%;border-collapse:separate;border-spacing:4px;font-size:12px;table-layout:fixed}.strategy-table th{color:#b6b5b1;font-weight:650;padding:2px 0}.strategy-table td{text-align:center;padding:4px 2px;border-radius:3px;border:1px solid rgba(255,255,255,.03)}.strategy-table td.rowhead{background:transparent!important;color:#eee;border:0;text-align:left;font-weight:700;width:52px}
 .act-H{background:#59311f;color:#f39a69}.act-S{background:#590821;color:#e94d75}.act-D{background:#0b432c;color:#56d795}.act-P{background:#5b511d;color:#e8d264}.act-R{background:#4c132d;color:#e578a8}
-.strategy-table td[data-cell]{cursor:help}
+.strategy-table td[data-cell]{cursor:pointer}
+.strategy-table td[data-cell]:hover{outline:1px solid rgba(255,255,255,.35);outline-offset:-1px}
+.strategy-table td.has-idx{position:relative}
+.strategy-table td.has-idx:after{content:"";position:absolute;top:2px;right:2px;width:4px;height:4px;border-radius:50%;background:rgba(255,255,255,.65)}
+.strategy-table td.ruled{box-shadow:inset 0 0 0 2px var(--orange)}
+.cellhand{display:flex;align-items:center;gap:6px;margin:4px 0 14px}
+.cellvs{font-size:12px;color:#6d6d69;margin:0 2px}
+.cellplay{font-size:30px;font-weight:800;letter-spacing:-.02em;line-height:1.1}
+.cellplay.a-HIT{color:#f39a69}.cellplay.a-STAND{color:#e94d75}.cellplay.a-DOUBLE{color:#56d795}
+.cellplay.a-SPLIT{color:#e8d264}.cellplay.a-SURRENDER{color:#e578a8}
+.cellcode{font-size:12px;color:#8a8a87;margin-top:5px}
+.cellwhy{font-size:13px;color:#b4b3af;line-height:1.7;margin:12px 0 14px}
+.evhead{font-size:12px;color:#c9c8c4;font-weight:700;margin:16px 0 8px;display:flex;justify-content:space-between;align-items:baseline}
+.evhead small{font-size:11px;color:#6d6d69;font-weight:500}
+.evbody{display:grid;gap:5px}
+.evrow{display:grid;grid-template-columns:88px 1fr 58px 52px;gap:8px;align-items:center;font-size:12px;color:#9a9995;padding:4px 0}
+.evrow.best{color:#e9e8e4}
+.evrow.best .evact{font-weight:800}
+.evbar{height:9px;border-radius:3px;background:#191919;overflow:hidden}
+.evbar i{display:block;height:100%;border-radius:3px}
+.evnum{text-align:right;font-variant-numeric:tabular-nums}
+.evgap{text-align:right;font-size:11px;color:#6d6d69;font-variant-numeric:tabular-nums}
 .rulebar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;font-size:13px;color:#8a8a87}
 .chip{border:1px solid #33302c;background:#141414;border-radius:99px;padding:5px 10px;font-size:13px;color:#9c9b97;display:inline-flex;align-items:center;gap:6px}
 .chip.on{border-color:#54362c;color:#f0cdb5;background:#1a1311}
@@ -295,7 +322,17 @@ h1{font-size:27px;line-height:1.1;margin:0 0 8px;font-weight:780;letter-spacing:
 <body>
 <div class="shell">
   <header class="topnav">
-    <div class="brand"><div class="brandmark">◎</div><span>BLACKJACK ACADEMY</span></div>
+    <div class="brand">
+      <span class="brandmark" aria-hidden="true">
+        <svg viewBox="0 0 24 32" role="img">
+          <rect x="0.6" y="0.6" width="22.8" height="30.8" rx="3.4" fill="#f7f7f5" stroke="#d8d5cf" stroke-width="0.8"/>
+          <path d="M12 7.4C9.6 10.6 5.6 13.4 5.6 16.5c0 2.5 2 3.9 3.9 3.2 0.9-0.3 1.6-0.9 2-1.5-0.3 2.7-1.2 4.8-2.3 6.1h5.6c-1.1-1.3-2-3.4-2.3-6.1 0.4 0.6 1.1 1.2 2 1.5 1.9 0.7 3.9-0.7 3.9-3.2 0-3.1-4-5.9-6.4-9.1z" fill="#14110f"/>
+          <text x="3.4" y="6.6" font-family="Inter,system-ui,sans-serif" font-size="5.4" font-weight="800" fill="#14110f">A</text>
+          <text x="20.6" y="27.4" font-family="Inter,system-ui,sans-serif" font-size="5.4" font-weight="800" fill="#14110f" transform="rotate(180 20.6 25.6)">A</text>
+        </svg>
+      </span>
+      <span>BLACKJACK ACADEMY</span>
+    </div>
     <nav class="nav" id="nav">
       <button data-view="train" class="active">Train</button>
       <button data-view="strategy">Charts</button>
@@ -530,6 +567,7 @@ h1{font-size:27px;line-height:1.1;margin:0 0 8px;font-weight:780;letter-spacing:
             <button class="chip tog" id="togDAS">Double after split</button>
             <button class="chip tog" id="togSurr">Late surrender</button>
             <button class="chip tog" id="togPeek">Dealer peeks for blackjack</button>
+            <button class="chip tog" id="togDiff">Highlight what the soft-17 rule changes</button>
             <span id="ruleExplain" class="note" style="margin:0;flex:1 1 100%"></span>
           </div>
           <div class="segment" id="chartSeg" style="max-width:340px">
@@ -541,8 +579,15 @@ h1{font-size:27px;line-height:1.1;margin:0 0 8px;font-weight:780;letter-spacing:
           <span><i class="dot d-hit">H</i>Hit</span>
           <span><i class="dot d-stand">S</i>Stand</span>
           <span><i class="dot d-double">D</i>Double</span>
-          <span><i class="dot d-split">Y</i>Split (Yes)</span>
+          <span><i class="dot d-split">Y</i>Split</span>
           <span><i class="dot d-surr">R</i>Surrender</span>
+          <span class="legend-sep"></span>
+          <span><i class="dot d-idx"></i>the count changes this one</span>
+        </div>
+        <div class="howto" id="chartHow">
+          <b>Reading it:</b> find your total down the left, the dealer's upcard across the top, and take the cell where they meet.
+          Every cell is a move you can actually make — where a table doesn't allow doubling or surrender, the chart already shows what to do instead.
+          <b>Click any cell</b> and it will deal that hand out 60,000 times to show what each option is worth and what the second-best choice costs you.
         </div>
         <div id="chartArea"></div>
       </div>
@@ -1729,8 +1774,16 @@ function buildTable(kind){
         const pv=r, hardTotal=pv===11?12:pv*2;
         move=pv===11?'HIT':resolve(codeFor('hard',clamp(hardTotal,5,21),col,rules),{canDouble:true,canSplit:false,das:rules.das,canSurrender:false})||'HIT';
       }
-      const title=`${label} vs ${DEALER_COLS[col]} — ${CODE_NOTE[code]||move}`;
-      html+=`<td class="act-${ACT_CLASS[move]||'H'}" data-cell data-code="${ACT_CLASS[move]||'H'}" title="${esc(title)}">${ACT_SHORT[move]||move}</td>`;
+      const title=`${label} vs ${DEALER_COLS[col]} — ${CODE_NOTE[code]||move}. Click for the numbers.`;
+      const cardList=(kind==='pair'?[r===11?'A':String(r),r===11?'A':String(r)]
+                     :kind==='soft'?['A',String(r-11)]
+                     :hardCardsFor(r));
+      const idx=(move!=='SPLIT'||(kind==='pair'&&r===10))
+        ?findIndexFor(cardList.map(x=>card(x)),card(DEALER_COLS[col])):null;
+      const diff=DIFF_CELLS&&DIFF_CELLS.has(`${kind}:${r}:${col}`);
+      html+=`<td class="act-${ACT_CLASS[move]||'H'}${idx?' has-idx':''}${diff?' ruled':''}" data-cell
+        data-code="${ACT_CLASS[move]||'H'}" data-cards="${cardList.join(',')}" data-up="${DEALER_COLS[col]}"
+        data-kind="${kind}" data-row="${r}" title="${esc(title)}">${ACT_SHORT[move]||move}</td>`;
     }
     html+='</tr>';
   }
@@ -1749,8 +1802,22 @@ function buildIndexTable(){
       <div class="sessionlist">${fab.map(row).join('')}</div>
       ${(state.rules.surrender&&!state.rules.enhc)?'':'<div class="note">Your current rule set has no surrender, so these four do not apply — the drill will skip them.</div>'}</div>`;
 }
+let DIFF_CELLS=null, showDiff=false;
+/** Cells whose play changes if the dealer's soft-17 rule flips. */
+function computeDiffCells(){
+  const r=state.rules;
+  if(r.enhc) return null;
+  const other=Object.assign({},r,{h17:!r.h17});
+  const set=new Set();
+  const rows={hard:[18,17,16,15,14,13,12,11,10,9,8],soft:[20,19,18,17,16,15,14,13],pair:[11,10,9,8,7,6,5,4,3,2]};
+  for(const kind in rows) for(const row of rows[kind]) for(let col=0;col<10;col++){
+    if(codeFor(kind,row,col,r)!==codeFor(kind,row,col,other)) set.add(`${kind}:${row}:${col}`);
+  }
+  return set;
+}
 function renderCharts(){
   const r=state.rules;
+  DIFF_CELLS=showDiff?computeDiffCells():null;
   const name=r.enhc?'ENHC':(r.h17?'H17':'S17');
   if(chartType==='dev'){
     $('#chartLegend').hidden=true;
@@ -1769,6 +1836,10 @@ function renderCharts(){
   $('#togSurr').classList.toggle('on',r.surrender&&!r.enhc);
   $('#togSurr').textContent=((r.surrender&&!r.enhc)?'✓ ':'✕ ')+'Late surrender';
   $('#togSurr').disabled=r.enhc;
+  const dt=$('#togDiff');
+  dt.classList.toggle('on',showDiff&&!r.enhc);
+  dt.disabled=r.enhc;
+  dt.textContent=(showDiff&&!r.enhc?'✓ ':'')+`Highlight what ${r.h17?'S17':'H17'} would change`;
   $('#togPeek').classList.toggle('on',r.peek&&!r.enhc);
   $('#togPeek').textContent=((r.peek&&!r.enhc)?'✓ ':'✕ ')+'Dealer peeks for blackjack';
   $('#togPeek').disabled=r.enhc;
@@ -1776,6 +1847,10 @@ function renderCharts(){
     ? 'ENHC: the dealer takes no hole card, so a dealer blackjack takes your doubled and split bets in full. The chart applies the standard adjustments — never split 8,8 or A,A against a 10 or ace, and do not double 11 against them. Surrender is not offered.'
     : r.h17 ? 'H17: the dealer hits soft 17. This costs the player about 0.22% and adds five deviations from the S17 chart, all marked in the tables below.'
             : 'S17: the dealer stands on all 17s. This is the better rule for the player.';
+  if(showDiff&&!r.enhc){
+    const n=DIFF_CELLS?DIFF_CELLS.size:0;
+    $('#chartHow').innerHTML=`<b>Outlined cells</b> are the ${n} plays that change if the dealer ${r.h17?'stands on':'hits'} soft 17 instead. Everything else is the same in both games — which is why learning one chart gets you most of the way to the other.`;
+  }
   renderRuleChips();
 }
 $$('#rulesSeg button').forEach(b=>b.onclick=()=>{
@@ -1792,6 +1867,7 @@ $$('#chartSeg button').forEach(b=>b.onclick=()=>{
 $('#togDAS').onclick=()=>{ state.rules.das=!state.rules.das; save(); renderCharts(); };
 $('#togSurr').onclick=()=>{ state.rules.surrender=!state.rules.surrender; save(); renderCharts(); };
 $('#togPeek').onclick=()=>{ state.rules.peek=!state.rules.peek; save(); renderCharts(); };
+$('#togDiff').onclick=()=>{ showDiff=!showDiff; renderCharts(); };
 
 /* ================================================================ COURSE */
 const MODULES=[
@@ -3528,6 +3604,188 @@ function jackGreet(){
   renderRich(b,`Tell me a hand however you'd say it out loud — "I have an ace and a 3 and the dealer shows a king" — and I'll give you the play and the reasoning.\n\nI can also read your drill record and tell you what to work on next.`);
 }
 
+/* =====================================================================
+   WHAT THE OTHER PLAY WOULD COST
+   A chart tells you the move; it does not tell you by how much. This deals
+   the exact hand out many times under each legal action — taking that
+   action, then playing basic strategy to the end — and reports the average
+   result per unit staked. Same engine, same rules, measured rather than
+   asserted.
+   ===================================================================== */
+function evEngine(rules){
+  const t=compileTables(rules);
+  const V=r=>r==='A'?1:VALUE[r];
+  function deck(exclude){
+    const counts=new Array(11).fill(0);
+    for(let v=1;v<=9;v++) counts[v]=4*rules.decks;
+    counts[10]=16*rules.decks;
+    for(const r of exclude) counts[V(r)]--;
+    const a=[];
+    for(let v=1;v<=10;v++) for(let i=0;i<counts[v];i++) a.push(v);
+    return Int8Array.from(a);
+  }
+  let rnd=(()=>{ let x=(Math.random()*4294967295)>>>0;
+    return ()=>{ x^=x<<13; x>>>=0; x^=x>>17; x^=x<<5; x>>>=0; return x/4294967296; }; })();
+  const best=(t0,a)=>(a>0&&t0+10<=21)?t0+10:t0;
+  const soft=(t0,a)=>a>0&&t0+10<=21;
+  /** Play a hand out by basic strategy: no double, no split, no surrender. */
+  function playOut(st,total,aces,col){
+    for(;;){
+      const b=best(total,aces);
+      if(b>21) return b;
+      const code=soft(total,aces)?t.soft[b*10+col]:t.hard[(b<5?5:b)*10+col];
+      // D/Ds/P/Ph/R all fall back to hit or stand once the first move is made
+      if(code===1||code===3||code===7) return b;                 // S, Ds->S, Rs->S
+      if(code===4||code===5||code===8) return b;                 // split not available
+      const c=draw(st); total+=c; if(c===1) aces++;
+    }
+  }
+  function draw(st){ if(st.i>=st.shoe.length){ shuffle(st); } return st.shoe[st.i++]; }
+  function shuffle(st){
+    const a=st.shoe;
+    for(let i=a.length-1;i>0;i--){ const j=(rnd()*(i+1))|0; const tmp=a[i]; a[i]=a[j]; a[j]=tmp; }
+    st.i=0;
+  }
+  /**
+   * Mean result per unit of the ORIGINAL bet, given that a decision exists.
+   * Where the dealer peeks, hands lost to a dealer natural never reach a
+   * decision at all, so those trials are discarded rather than averaged in —
+   * otherwise every cell against a ten or an ace reads about 0.03 too low.
+   */
+  function ev(cards,upRank,action,trials){
+    const known=cards.concat([upRank]);
+    const st={shoe:deck(known),i:1e9};
+    const up=V(upRank), col=upRank==='A'?9:up-2;
+    let base=0,aces=0;
+    for(const r of cards){ const v=V(r); base+=v; if(v===1) aces++; }
+    if(action==='SURRENDER') return -0.5;
+    const maxHands=Math.max(2,rules.maxHands||4);
+    let sum=0, counted=0, guard=0;
+    while(counted<trials&&guard<trials*4){
+      guard++;
+      if(st.i>st.shoe.length-24) shuffle(st);
+      const hole=draw(st);
+      const dealerNatural=(up===1&&hole===10)||(up===10&&hole===1);
+      if(rules.peek&&dealerNatural) continue;        // no decision was ever offered
+      counted++;
+      const hands=[];
+      if(action==='SPLIT'){
+        const pv=V(cards[0]);
+        const mk=()=>({t:pv,a:pv===1?1:0,bet:1,res:null});
+        hands.push(mk(),mk());
+        for(let i=0;i<hands.length;i++){
+          const H=hands[i];
+          let c=draw(st); H.t+=c; if(c===1) H.a++;
+          // resplit while the new card pairs again and a box is free
+          while(c===pv&&pv!==1&&hands.length<maxHands){
+            hands.push(mk());
+            H.t=pv; H.a=pv===1?1:0;
+            c=draw(st); H.t+=c; if(c===1) H.a++;
+          }
+          if(pv===1){ H.res=best(H.t,H.a); continue; }   // split aces draw one card
+          const b=best(H.t,H.a);
+          const code=soft(H.t,H.a)?t.soft[b*10+col]:t.hard[(b<5?5:b)*10+col];
+          if(rules.das&&(code===2||code===3)){          // double after split
+            const d=draw(st); H.t+=d; if(d===1) H.a++;
+            H.bet=2; H.res=best(H.t,H.a);
+          }else H.res=playOut(st,H.t,H.a,col);
+        }
+      }else if(action==='DOUBLE'){
+        const c=draw(st); const tot=base+c, ac=aces+(c===1?1:0);
+        hands.push({bet:2,res:best(tot,ac)});
+      }else if(action==='HIT'){
+        const c=draw(st); const tot=base+c, ac=aces+(c===1?1:0);
+        hands.push({bet:1,res:playOut(st,tot,ac,col)});
+      }else hands.push({bet:1,res:best(base,aces)});
+      // the dealer completes only if something of yours survived
+      let dt=up+hole, da=(up===1?1:0)+(hole===1?1:0);
+      if(hands.some(h=>h.res<=21)){
+        for(;;){
+          const b=best(dt,da);
+          if(b>21||b>17) break;
+          if(b===17&&!(rules.h17&&soft(dt,da))) break;
+          const c=draw(st); dt+=c; if(c===1) da++;
+        }
+      }
+      const dFinal=best(dt,da);
+      const dBJ=!rules.peek&&dealerNatural;           // no peek: found only at the end
+      for(const H of hands){
+        if(H.res>21||dBJ) sum-=H.bet;
+        else if(dFinal>21||H.res>dFinal) sum+=H.bet;
+        else if(H.res<dFinal) sum-=H.bet;
+      }
+    }
+    return counted?sum/counted:0;
+  }
+  return {ev};
+}
+/** Every legal action for a chart cell, measured and ranked. */
+function cellEVs(cards,upRank,rules,trials){
+  const h=handInfo(cards.map(r=>card(r)));
+  const eng=evEngine(rules);
+  const acts=['STAND','HIT'];
+  if(cards.length===2) acts.push('DOUBLE');
+  if(cards.length===2&&h.pair) acts.push('SPLIT');
+  if(cards.length===2&&rules.surrender&&!rules.enhc) acts.push('SURRENDER');
+  const out=acts.map(a=>({action:a,ev:eng.ev(cards,upRank,a,a==='SURRENDER'?1:trials)}));
+  out.sort((x,y)=>y.ev-x.ev);
+  return out;
+}
+
+/* ---- a cell, explained ------------------------------------------------ */
+const EV_TRIALS=60000;
+function openCell(td){
+  const ranks=td.dataset.cards.split(','), up=td.dataset.up;
+  const cards=ranks.map(r=>card(r)), upCard=card(up);
+  const h=handInfo(cards), r=state.rules;
+  const ctx={canDouble:true,canSplit:h.pair,canSurrender:r.surrender&&!r.enhc,das:r.das};
+  const play=basicPlay(cards,upCard,r,ctx);
+  const code=codeFor(td.dataset.kind,Number(td.dataset.row)||(h.pair?VALUE[ranks[0]]:h.total),
+                     colOf(up),r);
+  const tensPair=h.pair&&VALUE[ranks[0]]===10;
+  const entry=(play==='SPLIT'&&!tensPair)?null:findIndexFor(cards,upCard);
+  const label=h.pair?`a pair of ${ranks[0]}s`:(h.soft?'soft ':'hard ')+h.total;
+
+  openModal(`
+    <h3>${cap(label)} against a dealer ${up}</h3>
+    <div class="sub">${esc(ruleText())}</div>
+    <div class="cellhand">${ranks.map(x=>`<span class="mini-card">${x}</span>`).join('')}
+      <span class="cellvs">vs</span><span class="mini-card">${up}</span></div>
+    <div class="cellplay a-${play}">${play}</div>
+    <div class="cellcode">${esc(CODE_NOTE[code]||play)}</div>
+    <div class="cellwhy">${esc(explainPlay({h,cards,up:upCard,answer:play,ctx}))}</div>
+    ${entry?`<div class="v-dev">Count changes this one. ${esc(entry.label)}: ${entry.dir==='>='?'at or above':'below'} ${idxNum(entry.idx)} → ${esc(entry.play.toLowerCase())}, otherwise ${esc(entry.base.toLowerCase())}.</div>`:''}
+    <div class="evhead">What each option is worth <small>per unit staked</small></div>
+    <div id="evBody" class="evbody"><div class="empty">Dealing this hand out ${(EV_TRIALS/1000)}k times…</div></div>
+    <div class="modal-acts"><button class="btn ghost" data-close>Close</button>
+      <button class="btn primary" id="cellDrill">Practise this</button></div>`);
+  $('#cellDrill').onclick=()=>{ closeModal(); showView('train'); openMode('basic'); };
+
+  // let the panel paint before the arithmetic starts
+  setTimeout(()=>{
+    let evs;
+    try{ evs=cellEVs(ranks,up,r,EV_TRIALS); }catch(e){ evs=null; }
+    const body=$('#evBody'); if(!body) return;
+    if(!evs){ body.innerHTML='<div class="empty">Could not work that one out.</div>'; return; }
+    const top=evs[0].ev, lo=Math.min(...evs.map(e=>e.ev)), hi=Math.max(...evs.map(e=>e.ev));
+    const span=Math.max(0.05,hi-lo);
+    body.innerHTML=evs.map(e=>{
+      const gap=e.ev-top;
+      const w=((e.ev-lo)/span*100).toFixed(1);
+      return `<div class="evrow${e.action===play?' best':''}">
+        <span class="evact">${e.action}</span>
+        <span class="evbar"><i style="width:${w}%;background:${e.ev>=0?'#2f9e5c':'#8d3450'}"></i></span>
+        <span class="evnum">${e.ev>=0?'+':''}${e.ev.toFixed(3)}</span>
+        <span class="evgap">${e.action===evs[0].action?'best':gap.toFixed(3)}</span></div>`;
+    }).join('')+
+    `<div class="an-note">Measured by dealing this exact hand ${(EV_TRIALS/1000)}k times under each option and playing it out. ${evs.length>1?`Choosing ${esc(evs[1].action.toLowerCase())} instead would cost about ${Math.abs(evs[1].ev-top).toFixed(3)} of a bet every time this hand comes up.`:''} Figures carry a sampling error of roughly ±0.005.</div>`;
+  },30);
+}
+$('#chartArea').addEventListener('click',e=>{
+  const td=e.target.closest('td[data-cards]');
+  if(td) openCell(td);
+});
+
 /* ================================================================== INIT */
 renderCharts();
 renderCourse();
@@ -3541,7 +3799,7 @@ updateBasicStats(); updateTCStats(); updateDevStats(); runStats();
 showView(location.hash.slice(1)||'train',false);
 
 // exposed for automated checks only
-window.__BJ={basicPlay,handInfo,card,Shoe,INDICES,indexPlay,houseEdge,state,codeFor,resolve,colOf,ruleText,sim:()=>sim,compileTables,SimEngine,ACT,assistVerdict,assist,pending,whyBasic,explainPlay,jackAnswer,parseHand,JACK_TOPICS};
+window.__BJ={basicPlay,handInfo,card,Shoe,INDICES,indexPlay,houseEdge,state,codeFor,resolve,colOf,ruleText,sim:()=>sim,compileTables,SimEngine,ACT,assistVerdict,assist,pending,whyBasic,explainPlay,jackAnswer,parseHand,JACK_TOPICS,cellEVs,evEngine};
 })();
 </script>
 </body></html>

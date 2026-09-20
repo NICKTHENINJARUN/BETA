@@ -243,6 +243,39 @@ await p.click('#togSurr'); await p.waitForTimeout(150);
 const surrOff = await cellFor('16','10');
 ok(surrOn === 'Surr.' && surrOff === 'Hit', `surrender toggle changes 16 vs 10 (${surrOn} / ${surrOff})`);
 await p.click('#togSurr'); await p.waitForTimeout(100);
+// ---- clicking a cell explains it, and the measured best must be the chart's play
+await p.evaluate(() => {
+  const td = [...document.querySelectorAll('td[data-cards]')].find(t => t.dataset.cards === '10,6' && t.dataset.up === '10');
+  td.click();
+});
+await p.waitForTimeout(150);
+ok(await p.locator('#modal').isVisible(), 'clicking a cell opens its explanation');
+const cellHead = await txt('#modalBox h3');
+ok(/Hard 16 against a dealer 10/.test(cellHead), `the panel names the hand (${cellHead})`);
+ok(/Surrender if allowed/i.test(await txt('.cellcode')), 'the code fallback is spelled out');
+ok(/Count changes this one/.test(await p.evaluate(() => document.querySelector('#modalBox').textContent)),
+   'the index on this cell is called out');
+await p.waitForFunction(() => !/times…/.test(document.querySelector('#evBody').textContent), { timeout: 30000 });
+const evRows = await p.evaluate(() => [...document.querySelectorAll('.evrow')].map(r => ({
+  act: r.querySelector('.evact').textContent,
+  ev: parseFloat(r.querySelector('.evnum').textContent),
+  best: r.classList.contains('best')
+})));
+ok(evRows.length >= 3, `every legal option is priced (${evRows.length})`);
+ok(evRows[0].act === 'SURRENDER', `the measured best matches the chart (${evRows[0].act})`);
+ok(evRows.every(r => Number.isFinite(r.ev)), 'every figure is a real number');
+ok(evRows[0].ev >= evRows[evRows.length - 1].ev, 'options are ranked best first');
+ok(evRows.some(r => r.best), "the chart's own play is marked");
+await p.click('#modalBox [data-close]'); await p.waitForTimeout(150);
+
+// ---- the soft-17 difference highlight
+await p.click('#togDiff'); await p.waitForTimeout(300);
+const ruled = await p.evaluate(() => document.querySelectorAll('td.ruled').length);
+ok(ruled > 0 && ruled < 30, `the rule difference outlines a handful of cells (${ruled})`);
+ok(/plays that change/.test(await txt('#chartHow')), 'and says what the outline means');
+await p.click('#togDiff'); await p.waitForTimeout(250);
+ok((await p.evaluate(() => document.querySelectorAll('td.ruled').length)) === 0, 'toggling it off clears the outline');
+
 // deterministic: re-rendering must not change any cell
 const snapA = await p.evaluate(() => document.querySelector('#chartArea').innerText);
 await p.click('#chartSeg [data-chart="dev"]'); await p.waitForTimeout(150);
