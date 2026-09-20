@@ -90,11 +90,10 @@ never reaches the live site. Only `index.html` is published; the tests,
 lockfile and this README stay off the server. Unknown paths serve the app
 rather than a 404.
 
-Two settings have to be set once, by hand, before the first deploy:
-
-- **Settings → Pages → Source: GitHub Actions.**
-- The repository must be **public**, or the account needs GitHub Pro — Pages
-  does not serve private repositories on the free plan.
+The deploy job turns Pages on itself the first time it runs, so there is no
+settings toggle to remember. The one requirement it cannot satisfy on its own
+is that the repository be **public**, or the account be on a plan that serves
+Pages from private repositories.
 
 The published URL is `https://<owner>.github.io/<repo>/`. A custom domain goes
 in Settings → Pages, with a `CNAME` file added to the `_site` assembly step.
