@@ -14,7 +14,7 @@ import { createServer } from 'node:http';
 import { readFile } from 'node:fs/promises';
 import { extname, join, normalize } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { openDb, Accounts } from './accounts.mjs';
+import { openDb, Accounts, GIFT } from './accounts.mjs';
 import { Table, SEATS } from './table.mjs';
 
 const HERE = fileURLToPath(new URL('.', import.meta.url));
@@ -133,6 +133,12 @@ const clientIp = req =>
   ((TRUST_PROXY && req.headers['x-forwarded-for']) || '').split(',')[0].trim()
   || req.socket.remoteAddress || 'unknown';
 
+/* Open event streams, counted per address. Decremented when the connection
+   closes rather than expiring on a timer, because a stream is meant to stay
+   open — a window would let someone accumulate them. */
+const streamsPerIp = new Map();
+const MAX_STREAMS_PER_IP = 6;
+
 function tooMany(key, max = 10, windowMs = 60000) {
   const now = Date.now();
   const rec = hits.get(key);
@@ -180,6 +186,7 @@ const ROUTES = {
   'POST /api/sit': async (req, res) => {
     const user = userFor(req);
     if (!user) return fail(res, 401, 'not signed in');
+    if (tooMany(`sit:${user.id}`, 20, 60000)) return fail(res, 429, 'slow down');
     const { seat } = await readJson(req);
     send(res, 200, { seat: table.sit(Number(seat), user), state: table.publicState() });
   },
@@ -194,6 +201,7 @@ const ROUTES = {
   'POST /api/bet': async (req, res) => {
     const user = userFor(req);
     if (!user) return fail(res, 401, 'not signed in');
+    if (tooMany(`bet:${user.id}`, 60, 60000)) return fail(res, 429, 'slow down');
     const { cents } = await readJson(req);
     table.placeBet(user.id, cents);
     send(res, 200, { balance: accounts.balance(user.id), state: table.publicState() });
@@ -210,12 +218,32 @@ const ROUTES = {
   'POST /api/act': async (req, res) => {
     const user = userFor(req);
     if (!user) return fail(res, 401, 'not signed in');
+    if (tooMany(`act:${user.id}`, 120, 60000)) return fail(res, 429, 'slow down');
     const { action } = await readJson(req);
     table.act(user.id, String(action));
     send(res, 200, { balance: accounts.balance(user.id), state: table.publicState() });
   },
 
   'GET /api/table': async (req, res) => send(res, 200, table.publicState()),
+
+  /* Send play money to another player by the tag they can read out. Every
+     guard that matters lives in accounts.gift — this is only the doorway. */
+  'POST /api/gift': async (req, res) => {
+    const user = userFor(req);
+    if (!user) return fail(res, 401, 'not signed in');
+    if (tooMany(`gift:${user.id}`, 10, 60000)) return fail(res, 429, 'slow down');
+    const { to, cents } = await readJson(req);
+    send(res, 200, accounts.gift(user.id, to, cents));
+  },
+
+  'GET /api/leaderboard': async (req, res) =>
+    send(res, 200, { players: accounts.leaderboard(20) }),
+
+  'GET /api/stats': async (req, res) => {
+    const user = userFor(req);
+    if (!user) return fail(res, 401, 'not signed in');
+    send(res, 200, { stats: accounts.stats(user.id), gift: GIFT });
+  },
 
   /* What a platform's health check calls. Touches the database rather than
      just returning 200, so a server that has lost its disk reports unhealthy
@@ -230,7 +258,21 @@ const ROUTES = {
   },
 
   /* The live feed. One long-lived response per watcher; the table pushes into it. */
+  /* The live feed is open to anyone, including people who have not signed in —
+     watching a table costs nothing and asking for an account first would be
+     unfriendly. What it cannot be is unlimited: each of these is a response
+     held open for as long as the watcher stays, and Fly stops accepting
+     connections at 220. One client opening them in a loop would close the
+     table to everybody else, which is a denial of service that needs no
+     cleverness at all. A handful per address is plenty for real use — several
+     tabs, a phone and a laptop on one connection — and nowhere near enough to
+     exhaust the server. */
   'GET /api/stream': async (req, res) => {
+    const ip = clientIp(req);
+    const open = (streamsPerIp.get(ip) || 0);
+    if (open >= MAX_STREAMS_PER_IP) return fail(res, 429, 'too many open connections from here');
+    streamsPerIp.set(ip, open + 1);
+
     res.writeHead(200, {
       'content-type': 'text/event-stream',
       'cache-control': 'no-store',
@@ -242,7 +284,12 @@ const ROUTES = {
 
     // A comment line every 25s, so idle proxies do not decide the connection died.
     const beat = setInterval(() => { try { res.write(': ping\n\n'); } catch {} }, 25000);
-    req.on('close', () => { clearInterval(beat); watchers.delete(res); });
+    req.on('close', () => {
+      clearInterval(beat);
+      watchers.delete(res);
+      const n = (streamsPerIp.get(ip) || 1) - 1;
+      if (n > 0) streamsPerIp.set(ip, n); else streamsPerIp.delete(ip);
+    });
   },
 };
 
@@ -277,7 +324,12 @@ export const server = createServer(async (req, res) => {
   } catch (e) {
     if (e?.code === 'ENOENT') return fail(res, 404, 'not found');
     // A rule the table refused is the caller's problem, not a server fault.
-    const client = /already|cannot|not your|refused|insufficient|minimum|maximum|taken|no such|closed|not open|not seated|not in this|does not look|at least|too large/i.test(e.message || '');
+    // Errors that say so are the caller's problem. The regex is how the older
+    // throws are still recognised; anything new marks itself instead, because
+    // classifying a refusal by whether its wording appears in a list here is a
+    // 500 waiting to happen.
+    const client = e?.expected === true ||
+      /already|cannot|not your|refused|insufficient|minimum|maximum|taken|no such|closed|not open|not seated|not in this|does not look|at least|too large/i.test(e.message || '');
     if (!client) console.error(route, e);
     fail(res, client ? 400 : 500, client ? e.message : 'something went wrong');
   }

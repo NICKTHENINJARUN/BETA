@@ -91,7 +91,7 @@ export class Table {
     if (this.seats.some(s => s && s.userId === user.id)) throw new Error('you are already seated');
 
     this.seats[seatNo] = {
-      userId: user.id, display: user.display, seatNo,
+      userId: user.id, display: user.display, tag: user.tag || null, seatNo,
       bet: 0, hands: [], insurance: 0, activeHand: 0,
       inRound: false, lastAction: null,
     };
@@ -410,6 +410,11 @@ export class Table {
       seats: this.seats.map((s, i) => s && ({
         seatNo: i,
         display: s.display,
+        // The tag, not the name, is how a client knows which seat is its own.
+        // Display names are not unique, so matching on one meant two players
+        // called "Nick" each saw the other's seat as theirs — and anyone could
+        // take your name and cause it deliberately.
+        tag: s.tag || null,
         bet: s.bet,
         inRound: s.inRound,
         insurance: s.insurance > 0 ? s.insurance : 0,

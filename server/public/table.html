@@ -89,6 +89,18 @@
                background:#0d0d0d;color:var(--text)}
   .err{color:var(--red);font-size:14px;min-height:20px;margin-top:8px}
   .ok{color:var(--green)}
+  /* The value is uppercased because tags are, but the placeholder is a
+     sentence and should not shout. */
+  #giftTo{text-transform:uppercase}
+  #giftTo::placeholder{text-transform:none}
+  .board{width:100%;border-collapse:collapse;font-size:14px;margin-top:6px}
+  .board th{text-align:left;color:var(--muted);font-weight:650;padding:6px 8px;
+            border-bottom:1px solid var(--line);font-size:13px}
+  .board td{padding:6px 8px;border-bottom:1px solid #1b1b1b}
+  .board td:last-child,.board th:last-child{text-align:right}
+  .board tr.mine td{color:var(--orange)}
+  .board .pos{color:#3fca77}.board .neg{color:#e0546f}
+  .vh{position:absolute;width:1px;height:1px;margin:-1px;overflow:hidden;clip-path:inset(50%)}
   .tabs{display:flex;gap:6px;margin-bottom:16px}
   .tabs button{padding:8px 16px;border-radius:6px;border:1px solid var(--line);background:transparent;font-size:14px}
   .tabs button[aria-selected=true]{background:var(--panel2);border-color:var(--orange);color:var(--orange)}
@@ -200,6 +212,42 @@
       </div>
 
       <div class="panel">
+        <h2>Your wallet</h2>
+        <p class="fair">
+          Your player tag is <code id="myTag">—</code>. Give it to someone and they can send you chips.
+        </p>
+        <form id="giftForm" class="bar" autocomplete="off">
+          <div class="field">
+            <label for="giftTo">Send to (player tag)</label>
+            <input id="giftTo" name="giftTo" maxlength="6" placeholder="e.g. 7K2QXB"
+                   required>
+          </div>
+          <div class="field">
+            <label for="giftAmt">Amount ($)</label>
+            <input id="giftAmt" name="giftAmt" type="number" min="1" max="250" step="1" value="10" required>
+          </div>
+          <button class="btn" id="giftSend" type="submit">Send chips</button>
+        </form>
+        <p class="fair" id="giftRule"></p>
+        <div class="err" id="giftErr" role="alert"></div>
+        <div id="giftOk" role="status" aria-live="polite"></div>
+      </div>
+
+      <div class="panel">
+        <h2>Leaderboard</h2>
+        <p class="fair">
+          Ranked by what each player has won at the table. Chips you were given do not count —
+          otherwise the fastest way to the top would be to ask a friend.
+        </p>
+        <table class="board" id="board">
+          <caption class="vh">Players ranked by net winnings</caption>
+          <thead><tr><th scope="col">#</th><th scope="col">Player</th>
+            <th scope="col">Hands</th><th scope="col">Net</th></tr></thead>
+          <tbody id="boardBody"></tbody>
+        </table>
+      </div>
+
+      <div class="panel">
         <h2>Provably fair</h2>
         <p class="fair">
           Before this shoe was shuffled the server published a fingerprint of the seed that governs it.
@@ -278,9 +326,83 @@ function enter(user) {
   $('#tablePanel').hidden = false;
   $('#whoami').hidden = false;
   $('#displayName').textContent = user.display;
+  $('#myTag').textContent = user.tag || '—';
   setBalance(user.balance);
   connect();
+  refreshWallet();
+  refreshBoard();
 }
+
+/* ------------------------------------------------------- wallet and board */
+
+/** What this account may send, and how close it is to being allowed to. */
+async function refreshWallet() {
+  try {
+    const r = await fetch('/api/stats');
+    if (!r.ok) return;
+    const { stats, gift } = await r.json();
+    const short = Math.max(0, gift.minHandsPlayed - stats.hands);
+    $('#giftRule').textContent = short
+      ? `You need ${short} more hand${short === 1 ? '' : 's'} before you can send chips — ` +
+        `${stats.hands} of ${gift.minHandsPlayed} played. It keeps people from making accounts just to farm the bonus.`
+      : `You can send up to ${money(gift.maxCents)} at once, and ${money(gift.perDayCents)} a day.`;
+    $('#giftSend').disabled = short > 0;
+  } catch {}
+}
+
+async function refreshBoard() {
+  try {
+    const r = await fetch('/api/leaderboard');
+    if (!r.ok) return;
+    const { players } = await r.json();
+    const body = $('#boardBody');
+    body.textContent = '';
+    if (!players.length) {
+      const tr = body.insertRow();
+      const td = tr.insertCell();
+      td.colSpan = 4;
+      td.textContent = 'Nobody has played a hand yet. Be the first.';
+      return;
+    }
+    players.forEach((p, i) => {
+      const tr = body.insertRow();
+      if (me && p.tag === me.tag) tr.className = 'mine';
+      // textContent throughout: a display name is whatever a stranger typed.
+      tr.insertCell().textContent = String(i + 1);
+      tr.insertCell().textContent = p.display;
+      tr.insertCell().textContent = String(p.hands);
+      const net = tr.insertCell();
+      net.textContent = (p.net >= 0 ? '+' : '−') + money(Math.abs(p.net));
+      net.className = p.net > 0 ? 'pos' : p.net < 0 ? 'neg' : '';
+    });
+  } catch {}
+}
+
+$('#giftForm').addEventListener('submit', async e => {
+  e.preventDefault();
+  $('#giftErr').textContent = '';
+  $('#giftOk').textContent = '';
+  const to = $('#giftTo').value.trim().toUpperCase();
+  const cents = Math.round(Number($('#giftAmt').value) * 100);
+  const btn = $('#giftSend');
+  btn.disabled = true;
+  try {
+    const r = await fetch('/api/gift', {
+      method: 'POST', headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ to, cents }),
+    });
+    const data = await r.json().catch(() => ({}));
+    if (!r.ok) { $('#giftErr').textContent = data.error || 'that did not go through'; return; }
+    $('#giftOk').textContent = `Sent ${money(data.cents)} to ${data.to.display}.`;
+    $('#giftTo').value = '';
+    setBalance(data.balance);
+  } catch {
+    $('#giftErr').textContent = 'that did not go through';
+  } finally {
+    btn.disabled = false;
+    refreshWallet();
+  }
+});
 
 const setBalance = c => { $('#balance').textContent = money(c); };
 
@@ -322,7 +444,10 @@ function render() {
   $('#commit').textContent = state.commit || '—';
   $('#cardsLeft').textContent = state.cardsLeft ?? '—';
 
-  mySeat = state.seats.findIndex(s => s && s.display === me.display);
+  // By tag. Display names are not unique, so two players called the same
+  // thing each saw the other's seat as their own — and taking someone's name
+  // to do that on purpose was a two-second attack.
+  mySeat = state.seats.findIndex(s => s && s.tag && s.tag === me.tag);
   if (mySeat < 0) mySeat = null;
 
   // seats

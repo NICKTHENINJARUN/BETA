@@ -21,6 +21,10 @@ function client() {
   let cookie = '';
   return {
     get cookie() { return cookie; },
+    /* Sign in without going through /api/signup. The signup limiter is five a
+       minute per address and this whole suite shares one, so tests that need
+       an account rather than a signup take one directly. */
+    as(user) { cookie = `sid=${accounts.startSession(user.id)}`; return this; },
     async call(path, body, extraHeaders = {}) {
       const r = await fetch(BASE + path, {
         method: body === undefined ? 'GET' : 'POST',
@@ -362,7 +366,87 @@ function client() {
 }
 
 /* ------------------------------------------------------------------ done */
+/* ============================================== gifting and the leaderboard */
+{
+  const giverUser = accounts.createUser('giver@example.com', 'password123', 'Giver');
+  const takerUser = accounts.createUser('taker@example.com', 'password123', 'Taker');
+  const giver = client().as(giverUser);
+  const taker = client().as(takerUser);
+
+  const takerMe = (await taker.call('/api/me')).data.user;
+  const giverMe = (await giver.call('/api/me')).data.user;
+  ok(/^[0-9A-Z]{6}$/.test(takerMe.tag), `a new account gets a readable tag (${takerMe.tag})`);
+  ok(takerMe.tag !== giverMe.tag, 'two accounts do not share a tag');
+
+  // The whole point of the guard: a fresh account is exactly the thing a farm
+  // would be made of, and it holds a full starting balance.
+  let r = await giver.call('/api/gift', { to: takerMe.tag, cents: 10000 });
+  eq(r.status, 400, 'an account that has never played cannot gift');
+
+  // Give the giver a play record, then the same gift should go through.
+  const giverId = giverMe.id;
+  for (let i = 1; i <= 50; i++) {
+    accounts.post([{ userId: giverId, delta: -100, reason: 'bet', ref: `srv#${i}` },
+                   { userId: giverId, delta: 200, reason: 'settle', ref: `srv#${i}/0` }]);
+  }
+  r = await giver.call('/api/gift', { to: takerMe.tag, cents: 10000 });
+  eq(r.status, 200, 'a player who has played can gift');
+  eq((await taker.call('/api/me')).data.user.balance, STARTING_BALANCE + 10000,
+     'the gift arrives in full');
+
+  r = await giver.call('/api/gift', { to: giverMe.tag, cents: 100 });
+  eq(r.status, 400, 'a player cannot gift themselves');
+
+  r = await giver.call('/api/gift', { to: 'ZZZZZZ', cents: 100 });
+  eq(r.status, 400, 'an unknown tag is refused');
+
+  r = await giver.call('/api/gift', { to: takerMe.tag, cents: -5000 });
+  eq(r.status, 400, 'a negative gift is refused');
+
+  r = await giver.call('/api/gift', { to: takerMe.tag, cents: 99999999 });
+  eq(r.status, 400, 'a gift larger than the per-gift ceiling is refused');
+
+  // Signed out, none of this is reachable.
+  const nobody = client();
+  r = await nobody.call('/api/gift', { to: takerMe.tag, cents: 100 });
+  eq(r.status, 401, 'gifting requires an account');
+
+  // Whatever happened above, the books still balance.
+  eq(accounts.audit().length, 0, 'every balance still matches its ledger after gifting');
+
+  // The board ranks on play, so money that was handed over cannot buy a place.
+  const board = (await nobody.call('/api/leaderboard')).data.players;
+  ok(Array.isArray(board), 'the leaderboard is public');
+  ok(board.every(p => p.hands > 0), 'nobody who has never played appears on the board');
+  ok(!board.some(p => p.tag === takerMe.tag),
+     'being gifted a fortune does not put you on the leaderboard');
+  ok(board.every(p => p.email === undefined), 'the leaderboard exposes no email addresses');
+}
+
+/* ================================================ a seat says whose it is */
+{
+  const c = client().as(accounts.createUser('seated@example.com', 'password123', 'Seated'));
+  const me = (await c.call('/api/me')).data.user;
+  // Earlier tests leave players sitting, and there are only five seats. Make
+  // room rather than skipping: an `if` here meant the whole block quietly
+  // passed when the table was full, which is not a check at all.
+  let free = table.seats.findIndex(s => !s);
+  if (free < 0) { table.stand(table.seats[0].userId); free = 0; }
+  ok(free >= 0, 'a seat was available to test with');
+
+  await c.call('/api/sit', { seat: free });
+  const state = (await c.call('/api/table')).data;
+  const mine = state.seats.find(s => s && s.tag === me.tag);
+  ok(!!mine, 'a seat carries the tag of whoever is in it');
+  // Display names are not unique, so they cannot be what identifies a seat.
+  ok(mine && typeof mine.tag === 'string' && mine.tag === me.tag,
+     'the seat is identified by tag rather than by display name');
+  ok(state.seats.every(s => !s || s.userId === undefined),
+     'a seat does not leak the internal account id');
+}
+
 server.close();
+
 console.log(`server checks run: ${checks}`);
 if (fails.length) {
   console.log('SERVER FAILURES:');
