@@ -17,6 +17,21 @@ const SESSION_DAYS = 30;
 /** What a new account starts with, in cents. Play money, so it is a gift. */
 export const STARTING_BALANCE = 100000; // $1,000.00
 
+/* Gifting exists so people can stake a friend, not so one person can run a
+   hundred signups into a single balance. Every new account arrives holding
+   STARTING_BALANCE, which is exactly what makes that worth doing — so a
+   giver has to have actually played first, and there is a ceiling on a day. */
+export const GIFT = {
+  minHandsPlayed: 50,        // roughly one sitting
+  perDayCents: 50000,        // $500 out per day, however many recipients
+  minCents: 100,             // $1
+  maxCents: 25000,           // $250 in one go
+};
+
+/* Unambiguous when read aloud or typed: no O/0, no I/1/L. */
+const TAG_ALPHABET = '23456789ABCDEFGHJKMNPQRSTVWXYZ';
+const TAG_LENGTH = 6;
+
 export function openDb(path = ':memory:') {
   const db = new DatabaseSync(path);
   db.exec(`
@@ -65,7 +80,41 @@ export function openDb(path = ':memory:') {
     CREATE INDEX IF NOT EXISTS ledger_user ON ledger(user_id, id);
     CREATE INDEX IF NOT EXISTS sessions_user ON sessions(user_id);
   `);
+  /* The tag arrived after the first accounts did, so it is added rather than
+     declared, and only when it is missing. A UNIQUE index rather than a column
+     constraint, because SQLite cannot add one of those to a table that exists.
+     Backfilled below so no account is left without a way to be paid. */
+  const hasTag = db.prepare("SELECT COUNT(*) AS n FROM pragma_table_info('users') WHERE name = 'tag'").get().n;
+  if (!hasTag) db.exec('ALTER TABLE users ADD COLUMN tag TEXT');
+  db.exec('CREATE UNIQUE INDEX IF NOT EXISTS users_tag ON users(tag) WHERE tag IS NOT NULL');
+
+  const untagged = db.prepare('SELECT id FROM users WHERE tag IS NULL').all();
+  for (const u of untagged) {
+    for (let i = 0; i < 50; i++) {
+      const tag = randomTag();
+      try { db.prepare('UPDATE users SET tag = ? WHERE id = ?').run(tag, u.id); break; }
+      catch (e) { if (i === 49) throw e; }        // collision: draw again
+    }
+  }
+
   return db;
+}
+
+/* A rule the caller broke, not a fault in the server. Marked rather than
+   left to be recognised by reading the sentence: the HTTP layer classifies
+   older throws with a regex over the message, which quietly returns 500 the
+   first time someone writes a refusal in words it does not happen to list. */
+function refuse(message) {
+  const e = new Error(message);
+  e.expected = true;
+  return e;
+}
+
+function randomTag() {
+  const bytes = randomBytes(TAG_LENGTH);
+  let out = '';
+  for (let i = 0; i < TAG_LENGTH; i++) out += TAG_ALPHABET[bytes[i] % TAG_ALPHABET.length];
+  return out;
 }
 
 const now = () => Date.now();
@@ -93,9 +142,20 @@ export class Accounts {
 
     this.db.exec('BEGIN');
     try {
-      this.db.prepare(
-        'INSERT INTO users (id,email,display,pass_hash,pass_salt,balance,created_at) VALUES (?,?,?,?,?,0,?)'
-      ).run(id, email, display, hash, salt, t);
+      // Retry on the unique index rather than checking first: two signups in
+      // the same moment can both pass a check and only one can pass the index.
+      let inserted = false;
+      for (let i = 0; i < 50 && !inserted; i++) {
+        try {
+          this.db.prepare(
+            'INSERT INTO users (id,email,display,tag,pass_hash,pass_salt,balance,created_at) VALUES (?,?,?,?,?,?,0,?)'
+          ).run(id, email, display, randomTag(), hash, salt, t);
+          inserted = true;
+        } catch (e) {
+          if (!/users_tag/.test(String(e && e.message))) throw e;
+        }
+      }
+      if (!inserted) throw new Error('could not allocate a player tag');
       this.#post(id, STARTING_BALANCE, 'signup', null);
       this.db.exec('COMMIT');
     } catch (e) {
@@ -117,7 +177,7 @@ export class Accounts {
   }
 
   getUser(id) {
-    const r = this.db.prepare('SELECT id,email,display,balance,created_at FROM users WHERE id = ?').get(id);
+    const r = this.db.prepare('SELECT id,email,display,tag,balance,created_at FROM users WHERE id = ?').get(id);
     return r || null;
   }
 
@@ -261,6 +321,112 @@ export class Accounts {
       ).run(tableId, upto);
       this.db.exec('COMMIT');
       return out;
+    } catch (e) {
+      this.db.exec('ROLLBACK');
+      throw e;
+    }
+  }
+
+  /* ------------------------------------------------------- who and how well */
+
+  /** Find a player by the tag they would read out, or by their raw id. */
+  findPlayer(handle) {
+    const h = String(handle || '').trim();
+    if (!h) return null;
+    return this.db.prepare(
+      'SELECT id, display, tag FROM users WHERE tag = ? OR id = ? LIMIT 1'
+    ).get(h.toUpperCase(), h) || null;
+  }
+
+  /**
+   * Read a player's record out of the ledger rather than keeping a second
+   * copy of it. Gifts are deliberately left out of `net`: a leaderboard that
+   * counts money someone was handed is a leaderboard of who has generous
+   * friends, and it would make the gift feature the fastest way to the top.
+   */
+  stats(userId) {
+    const one = (sql, ...args) => this.db.prepare(sql).get(userId, ...args) || {};
+    const hands = one(
+      "SELECT COUNT(DISTINCT ref) AS n FROM ledger WHERE user_id = ? AND reason = 'bet'"
+    ).n || 0;
+    const staked = -(one(
+      "SELECT SUM(delta) AS s FROM ledger WHERE user_id = ? AND reason IN ('bet','double','split','insurance')"
+    ).s || 0);
+    const returned = one(
+      "SELECT SUM(delta) AS s FROM ledger WHERE user_id = ? AND reason IN ('settle','insurance-win')"
+    ).s || 0;
+    const giftedOut = -(one(
+      "SELECT SUM(delta) AS s FROM ledger WHERE user_id = ? AND reason = 'gift-sent'"
+    ).s || 0);
+    const giftedIn = one(
+      "SELECT SUM(delta) AS s FROM ledger WHERE user_id = ? AND reason = 'gift-received'"
+    ).s || 0;
+    return { hands, staked, returned, net: returned - staked, giftedOut, giftedIn,
+             balance: this.balance(userId) };
+  }
+
+  /**
+   * Ranked by what they have won at the table, not by what they hold. Balance
+   * would put whoever was gifted most at the top; this cannot be raised by
+   * being given anything, only by playing well. Accounts that have never
+   * played are left out rather than sitting at a meaningless zero.
+   */
+  leaderboard(limit = 20) {
+    return this.db.prepare(
+      `SELECT u.display, u.tag, u.balance,
+              COUNT(DISTINCT CASE WHEN l.reason = 'bet' THEN l.ref END) AS hands,
+              COALESCE(SUM(CASE
+                WHEN l.reason IN ('settle','insurance-win')             THEN l.delta
+                WHEN l.reason IN ('bet','double','split','insurance')   THEN l.delta
+                ELSE 0 END), 0) AS net
+         FROM users u LEFT JOIN ledger l ON l.user_id = u.id
+        GROUP BY u.id
+        HAVING hands > 0
+        ORDER BY net DESC, hands DESC
+        LIMIT ?`
+    ).all(Math.min(100, Math.max(1, Number(limit) || 20)));
+  }
+
+  /** What this player has sent in the last day, for the cap. */
+  giftedSince(userId, sinceMs) {
+    const r = this.db.prepare(
+      "SELECT SUM(delta) AS s FROM ledger WHERE user_id = ? AND reason = 'gift-sent' AND created_at >= ?"
+    ).get(userId, sinceMs);
+    return -((r && r.s) || 0);
+  }
+
+  /**
+   * Move play money between two players. Both sides in one transaction: a gift
+   * that debited and did not credit would be money destroyed, and the reverse
+   * would be money invented.
+   */
+  gift(fromId, handle, cents) {
+    cents = Math.floor(Number(cents) || 0);
+    if (cents < GIFT.minCents) throw refuse(`the smallest gift is ${GIFT.minCents} cents`);
+    if (cents > GIFT.maxCents) throw refuse(`the largest single gift is ${GIFT.maxCents} cents`);
+
+    const to = this.findPlayer(handle);
+    if (!to) throw refuse('no player with that tag');
+    if (to.id === fromId) throw refuse('you cannot gift yourself');
+
+    const me = this.stats(fromId);
+    if (me.hands < GIFT.minHandsPlayed) {
+      throw refuse(`play ${GIFT.minHandsPlayed} hands before gifting — you have played ${me.hands}`);
+    }
+    if (cents > me.balance) throw refuse('you do not have that much');
+
+    const sentToday = this.giftedSince(fromId, now() - 86400000);
+    if (sentToday + cents > GIFT.perDayCents) {
+      throw refuse(`that is over your daily limit — ${GIFT.perDayCents - sentToday} cents left today`);
+    }
+
+    const ref = `gift:${randomUUID()}`;
+    this.db.exec('BEGIN');
+    try {
+      const fromBalance = this.#post(fromId, -cents, 'gift-sent', ref);
+      this.#post(to.id, cents, 'gift-received', ref);
+      this.db.exec('COMMIT');
+      return { to: { display: to.display, tag: to.tag }, cents, balance: fromBalance };
     } catch (e) {
       this.db.exec('ROLLBACK');
       throw e;
