@@ -19,8 +19,20 @@ import { Table, SEATS } from './table.mjs';
 
 const HERE = fileURLToPath(new URL('.', import.meta.url));
 const PUBLIC = join(HERE, 'public');
+/* The trainer is one file that sits beside this directory rather than inside
+   server/public, because it is also deployed on its own to a static host. The
+   same relative path resolves in the container, where the Dockerfile puts it
+   next to server/ for exactly this reason, so one deployment is the whole
+   site: the trainer at / and the table at /table. */
+const TRAINER = join(HERE, '..', 'index.html');
 const PORT = Number(process.env.PORT || 8787);
+const HOST = process.env.HOST || '0.0.0.0';
 const DB_PATH = process.env.DB_PATH || ':memory:';
+/* Behind a platform's load balancer the connection to this process is plain
+   HTTP even when the browser's connection is TLS, so the only way to know is
+   the forwarded header — and that header is only trustworthy when something
+   is actually in front of us setting it. Off by default, on in deployment. */
+const TRUST_PROXY = process.env.TRUST_PROXY === '1';
 
 const db = openDb(DB_PATH);
 const accounts = new Accounts(db);
@@ -81,9 +93,16 @@ const cookies = req => Object.fromEntries(
   }).filter(([k]) => k)
 );
 
-const sessionCookie = token =>
+/** A session cookie is Secure whenever the browser reached us over TLS. */
+const overTls = req => {
+  if (process.env.SECURE_COOKIE === '1') return true;
+  if (!TRUST_PROXY) return false;
+  return (req.headers['x-forwarded-proto'] || '').split(',')[0].trim() === 'https';
+};
+
+const sessionCookie = (token, req) =>
   `sid=${token}; HttpOnly; SameSite=Strict; Path=/; Max-Age=${30 * 86400}` +
-  (process.env.SECURE_COOKIE === '1' ? '; Secure' : '');
+  (overTls(req) ? '; Secure' : '');
 
 const userFor = req => accounts.userForSession(cookies(req).sid);
 
@@ -95,7 +114,11 @@ function sameOrigin(req) {
   const origin = req.headers.origin;
   if (!origin) return true;                    // not a browser, or a same-origin GET
   try {
-    const host = req.headers.host;
+    // Behind a proxy the Host header may be the internal one, so the forwarded
+    // host is what the browser actually typed and what Origin will match.
+    const host = (TRUST_PROXY && req.headers['x-forwarded-host'])
+      ? req.headers['x-forwarded-host'].split(',')[0].trim()
+      : req.headers.host;
     return new URL(origin).host === host;
   } catch { return false; }
 }
@@ -104,6 +127,12 @@ function sameOrigin(req) {
 /* Enough to stop someone walking a password list, not a substitute for the
    real thing in front of a real deployment. */
 const hits = new Map();
+/** The caller's address — the forwarded one when something in front set it,
+ *  otherwise every request behind a proxy shares one bucket. */
+const clientIp = req =>
+  ((TRUST_PROXY && req.headers['x-forwarded-for']) || '').split(',')[0].trim()
+  || req.socket.remoteAddress || 'unknown';
+
 function tooMany(key, max = 10, windowMs = 60000) {
   const now = Date.now();
   const rec = hits.get(key);
@@ -119,22 +148,22 @@ setInterval(() => {
 /* ------------------------------------------------------------- the routes */
 const ROUTES = {
   'POST /api/signup': async (req, res) => {
-    if (tooMany(`signup:${req.socket.remoteAddress}`, 5)) return fail(res, 429, 'too many attempts, wait a minute');
+    if (tooMany(`signup:${clientIp(req)}`, 5)) return fail(res, 429, 'too many attempts, wait a minute');
     const { email, password, display } = await readJson(req);
     const user = accounts.createUser(email, password, display);
     const token = accounts.startSession(user.id);
-    send(res, 200, { user }, { 'set-cookie': sessionCookie(token) });
+    send(res, 200, { user }, { 'set-cookie': sessionCookie(token, req) });
   },
 
   'POST /api/login': async (req, res) => {
-    if (tooMany(`login:${req.socket.remoteAddress}`, 10)) return fail(res, 429, 'too many attempts, wait a minute');
+    if (tooMany(`login:${clientIp(req)}`, 10)) return fail(res, 429, 'too many attempts, wait a minute');
     const { email, password } = await readJson(req);
     const user = accounts.verifyPassword(email, password);
     // One message for both cases: saying which was wrong tells an attacker
     // which addresses have accounts.
     if (!user) return fail(res, 401, 'that email and password do not match');
     const token = accounts.startSession(user.id);
-    send(res, 200, { user }, { 'set-cookie': sessionCookie(token) });
+    send(res, 200, { user }, { 'set-cookie': sessionCookie(token, req) });
   },
 
   'POST /api/logout': async (req, res) => {
@@ -188,6 +217,18 @@ const ROUTES = {
 
   'GET /api/table': async (req, res) => send(res, 200, table.publicState()),
 
+  /* What a platform's health check calls. Touches the database rather than
+     just returning 200, so a server that has lost its disk reports unhealthy
+     instead of cheerfully serving a broken table. */
+  'GET /healthz': async (req, res) => {
+    try {
+      db.prepare('SELECT 1').get();
+      send(res, 200, { ok: true, phase: table.phase, watchers: watchers.size, uptime: Math.round(process.uptime()) });
+    } catch (e) {
+      send(res, 503, { ok: false, error: 'storage unavailable' });
+    }
+  },
+
   /* The live feed. One long-lived response per watcher; the table pushes into it. */
   'GET /api/stream': async (req, res) => {
     res.writeHead(200, {
@@ -217,10 +258,19 @@ export const server = createServer(async (req, res) => {
     }
     if (req.method !== 'GET') return fail(res, 404, 'no such endpoint');
 
-    // Static files, confined to server/public — a path that climbs out is refused.
-    const rel = url.pathname === '/' ? 'table.html' : url.pathname.slice(1);
-    const path = join(PUBLIC, normalize(rel).replace(/^(\.\.[/\\])+/, ''));
-    if (!path.startsWith(PUBLIC)) return fail(res, 403, 'no');
+    // The trainer and the table are the two pages people ask for by name.
+    let path;
+    if (url.pathname === '/') {
+      path = TRAINER;
+    } else if (url.pathname === '/table' || url.pathname === '/table/') {
+      path = join(PUBLIC, 'table.html');
+    } else {
+      // Everything else is an asset, confined to server/public — a path that
+      // climbs out of it is refused rather than resolved.
+      const rel = normalize(url.pathname.slice(1)).replace(/^(\.\.[/\\])+/, '');
+      path = join(PUBLIC, rel);
+      if (!path.startsWith(PUBLIC)) return fail(res, 403, 'no');
+    }
     const body = await readFile(path);
     res.writeHead(200, { 'content-type': MIME[extname(path)] || 'application/octet-stream' });
     res.end(body);
@@ -233,12 +283,48 @@ export const server = createServer(async (req, res) => {
   }
 });
 
+/**
+ * Shut down in an order that cannot lose money: stop accepting connections,
+ * hang up the open event streams, then close the database. A platform sends
+ * SIGTERM and waits only a few seconds before killing the process, and a
+ * SIGTERM arriving mid-write is how a SQLite file gets corrupted.
+ */
+let closing = false;
+function shutdown(signal) {
+  if (closing) return;
+  closing = true;
+  console.log(`${signal} — closing`);
+
+  server.close(() => {
+    for (const res of watchers) { try { res.end(); } catch {} }
+    watchers.clear();
+    try { db.close(); } catch (e) { console.error('closing the database failed:', e); }
+    console.log('closed cleanly');
+    process.exit(0);
+  });
+
+  // Streams are long-lived by design and will not end on their own, so they
+  // are ended here rather than waiting for a close that would never come.
+  for (const res of watchers) { try { res.end(); } catch {} }
+
+  // If something is still holding on after ten seconds, stop waiting.
+  setTimeout(() => { console.error('did not close in time'); process.exit(1); }, 10000).unref?.();
+}
+process.on('SIGTERM', () => shutdown('SIGTERM'));
+process.on('SIGINT', () => shutdown('SIGINT'));
+
 // Only listen when run directly; importing this in a test must not open a port.
 if (process.argv[1] && process.argv[1].endsWith('index.mjs')) {
-  server.listen(PORT, () => {
-    console.log(`blackjack table on http://localhost:${PORT}`);
-    console.log(`  storage: ${DB_PATH === ':memory:' ? 'in memory (nothing survives a restart)' : DB_PATH}`);
+  server.listen(PORT, HOST, () => {
+    console.log(`blackjack academy listening on ${HOST}:${PORT}`);
+    console.log(`  trainer:     /`);
+    console.log(`  table:       /table`);
+    console.log(`  storage:     ${DB_PATH === ':memory:' ? 'in memory — nothing survives a restart' : DB_PATH}`);
+    console.log(`  behind proxy: ${TRUST_PROXY ? 'yes (forwarded headers trusted)' : 'no'}`);
     console.log(`  play money only — no deposits, no withdrawals, nothing to cash out`);
+    if (DB_PATH === ':memory:') {
+      console.log('  note: set DB_PATH to a file on a persistent disk to keep accounts');
+    }
   });
 }
 

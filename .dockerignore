@@ -1,0 +1,11 @@
+# Everything the server does not need at runtime. The trainer IS needed —
+# the server hosts it at / — so index.html is not excluded here.
+node_modules
+tests
+.github
+.git
+*.db
+*.db-wal
+*.db-shm
+README.md
+package-lock.json

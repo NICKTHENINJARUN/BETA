@@ -72,11 +72,13 @@ const force = table => table.tick(Date.now() + 10 ** 7);
     const pub = table.publicState();
     eq(pub.dealer.cards.length, 1, 'only the upcard is published while players act');
     ok(pub.dealer.hidden >= 1, 'the hidden card is reported as hidden, not sent');
-    // Nothing anywhere in the payload may name the hole card.
-    const hole = table.dealer.cards[1];
-    const json = JSON.stringify(pub);
+    /* Not a substring scan for the hole card's name: six decks mean "4d" names
+       six different cards, so a player legitimately holding one reads as a leak
+       about 6% of the time. What matters is structural — the dealer publishes
+       the upcard, and everything else is counted rather than sent. */
     const { cardName } = await import('../server/engine.mjs');
-    ok(!json.includes(`"${cardName(hole)}"`), 'the hole card does not appear anywhere in the public state');
+    eq(pub.dealer.cards[0], cardName(table.dealer.cards[0]), 'and it is the upcard, not the hole card');
+    eq(pub.dealer.hidden, table.dealer.cards.length - 1, 'every card not published is counted as hidden');
   } else {
     checks += 3;   // dealer had a natural; the round ended before anyone acted
   }
