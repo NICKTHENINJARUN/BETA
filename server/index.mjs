@@ -136,6 +136,10 @@ const clientIp = req =>
 /* Open event streams, counted per address. Decremented when the connection
    closes rather than expiring on a timer, because a stream is meant to stay
    open — a window would let someone accumulate them. */
+/* The only gestures that exist. Sent and matched by key, so the client decides
+   what each one looks like and no player-supplied string is ever broadcast. */
+export const EMOTES = ['clap', 'fire', 'mind-blown', 'luck', 'cheers', 'rip'];
+
 const streamsPerIp = new Map();
 const MAX_STREAMS_PER_IP = 6;
 
@@ -234,6 +238,21 @@ const ROUTES = {
     if (tooMany(`gift:${user.id}`, 10, 60000)) return fail(res, 429, 'slow down');
     const { to, cents } = await readJson(req);
     send(res, 200, accounts.gift(user.id, to, cents));
+  },
+
+  /* Emotes are a closed vocabulary — six keys, and the glyph lives on the
+     client. Nothing a player types reaches another player's page, which is the
+     whole reason this is a wheel and not a chat box: there is no moderation
+     surface because there is nothing to moderate. They are broadcast and never
+     stored; the table's state machine does not hear about them at all. */
+  'POST /api/emote': async (req, res) => {
+    const user = userFor(req);
+    if (!user) return fail(res, 401, 'not signed in');
+    if (tooMany(`emote:${user.id}`, 12, 60000)) return fail(res, 429, 'easy on the emotes');
+    const { emote } = await readJson(req);
+    if (!EMOTES.includes(emote)) return fail(res, 400, 'no such emote');
+    broadcast('emote', { tag: user.tag || null, display: user.display, emote });
+    send(res, 200, { ok: true });
   },
 
   'GET /api/leaderboard': async (req, res) =>

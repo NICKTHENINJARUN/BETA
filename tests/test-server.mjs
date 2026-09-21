@@ -423,6 +423,43 @@ function client() {
   ok(board.every(p => p.email === undefined), 'the leaderboard exposes no email addresses');
 }
 
+/* ===================================================== reactions at the table */
+{
+  const c = client().as(accounts.createUser('emoter@example.com', 'password123', 'Emoter'));
+
+  let r = await c.call('/api/emote', { emote: 'fire' });
+  eq(r.status, 200, 'a signed-in player can react');
+
+  // The vocabulary is closed, which is the entire reason this is safe: there is
+  // no moderation surface because nothing a player writes is ever relayed.
+  r = await c.call('/api/emote', { emote: 'not-an-emote' });
+  eq(r.status, 400, 'an emote outside the list is refused');
+
+  r = await c.call('/api/emote', { emote: '<img src=x onerror=alert(1)>' });
+  eq(r.status, 400, 'an emote key cannot carry markup');
+
+  const nobody = client();
+  r = await nobody.call('/api/emote', { emote: 'clap' });
+  eq(r.status, 401, 'reacting requires an account');
+
+  // Spam is the one abuse a fixed vocabulary still allows.
+  let limited = false;
+  for (let i = 0; i < 20; i++) {
+    const res = await c.call('/api/emote', { emote: 'clap' });
+    if (res.status === 429) { limited = true; break; }
+  }
+  ok(limited, 'reactions are rate limited');
+}
+
+/* ============================================ what the table tells the page */
+{
+  const state = (await client().call('/api/table')).data;
+  ok(state.timing && state.timing.turn > 0,
+     `the table publishes its own timings so a countdown cannot promise different time (turn ${state.timing?.turn}ms)`);
+  ok(state.seats.some(s => s && 'lastAction' in s) || state.seats.every(s => !s),
+     'seats report what they last did, for a client that joined mid-hand');
+}
+
 /* ================================================ a seat says whose it is */
 {
   const c = client().as(accounts.createUser('seated@example.com', 'password123', 'Seated'));
