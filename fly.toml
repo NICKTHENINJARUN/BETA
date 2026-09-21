@@ -52,6 +52,14 @@ primary_region = "dfw"          # Dallas — change to the region nearest your p
     soft_limit = 180
     hard_limit = 220
 
+# Stated rather than left to the platform's default, which has changed before
+# and decides the bill. Node plus a SQLite file sits well under this; the
+# ceiling is here so a busy shoe cannot push the machine into the next size
+# without anyone choosing it.
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "512mb"
+
 [checks.health]
   type = "http"
   port = 8080
