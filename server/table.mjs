@@ -44,9 +44,17 @@ export class Table {
     this.phase = 'waiting';
     this.deadline = 0;
     this.dealer = newHand(0);
-    this.handNo = 0;
+    // Seeded from the ledger, not from zero. The table id is a constant, so a
+    // counter that restarted would write ref "main#3" for a hand that has
+    // already existed, and the ledger would no longer say which of the two any
+    // row belonged to.
+    this.handNo = accounts ? accounts.lastHandNo(id) : 0;
     this.active = null;          // { seat, hand } whose turn it is
     this.lastResults = null;
+
+    // Anything staked on a hand that never finished — the process died holding
+    // it — goes back before play resumes. Empty on a clean start.
+    this.recovered = accounts ? accounts.refundOpenStakes(id) : [];
 
     this.#newShoe();
   }
@@ -337,7 +345,10 @@ export class Table {
       results.push({ seatNo: seat.seatNo, display: seat.display, hands, staked, returned: total, net: total - staked });
     }
 
-    if (entries.length) this.accounts.post(entries);
+    // The payout and the record that this round is closed go in one
+    // transaction. A round in which every hand lost moves no money and is
+    // closed just the same, so this runs whether or not there are entries.
+    this.accounts.settleRound(this.id, this.handNo, entries);
     for (const r of results) r.balance = this.accounts.balance(this.seats[r.seatNo].userId);
 
     this.lastResults = results;

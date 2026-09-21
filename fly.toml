@@ -12,7 +12,11 @@
 # volume is a config change rather than a port.
 
 app = "black-jack"
-primary_region = "dfw"          # Dallas — change to the region nearest your players
+primary_region = "ams"          # Amsterdam, because that is where the app was
+                                # actually created and a config that says
+                                # otherwise is just a lie waiting to be found.
+                                # The volume lives here too, so a machine
+                                # created anywhere else would fail to mount it.
 
 [build]
   dockerfile = "Dockerfile"
