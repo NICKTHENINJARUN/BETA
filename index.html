@@ -36,7 +36,13 @@ button:disabled{cursor:not-allowed;opacity:.34}
 @media(prefers-reduced-motion:reduce){
   *,*:before,*:after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;scroll-behavior:auto!important}
 }
-.shell{width:min(100%,1240px);margin:auto;min-height:100vh;padding:22px 28px 70px}
+/* viewport-fit=cover lets the page use the whole screen, which on a notched
+   phone means the corners and the home indicator sit on top of it unless the
+   padding says otherwise. max() rather than +, so the inset only ever widens
+   the gutter it replaces — in landscape the notch is on one side and the
+   other keeps the design's own spacing. */
+.shell{width:min(100%,1240px);margin:auto;min-height:100vh;
+  padding:22px max(28px,env(safe-area-inset-right)) calc(70px + env(safe-area-inset-bottom)) max(28px,env(safe-area-inset-left))}
 .topnav{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:34px;opacity:.97}
 .brand{display:flex;align-items:center;gap:10px;font-size:17px;font-weight:750}.brandmark{width:26px;height:35px;display:block;flex:none;filter:drop-shadow(0 0 14px rgba(244,117,45,.30)) drop-shadow(0 3px 6px rgba(0,0,0,.45));transform:rotate(-7deg);transition:transform .2s ease}
 .brandmark svg{width:100%;height:100%;display:block}
@@ -213,8 +219,16 @@ h1{font-size:27px;line-height:1.1;margin:0 0 8px;font-weight:780;letter-spacing:
 .checkline input{accent-color:var(--orange)}
 .footer{text-align:center;font-size:12px;color:#8d8c88;margin-top:34px;line-height:1.6}
 .toast{position:fixed;left:50%;bottom:25px;transform:translateX(-50%) translateY(20px);background:#151515;border:1px solid #3b312d;color:#ddd;padding:10px 14px;border-radius:6px;font-size:14px;opacity:0;pointer-events:none;transition:.2s;z-index:30}.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
-@media(max-width:850px){.shell{padding:16px 14px 50px}.topnav{margin-bottom:24px}.nav{overflow:auto;max-width:70vw}.nav button{white-space:nowrap}.traincards{grid-template-columns:1fr 1fr}.casino-wrap{grid-template-columns:1fr}.casinoside{max-height:360px}.metrics{grid-template-columns:1fr}.sim-grid{grid-template-columns:1fr}.strategy-table{font-size:12px}.chartbox{padding:12px}.map{min-height:500px}}
+@media(max-width:850px){.shell{padding:16px max(14px,env(safe-area-inset-right)) calc(50px + env(safe-area-inset-bottom)) max(14px,env(safe-area-inset-left))}.topnav{margin-bottom:24px}.nav{overflow:auto;max-width:70vw}.nav button{white-space:nowrap}.traincards{grid-template-columns:1fr 1fr}.casino-wrap{grid-template-columns:1fr}.casinoside{max-height:360px}.metrics{grid-template-columns:1fr}.sim-grid{grid-template-columns:1fr}.strategy-table{font-size:12px}.chartbox{padding:12px}.map{min-height:500px}}
 @media(max-width:600px){
+  /* On a phone the chart started 862px down — a whole screen of preamble
+     before the thing you opened the page for. The instructions are prose you
+     read once; the chart is what you came back for, so they swap places.
+     Source order is unchanged, so a screen reader and the keyboard still meet
+     the explanation before the table it explains. */
+  #view-strategy .content{display:flex;flex-direction:column}
+  #view-strategy #chartArea{order:1}
+  #view-strategy #chartHow{order:2;margin:18px 0 0}
   .strategy-table td[data-code]{font-size:0}
   .strategy-table td[data-code]:before{content:attr(data-code);font-size:14px;font-weight:700}
   .strategy-table{font-size:12px}
@@ -1177,6 +1191,17 @@ function showView(v,push=true){
        tab; the arrow keys move within it. */
     b.tabIndex = on?0:-1;
   });
+  /* The nav scrolls sideways on a phone, and arriving straight at a view —
+     a shared link, a bookmark, a jump from another screen — left the selected
+     tab 314px past the edge. Three tabs visible, none of them the one you were
+     looking at. Moving focus scrolls it into view on its own, which is why the
+     arrow keys never showed this; nothing was doing it for the other routes.
+     The nav's own scroll is set rather than scrollIntoView, which would also
+     move the page out from under someone. */
+  const tab = $('#nav button.active'), nav = $('#nav');
+  if (tab && nav.scrollWidth > nav.clientWidth) {
+    nav.scrollLeft = Math.max(0, tab.offsetLeft - (nav.clientWidth - tab.offsetWidth) / 2);
+  }
   if(push&&location.hash.slice(1)!==v) history.replaceState(null,'','#'+v);
   window.scrollTo({top:0,behavior:'smooth'});
   if(v==='casinos') renderVenues();
