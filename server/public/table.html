@@ -76,10 +76,29 @@
   .btn:hover:not(:disabled){border-color:#54362c}
   .btn.primary{background:var(--orange);border-color:var(--orange);color:#14110f}
   .btn.ghost{background:transparent}
-  .chips{display:flex;gap:8px;flex-wrap:wrap}
-  .chip{width:52px;height:52px;border-radius:50%;border:2px dashed #55514b;background:#191817;
-        font-weight:800;font-size:13px;font-variant-numeric:tabular-nums}
-  .chip:hover:not(:disabled){border-color:var(--orange);color:var(--orange)}
+  /* The betting picker. Wraps rather than shrinks: six denominations on a
+     narrow panel belong on two rows, not squeezed to slivers. */
+  .chips{display:flex;gap:10px;flex-wrap:wrap;justify-content:center}
+  .chip{width:58px;height:58px;border-radius:50%;border:2px solid rgba(0,0,0,.5);
+        display:grid;place-items:center;flex:0 0 auto;color:#fff;
+        font-weight:800;font-size:14px;font-variant-numeric:tabular-nums;
+        box-shadow:0 2px 6px rgba(0,0,0,.45), 0 0 0 4px rgba(255,255,255,.07) inset,
+                   0 0 0 5px rgba(0,0,0,.25) inset;
+        text-shadow:0 1px 2px rgba(0,0,0,.6)}
+  /* Cheque colours as a casino racks them, so the value is legible before the
+     number is read: white 1, red 5, green 25, black 100, purple 500,
+     orange 1K, maroon 5K. */
+  .chip.c1{background:#e8e6e1;color:#1a1a1a;text-shadow:none}
+  .chip.c5{background:#b8353f}.chip.c25{background:#2f8a4e}
+  .chip.c100{background:#1d1d1d}.chip.c500{background:#6c3f9e}
+  .chip.c1000{background:#d08a1c;color:#1a1a1a;text-shadow:none}
+  .chip.c5000{background:#8d2f33}
+  .chip:hover:not(:disabled){outline:2px solid var(--orange);outline-offset:2px}
+  .chip:disabled{opacity:.3}
+  .betnow{font-size:13px;color:var(--muted2);display:flex;align-items:center;gap:8px}
+  .betnow b{color:var(--gold);font-size:15px;font-variant-numeric:tabular-nums}
+  .betnow .btn{padding:5px 10px;font-size:12px}
+  .limits{font-size:12px;color:var(--muted2);text-align:center;margin:10px 0 0}
   .clock{font-variant-numeric:tabular-nums;color:var(--gold);font-weight:700;font-size:14px}
   .phase{font-size:13px;color:var(--muted);text-transform:capitalize}
 
@@ -126,13 +145,21 @@
   }
   @keyframes ringpulse{50%{opacity:.45}}
 
-  .chips{display:flex;gap:3px;align-items:flex-end;justify-content:center;min-height:20px;margin-top:4px}
+  /* The chips lying on the felt. These were called .chips and .chip too, and
+     being later in the file they won -- so the betting picker's buttons were
+     being drawn as 22x5px slivers with their labels spilling out over the
+     emote wheel. Named apart now, which is the actual fix. */
+  .betstack{display:flex;gap:3px;align-items:flex-end;justify-content:center;min-height:20px;margin-top:4px}
   .stack{display:flex;flex-direction:column-reverse;align-items:center}
-  .chip{width:22px;height:5px;border-radius:99px;margin-top:-1px;
+  .betchip{width:22px;height:5px;border-radius:99px;margin-top:-1px;
         border:1px solid rgba(0,0,0,.45);box-shadow:0 1px 0 rgba(255,255,255,.12) inset}
-  .chip.c5{background:#b8353f}.chip.c25{background:#2f8a4e}.chip.c100{background:#1d1d1d}
-  .chip.c500{background:#6c3f9e}.chip.c1000{background:#d08a1c}
-  .stack b{font-size:10px;color:var(--muted2);margin-top:3px;font-weight:650}
+  .betchip.c1{background:#e8e6e1}.betchip.c5{background:#b8353f}.betchip.c25{background:#2f8a4e}
+  .betchip.c100{background:#1d1d1d}.betchip.c500{background:#6c3f9e}
+  .betchip.c1000{background:#d08a1c}.betchip.c5000{background:#8d2f33}
+  /* 12px, not 10. These labels never showed up in the audit before, because
+     the smallest cheque on the felt was $5 and the test always bet a round
+     number -- a $1 cheque put one on screen and the reader found it. */
+  .stack b{font-size:12px;color:var(--muted2);margin-top:3px;font-weight:650}
 
   /* --- the dealer, and what she says --------------------------------- */
   .croupier{position:relative;display:grid;place-items:center;margin-bottom:2px}
@@ -228,6 +255,8 @@
       <a class="btn ghost" href="/" style="text-decoration:none">Trainer</a>
       <button class="soundbtn" id="soundBtn" type="button"
               aria-pressed="false" aria-label="Table sound" title="Table sound">♪</button>
+      <button class="soundbtn" id="voiceBtn" type="button" hidden
+              aria-pressed="false" aria-label="Dealer voice" title="Dealer voice">●●●</button>
       <span id="displayName"></span>
       <span class="bal" id="balance" aria-live="polite">—</span>
       <button class="btn ghost" id="signOut">Sign out</button>
@@ -304,8 +333,13 @@
         </div>
 
         <div id="betControls" hidden>
-          <h2 id="chipLabel">Place your bet</h2>
+          <div class="bar" style="justify-content:space-between;margin-bottom:10px">
+            <h2 id="chipLabel" style="margin:0">Place your bet</h2>
+            <span class="betnow">On the table <b id="betTotal">$0</b>
+              <button class="btn ghost" id="betClear" type="button" disabled>Clear</button></span>
+          </div>
           <div class="chips" role="group" aria-labelledby="chipLabel" id="chips"></div>
+          <p class="limits" id="betLimits"></p>
         </div>
 
         <div class="bar" id="actControls" role="group" aria-label="Your move" hidden></div>
@@ -401,6 +435,7 @@
 
 <script type="module">
 const $ = s => document.querySelector(s);
+const $$ = s => [...document.querySelectorAll(s)];
 const money = c => '$' + (c / 100).toFixed(2);
 
 let me = null, state = null, mySeat = null, lastActions = [];
@@ -571,17 +606,24 @@ $('#giftForm').addEventListener('submit', async e => {
   }
 });
 
-const setBalance = c => { $('#balance').textContent = money(c); };
+/* Kept as a number as well as painted, because the chip rack needs to know
+   what you can afford, and reading it back out of the DOM as "$1,000.00"
+   would mean parsing money out of a string. */
+let balanceCents = 0;
+const setBalance = c => { balanceCents = Number(c) || 0; $('#balance').textContent = money(c); };
 
 /* --------------------------------------------------- seats: what they show */
 
-const DENOMS = [[100000, 'c1000', '1K'], [50000, 'c500', '500'], [10000, 'c100', '100'],
-                [2500, 'c25', '25'], [500, 'c5', '5']];
+/* The denominations a casino actually racks, in the colours it racks them in:
+   white 1, red 5, green 25, black 100, purple 500, orange 1K, maroon 5K.
+   Largest first, because that is the order a bet is broken down in. */
+const DENOMS = [[500000, 'c5000', '5K'], [100000, 'c1000', '1K'], [50000, 'c500', '500'],
+                [10000, 'c100', '100'], [2500, 'c25', '25'], [500, 'c5', '5'], [100, 'c1', '1']];
 
 /** A bet drawn the way it would sit on the felt, largest denomination first. */
 function chipStack(cents) {
   const wrap = document.createElement('div');
-  wrap.className = 'chips';
+  wrap.className = 'betstack';
   let left = cents || 0;
   for (const [value, cls, label] of DENOMS) {
     const n = Math.floor(left / value);
@@ -593,7 +635,7 @@ function chipStack(cents) {
     // the count below it does the talking.
     for (let i = 0; i < Math.min(n, 8); i++) {
       const c = document.createElement('div');
-      c.className = 'chip ' + cls;
+      c.className = 'betchip ' + cls;
       stack.append(c);
     }
     const tag = document.createElement('b');
@@ -707,6 +749,7 @@ function say(line) {
   el.classList.remove('fresh');
   void el.offsetWidth;                       // restart the animation
   el.classList.add('fresh');
+  speak(line);
 }
 
 const seatName = n => (mySeat === n ? 'your move' : `seat ${n + 1}`);
@@ -783,7 +826,27 @@ function render() {
   // controls
   const seat = mySeat !== null ? state.seats[mySeat] : null;
   $('#sitControls').hidden = mySeat !== null;
-  $('#betControls').hidden = !(state.phase === 'betting' && seat && !seat.bet);
+  /* Stays up once there is a bet on the table, because the bet is built from
+     chips: hiding it after the first one is what made a single click the
+     whole wager. */
+  $('#betControls').hidden = !(state.phase === 'betting' && seat);
+  if (seat && state.phase === 'betting') {
+    const on = seat.bet || 0;
+    const lim = state.rules || {};
+    $('#betTotal').textContent = money(on);
+    $('#betClear').disabled = !on;
+    $('#betLimits').textContent =
+      `Table limits ${money(lim.minBet ?? 0)} to ${money(lim.maxBet ?? 0)} a hand.`
+      + (on ? ` You can add up to ${money(Math.max(0, (lim.maxBet ?? 0) - on))} more.` : '');
+    // A chip you cannot afford, or that would put you over the ceiling, is
+    // shown greyed rather than hidden: the rack does not change shape as you
+    // bet, so where a denomination sits stays where it was.
+    const room = (lim.maxBet ?? Infinity) - on;
+    $$('#chips .chip').forEach(b => {
+      const c = Number(b.dataset.cents);
+      b.disabled = c > room || c > balanceCents;
+    });
+  }
   $('#insControls').hidden = !(state.phase === 'insurance' && seat?.inRound);
   const myTurn = state.phase === 'acting' && state.active?.seat === mySeat;
   $('#actControls').hidden = !myTurn;
@@ -877,6 +940,98 @@ function setSound(on) {
   if (on) SFX.chip();                       // confirm it works, and unlock audio
 }
 $('#soundBtn').onclick = () => setSound(!soundOn);
+
+/* ------------------------------------------------------------ dealer voice */
+
+/* The dealer speaks with the browser's own synthesiser. That is the whole
+   reason it can be here at all: a recorded voice means an audio pipeline, a
+   megabyte of clips per accent, and a page that stops working on a plane.
+   This ships today, costs nothing, and reads every line the dealer has.
+
+   It is deliberately wired into say() rather than called at each event. A
+   second call site is a line that silently never gets spoken, and "all of the
+   dealer's dialogue" is a promise that only a single funnel can keep.
+
+   Off until asked, and the asking is the click that browsers require before
+   they will make noise at all. */
+const VOICE_KEY = 'bjTableVoice';
+const canSpeak = typeof speechSynthesis !== 'undefined' &&
+                 typeof SpeechSynthesisUtterance !== 'undefined';
+let voiceOn = false;
+try { voiceOn = canSpeak && localStorage.getItem(VOICE_KEY) === '1'; } catch {}
+
+/* Voice list loads asynchronously and starts empty on most browsers, so this
+   is re-run when it arrives rather than picked once at startup. A local voice
+   is preferred over a network one: a dealer whose callout needs a round trip
+   arrives after the cards do. */
+let picked = null;
+function pickVoice() {
+  if (!canSpeak) return null;
+  let all = [];
+  try { all = speechSynthesis.getVoices() || []; } catch { return null; }
+  if (!all.length) return null;
+  const en = all.filter(v => /^en(-|_|$)/i.test(v.lang || ''));
+  const pool = en.length ? en : all;
+  picked = pool.find(v => v.localService) || pool[0] || null;
+  return picked;
+}
+if (canSpeak) {
+  pickVoice();
+  try { speechSynthesis.addEventListener('voiceschanged', pickVoice); } catch {}
+}
+
+/* Numbers read better spoken than printed: a dealer says "seventeen", not
+   "17", and "three to two" is already written that way. Only the few the
+   table actually produces are here -- a general number-to-words routine would
+   be a lot of code for totals that only ever run 2 to 30. */
+const SPOKEN = {
+  2: 'two', 3: 'three', 4: 'four', 5: 'five', 6: 'six', 7: 'seven', 8: 'eight',
+  9: 'nine', 10: 'ten', 11: 'eleven', 12: 'twelve', 13: 'thirteen', 14: 'fourteen',
+  15: 'fifteen', 16: 'sixteen', 17: 'seventeen', 18: 'eighteen', 19: 'nineteen',
+  20: 'twenty', 21: 'twenty-one', 22: 'twenty-two', 23: 'twenty-three',
+  24: 'twenty-four', 25: 'twenty-five', 26: 'twenty-six', 27: 'twenty-seven',
+  28: 'twenty-eight', 29: 'twenty-nine', 30: 'thirty',
+};
+const forSpeech = line => line
+  .replace(/\bseat (\d+)\b/gi, (_, n) => `seat ${SPOKEN[+n] || n}`)
+  .replace(/\b(\d+)\b/g, (m, n) => SPOKEN[+n] || m)
+  .replace(/\s+—\s+/g, ', ');
+
+function speak(line) {
+  if (!voiceOn || !canSpeak || !line) return;
+  try {
+    // Replace rather than queue. A dealer two callouts behind the felt is
+    // worse than one that misses a line: the table has already moved on.
+    speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(forSpeech(line));
+    if (picked || pickVoice()) u.voice = picked;
+    u.lang = (picked && picked.lang) || 'en-US';
+    u.rate = 1.02;        // a working dealer is brisk, not languid
+    u.pitch = 1;
+    u.volume = 0.9;
+    speechSynthesis.speak(u);
+  } catch { /* a browser that will not speak is not a reason to break the table */ }
+}
+
+function setVoice(on) {
+  voiceOn = on && canSpeak;
+  try { localStorage.setItem(VOICE_KEY, voiceOn ? '1' : '0'); } catch {}
+  const b = $('#voiceBtn');
+  b.setAttribute('aria-pressed', String(voiceOn));
+  b.textContent = voiceOn ? '●●●' : '○○○';
+  b.title = voiceOn ? 'Dealer voice on' : 'Dealer voice off';
+  if (!voiceOn && canSpeak) { try { speechSynthesis.cancel(); } catch {} }
+  // Say something on the way in, so it is obvious it worked and which voice
+  // you have got. Nothing on the way out, which would be a contradiction.
+  if (voiceOn) speak('Dealer voice on.');
+}
+
+/* A browser with no synthesiser gets no button rather than a dead one. */
+if (canSpeak) {
+  $('#voiceBtn').hidden = false;
+  $('#voiceBtn').onclick = () => setVoice(!voiceOn);
+  setVoice(voiceOn);
+}
 
 /* -------------------------------------------------------------------- chat */
 
@@ -1040,17 +1195,27 @@ function renderActions(actions) {
   wrap.querySelector('button')?.focus();
 }
 
-// chips
-$('#chips').replaceChildren(...[100, 500, 1000, 2500, 10000].map(c => {
+/* The chips you bet with, in the denominations a casino racks. Each click
+   lays another one down rather than replacing what is there, so a bet is
+   built the way it is at a table: two blacks and a green is $225. */
+const PICKER = [[100, 'c1', '$1'], [500, 'c5', '$5'], [2500, 'c25', '$25'],
+                [10000, 'c100', '$100'], [50000, 'c500', '$500'], [100000, 'c1000', '$1K']];
+
+$('#chips').replaceChildren(...PICKER.map(([c, cls, label]) => {
   const b = document.createElement('button');
-  b.className = 'chip';
-  b.textContent = c >= 1000 ? `$${c / 100}` : `$${c / 100}`;
-  b.setAttribute('aria-label', `Bet ${money(c)}`);
+  b.className = 'chip ' + cls;
+  b.dataset.cents = c;
+  b.textContent = label;
+  b.setAttribute('aria-label', `Add ${money(c)} to your bet`);
   b.onclick = () => api('/api/bet', { cents: c })
-    .then(r => { setBalance(r.balance); state = r.state; render(); })
+    .then(r => { setBalance(r.balance); state = r.state; SFX.chip(); render(); })
     .catch(e => showErr($('#tableErr'), e.message));
   return b;
 }));
+
+$('#betClear').onclick = () => api('/api/bet/clear', {})
+  .then(r => { setBalance(r.balance); state = r.state; render(); })
+  .catch(e => showErr($('#tableErr'), e.message));
 
 $('#insControls').onclick = e => {
   const t = e.target.closest('[data-ins]');

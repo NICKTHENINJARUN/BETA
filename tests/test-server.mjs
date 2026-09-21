@@ -126,10 +126,29 @@ function client() {
   eq(r.status, 200, 'a bet is accepted while betting is open');
   eq(r.data.balance, STARTING_BALANCE - 500, 'and the stake leaves the balance');
 
+  /* Chips add up now, so a second one raises the bet rather than being
+     refused -- and the table minimum has to be checked against a clean seat,
+     because 99 cents on top of $5 is a $5.99 bet and passes it honestly. */
+  r = await ann.call('/api/bet', { cents: 2500 });
+  eq(r.status, 200, 'a second chip is accepted');
+  eq(r.data.balance, STARTING_BALANCE - 3000, 'and takes only that chip from the balance');
+  eq(r.data.state.seats[0].bet, 3000, 'and the seat carries the running total');
+
+  r = await ann.call('/api/bet/clear', {});
+  eq(r.status, 200, 'the bet can be taken back off the table');
+  eq(r.data.balance, STARTING_BALANCE, 'and every cent of it comes back');
+  eq(r.data.state.seats[0].bet, 0, 'leaving nothing on the seat');
+
   r = await ann.call('/api/bet', { cents: 99 });
   eq(r.status, 400, 'a bet under the minimum is refused');
   r = await ann.call('/api/bet', { cents: 99999999 });
   eq(r.status, 400, 'a bet over the maximum is refused');
+  r = await ann.call('/api/bet', { cents: 0 });
+  eq(r.status, 400, 'a bet of nothing is refused');
+
+  // Restored, so the rest of the round plays out as it did before.
+  r = await ann.call('/api/bet', { cents: 500 });
+  eq(r.status, 200, 'and the bet can be laid back down');
 
   await bob.call('/api/bet', { cents: 500 });
 
@@ -465,6 +484,37 @@ function client() {
   ok(accounts.balance(clean.id) > balBefore, 'though it certainly moves the balance');
 
   eq(accounts.audit().length, 0, 'every balance still matches its ledger after a grant');
+
+  /* Hands played gates gifting at fifty and chat at five, so it has to mean
+     money that was actually at risk. Chips add up and come back off again, and
+     a bet placed and cleared nets to zero on its round -- betting and clearing
+     on repeat would otherwise walk an account to fifty "hands" without ever
+     putting a cent on the table, which is the exact thing the gate exists to
+     stop. Measured on one account across both cases. */
+  const churn = accounts.createUser('churn@example.com', 'password123', 'Churn');
+  const handsOf = id => accounts.stats(id).hands;
+  eq(handsOf(churn.id), 0, 'a new account has played nothing');
+
+  for (let i = 0; i < 20; i++) {
+    accounts.post([{ userId: churn.id, delta: -500, reason: 'bet', ref: `churn#${i}` }]);
+    accounts.post([{ userId: churn.id, delta: 500, reason: 'bet', ref: `churn#${i}` }]);
+  }
+  eq(handsOf(churn.id), 0, 'twenty rounds of betting and clearing is still nothing played');
+  eq(accounts.balance(churn.id), STARTING_BALANCE, 'and costs nothing either');
+
+  // A stake that stayed down is a hand, cleared chips in the same round or not.
+  accounts.post([{ userId: churn.id, delta: -500, reason: 'bet', ref: 'churn#real' }]);
+  accounts.post([{ userId: churn.id, delta: 500, reason: 'bet', ref: 'churn#real' }]);
+  accounts.post([{ userId: churn.id, delta: -200, reason: 'bet', ref: 'churn#real' }]);
+  eq(handsOf(churn.id), 1, 'a round where a stake was left down counts once');
+
+  accounts.post([{ userId: churn.id, delta: -300, reason: 'bet', ref: 'churn#real2' }]);
+  eq(handsOf(churn.id), 2, 'and each further round counts once more');
+
+  // The board has to agree with stats, or the two gates disagree about the
+  // same player.
+  const onBoard = accounts.leaderboard(200).find(p => p.display === 'Churn');
+  eq(onBoard && onBoard.hands, 2, 'the leaderboard counts the same hands stats does');
 }
 
 /* ============================================== chat, and who moderates it */

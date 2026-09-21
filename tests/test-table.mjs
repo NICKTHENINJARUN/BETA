@@ -45,10 +45,54 @@ const force = table => table.tick(Date.now() + 10 ** 7);
   table.placeBet(bob.id, 1000);
   eq(accounts.balance(alice.id), STARTING_BALANCE - 500, 'the stake leaves the balance when it is bet');
 
-  let second = false;
-  try { table.placeBet(alice.id, 500); } catch { second = true; }
-  ok(second, 'a second bet in one round is refused');
-  eq(accounts.balance(alice.id), STARTING_BALANCE - 500, 'and does not take the money twice');
+  /* Chips add up, the way they do on a felt. This used to refuse a second bet
+     outright, which made one click the whole wager and a $1,000 cheque
+     useless for anything but a $1,000 hand. */
+  table.placeBet(alice.id, 500);
+  eq(table.seats[0].bet, 1000, 'a second chip adds to the bet rather than replacing it');
+  eq(accounts.balance(alice.id), STARTING_BALANCE - 1000, 'and takes exactly the second chip, once');
+
+  // Back down again, which a misplaced chip needs and six denominations make
+  // a matter of time.
+  table.clearBet(alice.id);
+  eq(table.seats[0].bet, 0, 'clearing takes the bet off the table');
+  eq(accounts.balance(alice.id), STARTING_BALANCE, 'and gives back every cent of it');
+
+  let over = false;
+  try { table.placeBet(alice.id, table.rules.maxBet + 1); } catch { over = true; }
+  ok(over, 'a chip that would pass the table maximum is refused');
+
+  // Built back up from chips, which is what the rest of this round plays out.
+  table.placeBet(alice.id, 200);
+  table.placeBet(alice.id, 300);
+  eq(table.seats[0].bet, 500, 'a bet built from several chips totals what was laid down');
+  eq(accounts.balance(alice.id), STARTING_BALANCE - 500, 'and the balance matches the total exactly');
+
+  /* The ceiling counts the whole bet, not the chip in your hand -- otherwise
+     the limit is no limit at all, since you can always add one more.
+
+     Funded past the maximum first, on purpose. A starting balance is a
+     thousand dollars and the table ceiling is two and a half, so without this
+     the refusal comes from having no money and the check passes whichever
+     rule is written: it would read the same with the ceiling removed. */
+  accounts.post([{ userId: alice.id, delta: table.rules.maxBet * 2, reason: 'grant', ref: 'test-fund' }]);
+  const funded = accounts.balance(alice.id);
+  let ceiling = false;
+  try {
+    table.placeBet(alice.id, table.rules.maxBet - 400);   // 500 already down
+    ceiling = table.seats[0].bet <= table.rules.maxBet;
+  } catch (e) { ceiling = /maximum/.test(e.message); }
+  ok(ceiling, 'the maximum is measured against the total on the table, not the chip');
+  eq(table.seats[0].bet, 500, 'and a chip that would breach it leaves the bet alone');
+  eq(accounts.balance(alice.id), funded, 'a refused chip costs nothing');
+
+  // And the ceiling is reachable, so the refusal above is a limit rather than
+  // an arithmetic accident.
+  table.clearBet(alice.id);
+  table.placeBet(alice.id, table.rules.maxBet);
+  eq(table.seats[0].bet, table.rules.maxBet, 'a bet of exactly the maximum is allowed');
+  table.clearBet(alice.id);
+  table.placeBet(alice.id, 500);
 
   force(table);                       // betting closes, cards come out
   ok(['insurance', 'acting', 'payout'].includes(table.phase), `dealing leads somewhere sensible (${table.phase})`);
@@ -388,6 +432,42 @@ const force = table => table.tick(Date.now() + 10 ** 7);
     t.placeBet(alice.id, 2500);
     boot(accounts);
     eq(accounts.balance(alice.id), STARTING_BALANCE, 'a bet that was never dealt is returned');
+  }
+
+  /* A bet taken back down before the deal is already paid back, and must not
+     be paid back again on the next boot. The refund is posted under the same
+     reason as the stake precisely so the recovery nets the two against each
+     other -- a refund under a reason of its own would leave the round looking
+     unpaid and hand the money over twice. */
+  {
+    const db = openDb(':memory:');
+    const accounts = new Accounts(db);
+    const t = boot(accounts);
+    const alice = user(accounts, 'restart-clear');
+    t.sit(0, alice);
+    t.placeBet(alice.id, 2500);
+    t.placeBet(alice.id, 10000);
+    t.clearBet(alice.id);
+    eq(accounts.balance(alice.id), STARTING_BALANCE, 'clearing gives the stake back right away');
+    const after = boot(accounts);
+    eq(after.recovered.length, 0, 'and the next boot finds nothing owing on it');
+    eq(accounts.balance(alice.id), STARTING_BALANCE, 'so a cleared bet is never paid back twice');
+  }
+
+  /* Clearing part-way and then betting again leaves a real stake on the
+     table, which the boot after it does still owe. */
+  {
+    const db = openDb(':memory:');
+    const accounts = new Accounts(db);
+    const t = boot(accounts);
+    const alice = user(accounts, 'restart-rebet');
+    t.sit(0, alice);
+    t.placeBet(alice.id, 5000);
+    t.clearBet(alice.id);
+    t.placeBet(alice.id, 800);
+    eq(accounts.balance(alice.id), STARTING_BALANCE - 800, 'the bet laid back down leaves the balance');
+    boot(accounts);
+    eq(accounts.balance(alice.id), STARTING_BALANCE, 'and an undealt one comes back on the next boot, once');
   }
 
   // Refunding is idempotent: booting repeatedly cannot mint money.

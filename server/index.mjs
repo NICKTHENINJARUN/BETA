@@ -220,6 +220,14 @@ const ROUTES = {
     send(res, 200, { balance: accounts.balance(user.id), state: table.publicState() });
   },
 
+  'POST /api/bet/clear': async (req, res) => {
+    const user = userFor(req);
+    if (!user) return fail(res, 401, 'not signed in');
+    if (tooMany(`bet:${user.id}`, 60, 60000)) return fail(res, 429, 'slow down');
+    table.clearBet(user.id);
+    send(res, 200, { balance: accounts.balance(user.id), state: table.publicState() });
+  },
+
   'POST /api/insurance': async (req, res) => {
     const user = userFor(req);
     if (!user) return fail(res, 401, 'not signed in');

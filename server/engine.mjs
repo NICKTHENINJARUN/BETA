@@ -185,5 +185,5 @@ export const DEFAULT_RULES = {
   blackjackPays: [3, 2],
   penetration: 0.75,
   minBet: 100,               // cents
-  maxBet: 50000,
+  maxBet: 250000,           // $2,500 — a real high-limit table's ceiling
 };
