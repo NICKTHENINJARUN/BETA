@@ -331,6 +331,48 @@ h1{font-size:27px;line-height:1.1;margin:0 0 8px;font-weight:780;letter-spacing:
 .cmp-row b{color:#e9e8e4}
 @media(max-width:980px){.an-grid{grid-template-columns:1fr}.an-metrics{grid-template-columns:1fr 1fr}}
 @media(max-width:520px){.an-metrics{grid-template-columns:1fr}.fgrid{grid-template-columns:1fr}.spread-head,.spread-row{grid-template-columns:36px 1fr 66px}}
+@media(hover:none) and (pointer:coarse){
+/* Touch. A fingertip covers far more ground than a cursor, so controls a mouse
+   hits easily still need a target near 44px. Scoped to coarse pointers only:
+   the desktop spacing and type scale is deliberate and is left exactly as it
+   is. Where growing a control would shift the layout, the hit area grows
+   instead of the paint, so nothing visibly moves. */
+.linkbtn,.casinoside h3 button{position:relative}
+.as-label{gap:14px;margin:18px 0 18px}
+.casinoside h3{margin-bottom:20px}
+.linkbtn:before,.casinoside h3 button:before{content:"";position:absolute;left:-6px;right:-6px;top:50%;height:44px;transform:translateY(-50%)}
+/* Map pins: the nearest two centres sit 73px apart, so a 44px target on each
+   still leaves a clear gap. The dot keeps its size and the map its look. */
+.node:before{content:"";position:absolute;left:50%;top:50%;width:44px;height:44px;transform:translate(-50%,-50%);border-radius:50%}
+.mapzoom button{width:44px;height:44px;font-size:19px}
+.resetview{padding:13px 15px}
+/* Toggles: the switch grows, and the row grows with it, so that two
+   neighbouring hit areas cannot overlap. */
+.switchrow{padding:13px 0}
+.switch{width:52px;height:30px}
+.switch:after{width:24px;height:24px}
+.switch.on:after{left:24px}
+.switch:before{content:"";position:absolute;left:0;right:0;top:50%;height:44px;transform:translateY(-50%)}
+/* On a checkbox row the whole label is the target, so the row gets the height. */
+.prefline{padding:11px 0}
+.prefline input{width:20px;height:20px}
+/* The rest already have padding; they just need more of it. */
+.chip.tog{padding:13px 14px}
+.iconbtn{width:44px;height:44px}
+.nav button{padding:13px 13px}
+.segment button{padding:14px 8px}
+.handtog button{padding:14px 10px;min-width:44px}
+.pickrow button{padding:12px 0;min-width:44px}
+.region-head{padding:15px 2px}
+.lesson-head{padding:13px 0}
+.btn{padding:12px 14px}
+.btn.sm{padding:13px 12px}
+.actions .btn{padding:12px 12px}
+select,input[type=number],input[type=text]{min-height:44px}
+/* Chart cells keep their grid size. The chart is eleven columns wide, and a
+   44px cell would either run off the screen or force a second axis of
+   scrolling to read one square. Tapping a cell only opens its explainer. */
+}
 </style>
 </head>
 <body>

@@ -304,6 +304,123 @@ ok(glyphs === 0, `decorative glyphs are hidden from screen readers (${glyphs} ex
   server.close();
 }
 
+/* ------------------------------------------------------------ touch targets */
+/* A fingertip covers far more ground than a cursor, so controls a mouse hits
+   easily can be genuinely hard to tap. Measured the way a finger meets them:
+   hit-test outward from each control's centre and see how big the region that
+   actually activates it is -- a padded-out hit area counts, and a control
+   sitting under an overlay does not, neither of which a bounding box shows. */
+{
+  const m = await b.newPage({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
+  await m.goto(APP_URL);
+  await m.waitForTimeout(400);
+
+  const worst = new Map();
+  for (const v of VIEWS) {
+    await m.click(`#nav button[data-view="${v}"]`);
+    await m.waitForTimeout(250);
+    const found = [];
+    const pageHeight = await m.evaluate(() => document.documentElement.scrollHeight);
+    // Hit-testing only works on what is currently on screen, so walk the view
+    // down a screen at a time. Without this a control passes the moment it
+    // happens to sit below the fold, which is an accident, not a result.
+    for (let y = 0; y < pageHeight; y += 700) {
+      await m.evaluate(top => window.scrollTo(0, top), y);
+      await m.waitForTimeout(120);
+      found.push(...await m.evaluate(() => {
+      const name = el => {
+        const par = el.parentElement;
+        return el.id ? el.tagName.toLowerCase() + '#' + el.id
+          : (par ? par.tagName.toLowerCase() + '.' + (par.className || '').toString().trim().split(' ')[0] + ' > ' : '')
+            + el.tagName.toLowerCase() + '.' + (el.className || '').toString().trim().split(' ')[0];
+      };
+      const mine = (el, x, y) => { const t = document.elementFromPoint(x, y); return !!t && (t === el || el.contains(t)); };
+      // A control inside a deliberately scrollable box is clipped by design --
+      // you scroll to reach it. That is not the same as being too small.
+      const clipped = el => {
+        for (let a = el.parentElement; a && a !== document.body; a = a.parentElement) {
+          const st = getComputedStyle(a);
+          if (!/auto|scroll/.test(st.overflowX + st.overflowY)) continue;
+          const ab = a.getBoundingClientRect(), eb = el.getBoundingClientRect();
+          if (eb.left < ab.left - 1 || eb.right > ab.right + 1 || eb.top < ab.top - 1 || eb.bottom > ab.bottom + 1) return true;
+        }
+        return false;
+      };
+      const out = [];
+      document.querySelectorAll('button,a[href],[role=button],input,select').forEach(el => {
+        if (!el.offsetParent) return;
+        // A checkbox wrapped in its label is tapped by hitting the label, so
+        // the label is the target a finger actually aims at -- measuring the
+        // 20px box would report a problem the page does not have.
+        const hit = el.tagName === 'INPUT' && el.closest('label') ? el.closest('label') : el;
+        const bx = hit.getBoundingClientRect();
+        if (!bx.width || !bx.height) return;
+        // Only what is fully on screen can be hit-tested at all.
+        if (bx.top < 0 || bx.bottom > window.innerHeight || bx.left < 0 || bx.right > window.innerWidth) return;
+        const cx = bx.x + bx.width / 2, cy = bx.y + bx.height / 2;
+        // Covered dead centre: taps aimed at this control land on something
+        // else entirely. Record it rather than skipping, or a control that is
+        // completely buried would pass by never being measured at all.
+        if (!mine(hit, cx, cy)) { out.push({ name: name(el), w: 0, h: 0, taken: 25, buried: true,
+                                            clipped: clipped(el), box: Math.round(bx.width) + 'x' + Math.round(bx.height) }); return; }
+        // Is any of the control's own painted box covered by something above it?
+        let taken = 0;
+        for (let i = 1; i <= 5; i++) for (let j = 1; j <= 5; j++)
+          if (!mine(hit, bx.x + bx.width * i / 6, bx.y + bx.height * j / 6)) taken++;
+        // Past 61px the answer to "is it at least 44?" is already yes.
+        const reach = (dx, dy) => { for (let d = 1; d <= 30; d++) if (!mine(hit, cx + dx * d, cy + dy * d)) return d - 1; return 30; };
+        out.push({ name: name(el), w: reach(-1, 0) + reach(1, 0) + 1, h: reach(0, -1) + reach(0, 1) + 1,
+                   taken, clipped: clipped(hit), box: Math.round(bx.width) + 'x' + Math.round(bx.height) });
+      });
+      return out;
+      }));
+    }
+    await m.evaluate(() => window.scrollTo(0, 0));
+    for (const r of found) {
+      const seen = worst.get(r.name);
+      if (!seen || Math.min(r.w, r.h) < Math.min(seen.w, seen.h)) worst.set(r.name, r);
+    }
+  }
+
+  const all = [...worst.values()];
+  // Guard against a vacuous pass: if the sweep found nothing, it proved nothing.
+  ok(all.length > 25, `touch: enough controls were measured to mean something (${all.length})`);
+
+  // The map pins are laid out in map coordinates on a surface you can pan and
+  // zoom, so one can sit against the map's edge or under the reset-view button.
+  // Everything that flows in the page layout has no such excuse.
+  const pin = r => r.name.endsWith('button.node');
+  // Strategy chart cells stay at their grid size on purpose. The chart is
+  // eleven columns wide; a 44px cell would either run off a phone screen or
+  // force a second axis of scrolling to read one square. A cell only opens an
+  // explainer, and both the chart and that explainer are reachable by keyboard.
+  const chartCell = r => / > td\.act-/.test(r.name);
+  const small = all.filter(r => !r.clipped && !pin(r) && !chartCell(r) && !r.buried && (r.w < 44 || r.h < 44));
+  ok(small.length === 0,
+     `touch: every control is at least 44px to a finger (${small.map(r => `${r.name} ${r.w}x${r.h}`).slice(0, 5).join(', ')})`);
+
+  // A hit region smaller than the painted box means something is sitting on
+  // top and swallowing taps meant for this control.
+  const stolen = all.filter(r => r.taken > 0 && !r.clipped && !pin(r) && !chartCell(r) && !r.buried);
+  ok(stolen.length === 0,
+     `touch: no control has its taps stolen by an overlay (${stolen.map(r => `${r.name} ${r.taken}/25 of ${r.box}`).slice(0, 5).join(', ')})`);
+
+  const buried = all.filter(r => r.buried && !r.clipped && !pin(r) && !chartCell(r));
+  ok(buried.length === 0,
+     `touch: no control is buried under another element (${buried.map(r => `${r.name} ${r.box}`).slice(0, 5).join(', ')})`);
+
+  // The page must not be wider than the phone. Comparing scrollWidth against
+  // innerWidth alone cannot catch this: faced with content it cannot fit, the
+  // browser widens the layout viewport and zooms out instead of scrolling, so
+  // the two stay equal and everything just gets smaller. The device width is
+  // the fixed thing to measure against.
+  const width = await m.evaluate(() => ({ layout: window.innerWidth, content: document.documentElement.scrollWidth }));
+  ok(width.layout <= 390 && width.content <= 391,
+     `touch: the page fits a 390px phone (layout viewport ${width.layout}px, content ${width.content}px)`);
+
+  await m.close();
+}
+
 await b.close();
 
 console.log(`accessibility checks run: ${checks}`);
