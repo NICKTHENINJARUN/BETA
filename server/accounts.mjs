@@ -28,6 +28,21 @@ export const GIFT = {
   maxCents: 25000,           // $250 in one go
 };
 
+/* Busting out should not end the evening, but a refill on a short timer is
+   just an infinite balance with extra clicks — and it would make the gifting
+   guard pointless, since there would be nothing scarce to guard. So: a grant
+   only when you genuinely cannot play, and only once a day.
+
+   $500 against a $1,000 start is deliberately generous — the point is to get
+   someone back to the table, not to ration them. What stops it mattering is
+   the once-a-day, and that it can never buy a place on the leaderboard, which
+   ranks winnings rather than balance. */
+export const BAILOUT = {
+  below: 2000,             // $20 — too little to play a table with a $500 max
+  grant: 50000,            // $500
+  everyMs: 24 * 3600 * 1000,
+};
+
 /* Unambiguous when read aloud or typed: no O/0, no I/1/L. */
 const TAG_ALPHABET = '23456789ABCDEFGHJKMNPQRSTVWXYZ';
 const TAG_LENGTH = 6;
@@ -263,6 +278,56 @@ export class Accounts {
      balance perfectly. It is simply gone.
 
      These three are what let the next boot find it and give it back.        */
+
+  /* --------------------------------------------------------- busting out */
+
+  /** When this account last took a grant, or 0. */
+  lastBailout(userId) {
+    const r = this.db.prepare(
+      "SELECT MAX(created_at) AS t FROM ledger WHERE user_id = ? AND reason = 'bailout'"
+    ).get(userId);
+    return (r && r.t) || 0;
+  }
+
+  /** What the page needs to decide whether to offer it, without guessing. */
+  bailoutState(userId) {
+    const balance = this.balance(userId);
+    const last = this.lastBailout(userId);
+    const readyAt = last ? last + BAILOUT.everyMs : 0;
+    return {
+      eligible: balance < BAILOUT.below && Date.now() >= readyAt,
+      balance, below: BAILOUT.below, grant: BAILOUT.grant,
+      readyAt: Date.now() < readyAt ? readyAt : 0,
+    };
+  }
+
+  bailout(userId) {
+    const st = this.bailoutState(userId);
+    if (st.balance >= BAILOUT.below) {
+      throw refuse(`grants are for when you are out — you still have ${st.balance} cents`);
+    }
+    if (st.readyAt) {
+      const hours = Math.ceil((st.readyAt - Date.now()) / 3600000);
+      throw refuse(`one grant a day — the next is in about ${hours} hour${hours === 1 ? '' : 's'}`);
+    }
+    // Re-read inside the write rather than trusting the check above: two
+    // requests can both pass a check and only one should pass this.
+    this.db.exec('BEGIN');
+    try {
+      const fresh = this.db.prepare(
+        "SELECT MAX(created_at) AS t FROM ledger WHERE user_id = ? AND reason = 'bailout'"
+      ).get(userId);
+      if (fresh && fresh.t && Date.now() - fresh.t < BAILOUT.everyMs) {
+        throw refuse('one grant a day');
+      }
+      const balance = this.#post(userId, BAILOUT.grant, 'bailout', null);
+      this.db.exec('COMMIT');
+      return { granted: BAILOUT.grant, balance };
+    } catch (e) {
+      this.db.exec('ROLLBACK');
+      throw e;
+    }
+  }
 
   /** Highest hand number this table has ever written, from the ledger itself. */
   lastHandNo(tableId) {

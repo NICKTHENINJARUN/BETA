@@ -237,11 +237,23 @@ ok(glyphs === 0, `decorative glyphs are hidden from screen readers (${glyphs} ex
      measure what is actually on screen, and a badge only exists once a seat
      has done something — so without this they covered it or not depending on
      whether the hand happened to be a natural. That is how an 11px badge got
-     past them once and was then caught by luck. */
-  try {
-    const seat = table.seats.find(x => x && x.inRound);
-    if (seat && table.active) table.act(table.seats[table.active.seat].userId, 'stand');
-  } catch { /* already resolved — the badge will come from the hand instead */ }
+     past them once and was then caught by luck.
+
+     About one deal in fourteen resolves on the spot — a natural, or a dealer
+     blackjack — and leaves no turn to take. Deal again until there is one
+     rather than shrugging: a check that runs only most of the time fails
+     only most of the time, which is worse than not having it. */
+  for (let attempt = 0; attempt < 30 && !table.active; attempt++) {
+    table.tick(Date.now() + 10 ** 7 * (attempt + 2));   // settle, re-bet, re-deal
+    await t.waitForTimeout(120);
+    if (!table.active && table.phase === 'betting') {
+      await t.click('#chips button').catch(() => {});
+      await t.waitForTimeout(150);
+      table.tick(Date.now() + 10 ** 7 * (attempt + 2) + 1);
+      await t.waitForTimeout(150);
+    }
+  }
+  if (table.active) table.act(table.seats[table.active.seat].userId, 'stand');
   await t.waitForTimeout(400);
   ok(await t.locator('.seat .badge').count() > 0,
      'table: a seat shows what it did, so the audits below can measure it');
@@ -483,6 +495,200 @@ ok(glyphs === 0, `decorative glyphs are hidden from screen readers (${glyphs} ex
      `touch: the page fits a 390px phone (layout viewport ${width.layout}px, content ${width.content}px)`);
 
   await m.close();
+}
+
+/* --------------------------------------------------- thumb-zone action dock */
+/* On a phone the drill's decisions are docked to the bottom of the screen, so
+   they are under your thumb rather than at the top of a page you have already
+   scrolled. Three things can go wrong and none of them show on a desktop:
+   the bar stops being pinned, six buttons stop fitting the width, or the bar
+   covers the control you need next. Measured at the three widths phones
+   actually are, in each drill, with a hand in progress so the bar is real. */
+{
+  const MODES = [
+    ['basic',      '#basicMode',      '#basicActions [data-a]', '#basicNext'],
+    ['deviation',  '#deviationMode',  '#devActions [data-d]',   '#devNext'],
+  ];
+  for (const w of [390, 360, 320]) {
+    const d = await b.newPage({ viewport: { width: w, height: 740 }, isMobile: true, hasTouch: true });
+    await d.goto(APP_URL);
+    await d.waitForTimeout(350);
+    // Auto-advance would whisk the hand away before the Next control could be
+    // looked at, and it is the control most at risk of ending up under the bar.
+    await d.uncheck('#prefAuto');
+
+    for (const [mode, panel, buttons, next] of MODES) {
+      await d.click(`[data-mode="${mode}"]`);
+      await d.waitForTimeout(300);
+
+      const r = await d.evaluate(([panel, buttons]) => {
+        const bar = document.querySelector(panel + ' .actions');
+        const bx = bar.getBoundingClientRect();
+        const btns = [...document.querySelectorAll(buttons)];
+        return {
+          position: getComputedStyle(bar).position,
+          gapToBottom: Math.round(window.innerHeight - bx.bottom),
+          count: btns.length,
+          // A button whose own text is wider than the box it sits in has its
+          // label cut off. Measured on the element that holds the text, since
+          // the button itself stretches to whatever flex gives it.
+          clipped: btns.filter(x => x.scrollWidth > x.clientWidth + 1)
+                       .map(x => `${x.textContent.trim()} ${x.scrollWidth}>${x.clientWidth}`),
+          short: btns.filter(x => x.getBoundingClientRect().height < 44)
+                     .map(x => `${x.textContent.trim()} ${Math.round(x.getBoundingClientRect().height)}px`),
+          // Two buttons sharing pixels is a mis-tap waiting to happen.
+          overlapping: btns.some((x, i) => btns.slice(i + 1).some(y => {
+            const a = x.getBoundingClientRect(), c = y.getBoundingClientRect();
+            return a.left < c.right - 1 && c.left < a.right - 1 && a.top < c.bottom - 1 && c.top < a.bottom - 1;
+          })),
+          // The page's own scrollWidth is no use here: a fixed element that
+          // overflows does not extend the document's scroll area at all, so
+          // that number stays exactly 390 while buttons run off both edges.
+          // Measured on the bar, and on where the buttons actually land.
+          barOverflow: bar.scrollWidth - bar.clientWidth,
+          outside: btns.filter(x => {
+            const q = x.getBoundingClientRect();
+            return q.left < -1 || q.right > window.innerWidth + 1;
+          }).map(x => x.textContent.trim()),
+          content: document.documentElement.scrollWidth,
+          layout: window.innerWidth,
+        };
+      }, [panel, buttons]);
+
+      ok(r.position === 'fixed' && r.gapToBottom === 0,
+         `dock: ${mode} at ${w}px is pinned to the bottom of the screen (${r.position}, ${r.gapToBottom}px short)`);
+      ok(r.count >= 5, `dock: ${mode} at ${w}px actually has its buttons to measure (${r.count})`);
+      ok(r.clipped.length === 0,
+         `dock: ${mode} at ${w}px shows every label in full (${r.clipped.join(', ')})`);
+      ok(r.short.length === 0,
+         `dock: ${mode} at ${w}px keeps every button 44px tall (${r.short.join(', ')})`);
+      ok(!r.overlapping, `dock: ${mode} at ${w}px keeps its buttons apart`);
+      ok(r.barOverflow <= 1 && r.outside.length === 0,
+         `dock: ${mode} at ${w}px keeps every button on the screen ` +
+         `(${r.barOverflow}px over, off the edge: ${r.outside.join(', ') || 'none'})`);
+      ok(r.layout <= w && r.content <= w + 1,
+         `dock: ${mode} at ${w}px does not push the page sideways (layout ${r.layout}, content ${r.content})`);
+
+      // Answer the hand, then look for the control that appears in its place.
+      // A fixed bar takes its space out of the flow, and if that space is not
+      // given back the page simply ends underneath it.
+      // Reported rather than thrown: if a button has ended up somewhere a
+      // finger cannot reach it, that is a result, and a run that dies here
+      // prints no failures at all -- including the ones already found.
+      const stood = await d.click(`${buttons}[data-${mode === 'basic' ? 'a' : 'd'}="STAND"]`,
+                                  { timeout: 4000 }).then(() => true, () => false);
+      ok(stood, `dock: ${mode} at ${w}px lets a tap reach the Stand button`);
+      await d.waitForTimeout(300);
+      ok(await d.evaluate(n => { const e = document.querySelector(n); return !!e && !e.hidden; }, next),
+         `dock: ${mode} at ${w}px offers a Next control after a hand`);
+
+      /* The bar is taken out of the flow, so whatever room it covers has to
+         be given back or the page simply ends underneath it. These drills are
+         all shorter than a phone screen, which means nothing ever reaches the
+         bottom and any comparison of real content against the bar passes on
+         its own -- so the page is given content that does overflow, and the
+         last line of it is hit-tested where it lands. A drill whose feedback
+         runs long is exactly this case. */
+      const room = await d.evaluate(panel => {
+        const panelEl = document.querySelector(panel);
+        const probe = document.createElement('div');
+        probe.id = '__tall';
+        probe.style.cssText = 'height:1400px;display:flex;align-items:flex-end';
+        probe.innerHTML = '<span id="__last" style="display:block;height:20px">last line</span>';
+        // Appended as the panel's very last child, so the only thing between
+        // it and the bar is whatever room the panel reserves. Put anywhere
+        // else, the feedback line and the Next bar below it supply clearance
+        // of their own and the check passes without testing anything.
+        panelEl.append(probe);
+        window.scrollTo(0, document.documentElement.scrollHeight);
+        const last = document.getElementById('__last').getBoundingClientRect();
+        const hit = document.elementFromPoint(last.x + last.width / 2, last.y + last.height / 2);
+        const covered = !(hit && hit.id === '__last');
+        const offscreen = last.bottom > window.innerHeight + 1;
+        probe.remove();
+        return { covered, offscreen, bottom: Math.round(last.bottom), h: window.innerHeight };
+      }, panel);
+      ok(!room.covered && !room.offscreen,
+         `dock: ${mode} at ${w}px leaves room below the bar for the end of a long drill ` +
+         `(covered ${room.covered}, ends at ${room.bottom} of ${room.h})`);
+
+      await d.click(`${panel} [data-back]`);
+      await d.waitForTimeout(250);
+    }
+
+    /* Simulation is the same bar but you have to be in a hand for it to exist,
+       and it is the one screen where a hand can end the moment it is dealt. */
+    await d.click('[data-mode="simulation"]');
+    await d.waitForTimeout(300);
+    /* A deal can resolve on the spot — a natural, or a dealer blackjack — and
+       then there is no turn and no bar to measure. Deal again until there is
+       one: skipping would leave this passing without having looked. */
+    // At the default $25 a hand the bankroll runs out after twenty deals, and
+    // then the loop below stops for want of money rather than for want of a
+    // hand. A dollar a hand leaves far more attempts than it can ever need.
+    await d.fill('#simBet', '1');
+    for (let attempt = 0; attempt < 40; attempt++) {
+      if (await d.locator('#simActions').isVisible()) break;
+      // A dealer ace stops on the insurance question, where neither the Deal
+      // button nor the action bar is on screen. Declining moves the hand on;
+      // treating that state as "no hand to be had" is what made this skip.
+      if (await d.locator('#simInsure').isVisible()) {
+        await d.click('#simInsure [data-i="no"]');
+        await d.waitForTimeout(220);
+        continue;
+      }
+      if (!await d.locator('#simDeal').isVisible()) break;
+      await d.click('#simDeal');
+      await d.waitForTimeout(220);
+    }
+    const sim = await d.evaluate(w => {
+      const bar = document.getElementById('simActions');
+      if (bar.hidden) return { skipped: true };
+      const bx = bar.getBoundingClientRect();
+      const btns = [...bar.querySelectorAll('[data-s]')];
+      return {
+        pinned: getComputedStyle(bar).position === 'fixed' && Math.round(window.innerHeight - bx.bottom) === 0,
+        count: btns.length,
+        clipped: btns.filter(x => x.scrollWidth > x.clientWidth + 1).map(x => x.textContent.trim()),
+        outside: btns.filter(x => {
+          const q = x.getBoundingClientRect();
+          return q.left < -1 || q.right > window.innerWidth + 1;
+        }).map(x => x.textContent.trim()),
+        content: document.documentElement.scrollWidth,
+      };
+    }, w);
+    ok(!sim.skipped, `dock: simulation at ${w}px reached a hand to measure`);
+    if (!sim.skipped) {
+      ok(sim.pinned, `dock: simulation at ${w}px is pinned to the bottom of the screen`);
+      ok(sim.count === 5, `dock: simulation at ${w}px has its five actions (${sim.count})`);
+      ok(sim.clipped.length === 0, `dock: simulation at ${w}px shows every label in full (${sim.clipped.join(', ')})`);
+      ok(sim.outside.length === 0,
+         `dock: simulation at ${w}px keeps every button on the screen (${sim.outside.join(', ')})`);
+    }
+
+    await d.close();
+  }
+
+  /* And the other half of the claim: a mouse is not a thumb. The dock is
+     scoped to coarse pointers, so the desktop layout must be untouched -- the
+     bar stays in the flow, and the full word and the keyboard hint stay on. */
+  const desk = await b.newPage({ viewport: { width: 1440, height: 900 } });
+  await desk.goto(APP_URL);
+  await desk.waitForTimeout(300);
+  await desk.click('[data-mode="basic"]');
+  await desk.waitForTimeout(300);
+  const dk = await desk.evaluate(() => {
+    const bar = document.querySelector('#basicMode .actions');
+    const surr = bar.querySelector('[data-a="SURRENDER"]');
+    return { position: getComputedStyle(bar).position,
+             label: surr.textContent.replace(/\s+/g, ' ').trim(),
+             kbd: getComputedStyle(surr.querySelector('kbd')).display };
+  });
+  ok(dk.position === 'static', `desktop: the action bar is not docked (${dk.position})`);
+  ok(/Surrender/.test(dk.label) && !/^Surr\b/.test(dk.label),
+     `desktop: the button still says Surrender in full (${dk.label})`);
+  ok(dk.kbd !== 'none', `desktop: the keyboard hint is still shown (${dk.kbd})`);
+  await desk.close();
 }
 
 await b.close();

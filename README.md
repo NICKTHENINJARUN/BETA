@@ -113,7 +113,14 @@ signup bonus never qualifies.
 **The leaderboard** ranks on what a player has won at the table, derived from
 the ledger. Gifts are left out on purpose: a board that counted money you were
 handed would rank whoever has generous friends, and would make gifting the
-fastest route to the top.
+fastest route to the top. Grants are left out for the same reason, so a player
+who has taken every bailout on offer sits exactly where their play puts them.
+
+**The bailout** hands out $500 when a balance falls under $20, once a day. It
+is a grant, not a refill on a timer: a few minutes' wait between top-ups just
+means the fastest way to play is to lose everything, which is the opposite of
+what a trainer should teach. Below the table minimum you cannot play at all,
+and that is the only case this exists for.
 
 It is Server-Sent Events rather than WebSockets, and `node:sqlite` rather than
 a driver, so the server has no runtime dependency either. `node:sqlite` is
@@ -134,6 +141,12 @@ Moderation needs a moderator. `ADMIN_EMAIL` names the account that can read
 reports and hide messages. Leave it unset and those two routes do not exist to
 anybody — they answer 404 rather than 403, because a 403 confirms there is
 something there.
+
+On a phone the drills dock their decisions to the bottom of the screen, under
+your thumb, rather than leaving them at the top of a page you have scrolled.
+It is scoped to coarse pointers, so a desktop is untouched — same markup, and
+the full word and the keyboard hint stay on. The deviation drill has six
+decisions and takes two rows, which reads better than six slivers.
 
 Signup and login are rate limited per address, and so are betting, sitting and
 acting. The event stream is open to anyone — watching a table should not need
