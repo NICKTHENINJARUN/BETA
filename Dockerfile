@@ -15,9 +15,12 @@ RUN apk add --no-cache tini
 
 WORKDIR /app
 
-# Only what the server needs to run. The trainer, the tests and the workflow
-# are not part of the image.
+# The server hosts both pages, so the trainer comes too. It sits beside server/
+# rather than inside it, which is where index.mjs looks for it and where it
+# lives in the repository — same relative path in both places, so there is no
+# "works locally" gap. The tests and the workflow are not part of the image.
 COPY package.json ./
+COPY index.html ./index.html
 COPY server ./server
 
 # The database lives on a mounted volume, owned by the user we drop to.

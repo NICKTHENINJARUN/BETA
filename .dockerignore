@@ -1,5 +1,5 @@
-# Everything the server does not need at runtime. Keeps the image small and
-# keeps the tests, the trainer and any local database out of it.
+# Everything the server does not need at runtime. The trainer IS needed —
+# the server hosts it at / — so index.html is not excluded here.
 node_modules
 tests
 .github
@@ -7,6 +7,5 @@ tests
 *.db
 *.db-wal
 *.db-shm
-index.html
 README.md
 package-lock.json

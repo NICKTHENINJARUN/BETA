@@ -45,6 +45,8 @@ button:disabled{cursor:not-allowed;opacity:.34}
 .nav button{border:0;background:transparent;color:#9a9995;padding:8px 11px;border-radius:6px;font-size:15px}.nav button:hover{color:#ddd}.nav button.active{background:#1a1a1a;color:#f2f2f2;box-shadow:inset 0 0 0 1px #282828}
 .headacts{display:flex;gap:6px;align-items:center}
 .iconbtn{border:1px solid #272727;background:#121212;width:31px;height:31px;border-radius:7px;color:#9a9995;display:inline-grid;place-items:center}
+.tablelink{display:inline-block;padding:7px 14px;border-radius:7px;border:1px solid var(--orange);background:rgba(244,117,45,.12);color:var(--orange);font-size:13px;font-weight:650;text-decoration:none}
+.tablelink:hover{background:rgba(244,117,45,.2)}
 .iconbtn:hover{color:#ddd;border-color:#3a3a3a}
 .view{display:none}.view.active{display:block;animation:fade .22s ease}@keyframes fade{from{opacity:0;transform:translateY(3px)}to{opacity:1;transform:none}}
 .content{width:min(100%,880px);margin:0 auto}.wide{width:min(100%,1020px);margin:0 auto}.narrow{width:min(100%,660px);margin:0 auto}
@@ -356,6 +358,7 @@ h1{font-size:27px;line-height:1.1;margin:0 0 8px;font-weight:780;letter-spacing:
       <button id="tab-dashboard" data-view="dashboard" role="tab" aria-selected="false" aria-controls="view-dashboard">Dashboard</button>
     </nav>
     <div class="headacts">
+      <a class="tablelink" id="tableLink" href="/table" hidden>Play at a table</a>
       <button class="iconbtn" id="dataBtn" title="Back up or restore your progress" aria-label="Back up or restore your progress"><span aria-hidden="true">⇅</span></button>
       <button class="iconbtn" id="resetAll" title="Reset all saved progress" aria-label="Reset all saved progress"><span aria-hidden="true">↻</span></button>
     </div>
@@ -3916,6 +3919,21 @@ function labelControls(root=document){
     const t=c.getAttribute('placeholder')||c.getAttribute('title')||c.name;
     if(t) c.setAttribute('aria-label',t);
   });
+}
+
+/* ------------------------------------------------- is there a table to join? */
+/* This file is served two ways: on its own from a static host, and by the
+   table's own server, which also answers /table. The link is shown only when
+   something replies, so it never points at a page that is not there. The
+   request is same-origin, fails silently, and nothing on this page depends on
+   it — offline, it simply never appears. */
+if (location.protocol === 'http:' || location.protocol === 'https:') {
+  // Opened straight from disk there is nothing to ask, and asking anyway only
+  // puts a failed request in the console.
+  fetch('healthz', { cache: 'no-store' })
+    .then(r => r.ok && r.json())
+    .then(h => { if (h && h.ok) $('#tableLink').hidden = false; })
+    .catch(() => {});
 }
 
 /* ================================================================== INIT */

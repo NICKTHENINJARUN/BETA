@@ -191,16 +191,36 @@ function client() {
   ok(r.status !== 200, 'an oversized body does not get through');
 }
 
-/* ================================================= static files stay put */
+/* ================================================= both pages, one server */
 {
   for (const path of ['/../accounts.mjs', '/..%2faccounts.mjs', '/../../etc/passwd']) {
     const r = await fetch(BASE + path);
     ok(r.status !== 200 || !(await r.text()).includes('pass_hash'),
       `${path} does not escape the public directory`);
   }
-  const page = await fetch(BASE + '/');
-  eq(page.status, 200, 'the table page is served');
-  ok((await page.text()).includes('BLACKJACK ACADEMY'), 'and it is the right page');
+
+  // The trainer at the root. It lives beside server/ rather than inside
+  // server/public, so this also proves that path resolves.
+  const home = await fetch(BASE + '/');
+  eq(home.status, 200, 'the trainer is served at /');
+  const homeHtml = await home.text();
+  ok(homeHtml.includes('Blackjack Academy Helper'), 'and it is the trainer, not the table');
+  ok(homeHtml.includes('id="chartArea"'), 'with the trainer\'s own markup');
+
+  // The table on its own path.
+  const tbl = await fetch(BASE + '/table');
+  eq(tbl.status, 200, 'the table is served at /table');
+  const tblHtml = await tbl.text();
+  ok(tblHtml.includes('Play at the table'), 'and it is the table page');
+  ok(tblHtml.includes('id="seats"'), 'with the felt on it');
+
+  eq((await fetch(BASE + '/table/')).status, 200, 'with or without a trailing slash');
+
+  // The trainer links to the table, and the table links back.
+  ok(homeHtml.includes('href="/table"'), 'the trainer links to the table');
+  ok(tblHtml.includes('href="/"'), 'and the table links back to the trainer');
+
+  eq((await fetch(BASE + '/nothing-here')).status, 404, 'an unknown path is a 404');
 }
 
 /* ============================================================ health check */

@@ -19,6 +19,12 @@ import { Table, SEATS } from './table.mjs';
 
 const HERE = fileURLToPath(new URL('.', import.meta.url));
 const PUBLIC = join(HERE, 'public');
+/* The trainer is one file that sits beside this directory rather than inside
+   server/public, because it is also deployed on its own to a static host. The
+   same relative path resolves in the container, where the Dockerfile puts it
+   next to server/ for exactly this reason, so one deployment is the whole
+   site: the trainer at / and the table at /table. */
+const TRAINER = join(HERE, '..', 'index.html');
 const PORT = Number(process.env.PORT || 8787);
 const HOST = process.env.HOST || '0.0.0.0';
 const DB_PATH = process.env.DB_PATH || ':memory:';
@@ -252,10 +258,19 @@ export const server = createServer(async (req, res) => {
     }
     if (req.method !== 'GET') return fail(res, 404, 'no such endpoint');
 
-    // Static files, confined to server/public — a path that climbs out is refused.
-    const rel = url.pathname === '/' ? 'table.html' : url.pathname.slice(1);
-    const path = join(PUBLIC, normalize(rel).replace(/^(\.\.[/\\])+/, ''));
-    if (!path.startsWith(PUBLIC)) return fail(res, 403, 'no');
+    // The trainer and the table are the two pages people ask for by name.
+    let path;
+    if (url.pathname === '/') {
+      path = TRAINER;
+    } else if (url.pathname === '/table' || url.pathname === '/table/') {
+      path = join(PUBLIC, 'table.html');
+    } else {
+      // Everything else is an asset, confined to server/public — a path that
+      // climbs out of it is refused rather than resolved.
+      const rel = normalize(url.pathname.slice(1)).replace(/^(\.\.[/\\])+/, '');
+      path = join(PUBLIC, rel);
+      if (!path.startsWith(PUBLIC)) return fail(res, 403, 'no');
+    }
     const body = await readFile(path);
     res.writeHead(200, { 'content-type': MIME[extname(path)] || 'application/octet-stream' });
     res.end(body);
@@ -301,7 +316,9 @@ process.on('SIGINT', () => shutdown('SIGINT'));
 // Only listen when run directly; importing this in a test must not open a port.
 if (process.argv[1] && process.argv[1].endsWith('index.mjs')) {
   server.listen(PORT, HOST, () => {
-    console.log(`blackjack table listening on ${HOST}:${PORT}`);
+    console.log(`blackjack academy listening on ${HOST}:${PORT}`);
+    console.log(`  trainer:     /`);
+    console.log(`  table:       /table`);
     console.log(`  storage:     ${DB_PATH === ':memory:' ? 'in memory — nothing survives a restart' : DB_PATH}`);
     console.log(`  behind proxy: ${TRUST_PROXY ? 'yes (forwarded headers trusted)' : 'no'}`);
     console.log(`  play money only — no deposits, no withdrawals, nothing to cash out`);

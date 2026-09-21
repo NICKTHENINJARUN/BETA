@@ -101,6 +101,13 @@ free tiers out — **a persistent disk**, because the accounts and the ledger ar
 a SQLite file. A container with no durable storage would reset every balance on
 each deploy.
 
+**One app serves the whole site**: the trainer at `/` and the table at
+`/table`. The trainer is still a single file that works on its own — it is
+also deployed by itself to GitHub Pages — and the server simply hands it out
+at the root. The "Play at a table" link appears in its header only when
+something answers `/healthz`, so on a static host, or opened straight from
+disk, it never points at a page that is not there.
+
 The image is a plain `Dockerfile`, so it runs anywhere. `fly.toml` is included
 because Fly mounts a volume without much ceremony, but nothing about the app is
 tied to it; moving providers is a config change.
@@ -110,6 +117,12 @@ fly launch --no-deploy          # accepts the fly.toml already here
 fly volumes create table_data --size 1
 fly deploy
 ```
+
+Hosts built around functions rather than processes — Netlify, Vercel and the
+like — are a poor fit for the table however the storage is solved. The table
+keeps its own clock: a betting window closes, a turn expires and the dealer
+plays because time passed, not because anyone made a request. Serverless has
+nothing alive between requests to notice.
 
 Environment it expects, all set in the Dockerfile and `fly.toml`:
 

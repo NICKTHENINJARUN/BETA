@@ -205,7 +205,9 @@ ok(glyphs === 0, `decorative glyphs are hidden from screen readers (${glyphs} ex
   const BASE = `http://127.0.0.1:${addr.port}`;
   const t = await b.newPage({ viewport: { width: 1100, height: 920 } });
 
-  await t.goto(BASE + '/');
+  // The table moved to /table when the server took over hosting the trainer
+  // at the root, so this is the page under test rather than whatever / serves.
+  await t.goto(BASE + '/table');
   await t.waitForTimeout(300);
 
   ok(await t.getAttribute('html', 'lang') === 'en', 'table: html carries a lang');
