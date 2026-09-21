@@ -232,6 +232,19 @@ ok(glyphs === 0, `decorative glyphs are hidden from screen readers (${glyphs} ex
   await t.waitForTimeout(300);
   table.tick(Date.now() + 10 ** 7);          // close betting now, not in 15s
   await t.waitForSelector('#dealerHand .card', { timeout: 8000 });
+
+  /* Act, so the seat carries a badge. The size and contrast audits below only
+     measure what is actually on screen, and a badge only exists once a seat
+     has done something — so without this they covered it or not depending on
+     whether the hand happened to be a natural. That is how an 11px badge got
+     past them once and was then caught by luck. */
+  try {
+    const seat = table.seats.find(x => x && x.inRound);
+    if (seat && table.active) table.act(table.seats[table.active.seat].userId, 'stand');
+  } catch { /* already resolved — the badge will come from the hand instead */ }
+  await t.waitForTimeout(400);
+  ok(await t.locator('.seat .badge').count() > 0,
+     'table: a seat shows what it did, so the audits below can measure it');
   await t.waitForTimeout(400);
 
   const r = await t.evaluate(() => {
@@ -299,6 +312,32 @@ ok(glyphs === 0, `decorative glyphs are hidden from screen readers (${glyphs} ex
   ok(r.cards > 0, `table: cards are on the felt when audited (${r.cards})`);
   ok(r.unlabelledCards === 0,
      `table: every card names its rank and suit (${r.unlabelledCards} of ${r.cards} unlabelled)`);
+
+  /* The dealer: what she says has to reach a screen reader, what she looks like
+     must not, and the sound has to be something you can find and turn off. */
+  const dealer = await t.evaluate(() => {
+    const say = document.getElementById('dealerSay');
+    const fig = document.querySelector('.figure');
+    const snd = document.getElementById('soundBtn');
+    return {
+      sayLive: say && say.getAttribute('aria-live') === 'polite' && say.getAttribute('role') === 'status',
+      figureHidden: !!fig && fig.getAttribute('aria-hidden') === 'true',
+      soundNamed: !!snd && !!(snd.getAttribute('aria-label') || '').trim(),
+      soundPressed: !!snd && snd.hasAttribute('aria-pressed'),
+      soundDefaultOff: !!snd && snd.getAttribute('aria-pressed') === 'false',
+    };
+  });
+  ok(dealer.sayLive, 'table: what the dealer says is announced, not just drawn');
+  ok(dealer.figureHidden, 'table: the dealer figure is decorative and hidden from the reader');
+  ok(dealer.soundNamed, 'table: the sound control has a name, not just a glyph');
+  ok(dealer.soundPressed, 'table: the sound control reports whether it is on');
+  ok(dealer.soundDefaultOff, 'table: sound is off until asked for');
+
+  /* The deal animation is not asserted here. Seeing it needs animationstart
+     on a real deal, and the honest ways to get one from this page are to
+     expose render or to drive the table from outside — both more machinery
+     than the check is worth. It is covered by hand instead; a stub that
+     counted nothing would just read like coverage. */
 
   await t.close();
   server.close();

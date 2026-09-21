@@ -95,7 +95,7 @@
   #giftTo::placeholder{text-transform:none}
   /* --- seat badges, turn ring, chips, emotes ------------------------- */
   .seat{position:relative}
-  .badge{position:absolute;top:8px;right:8px;font-size:11px;font-weight:700;
+  .badge{position:absolute;top:8px;right:8px;font-size:12px;font-weight:700;
          letter-spacing:.04em;text-transform:uppercase;padding:3px 7px;border-radius:99px;
          border:1px solid var(--line);background:var(--panel2);color:var(--muted)}
   .badge.hit{color:#f39a69;border-color:#59311f}
@@ -104,7 +104,11 @@
   .badge.split{color:#e8d264;border-color:#5b511d}
   .badge.surrender{color:#e578a8;border-color:#4c132d}
   .badge.bust{color:#e0546f;border-color:#572131;background:#1a0d11}
-  .badge.blackjack{color:#14110f;background:linear-gradient(#f7c35c,#e9a825);border-color:#f7c35c}
+  /* Solid rather than a gradient: a gradient has no background-color for the
+     contrast audit to read, so it falls through to the parent and reports dark
+     text on a dark panel. The measurement should be able to see what a person
+     sees. */
+  .badge.blackjack{color:#14110f;background:#e9a825;border-color:#f7c35c}
 
   /* The ring reads the server's own deadline, so it cannot promise a different
      amount of time than the table is actually giving you. */
@@ -129,6 +133,37 @@
   .chip.c5{background:#b8353f}.chip.c25{background:#2f8a4e}.chip.c100{background:#1d1d1d}
   .chip.c500{background:#6c3f9e}.chip.c1000{background:#d08a1c}
   .stack b{font-size:10px;color:var(--muted2);margin-top:3px;font-weight:650}
+
+  /* --- the dealer, and what she says --------------------------------- */
+  .croupier{position:relative;display:grid;place-items:center;margin-bottom:2px}
+  .figure{width:64px;height:56px;display:block;filter:drop-shadow(0 4px 10px rgba(0,0,0,.45))}
+  .cl-body{fill:#2a332d;stroke:#4a7d5e;stroke-width:1.2}
+  .cl-lapel{fill:#1b2a21}
+  .cl-head{fill:#6b5344}
+  .cl-collar{fill:#e9e6df}
+  .cl-tie{fill:var(--orange)}
+  /* The patter is text first and sound second: it works muted, it works for a
+     screen reader, and it works on a phone in a room with other people. */
+  .say{min-height:20px;margin-top:6px;font-size:13px;color:#bfe0cd;text-align:center;
+       max-width:min(92vw,420px);line-height:1.45}
+  .say:empty{visibility:hidden}
+  .say.fresh{animation:sayin .28s ease}
+  @keyframes sayin{from{opacity:0;transform:translateY(-3px)}to{opacity:1;transform:none}}
+  @media(prefers-reduced-motion:reduce){ .say.fresh{animation:none} }
+
+  /* A card that has just been dealt slides in from the shoe rather than
+     appearing. A round with rhythm reads as a game; one that materialises
+     reads as a form submitting. */
+  .card.dealt{animation:dealin .34s cubic-bezier(.2,.8,.3,1) backwards}
+  @keyframes dealin{
+    from{opacity:0;transform:translate(38px,-64px) rotate(14deg) scale(.86)}
+    to{opacity:1;transform:none}
+  }
+  @media(prefers-reduced-motion:reduce){ .card.dealt{animation:none} }
+
+  .soundbtn{border:1px solid var(--line);background:transparent;color:var(--muted2);
+            border-radius:7px;width:34px;height:34px;font-size:15px}
+  .soundbtn[aria-pressed=true]{color:var(--orange);border-color:#54362c}
 
   .chatlog{max-height:240px;overflow-y:auto;display:grid;gap:6px;margin-bottom:10px;
             padding-right:4px}
@@ -191,6 +226,8 @@
     </div>
     <div class="whoami" id="whoami" hidden>
       <a class="btn ghost" href="/" style="text-decoration:none">Trainer</a>
+      <button class="soundbtn" id="soundBtn" type="button"
+              aria-pressed="false" aria-label="Table sound" title="Table sound">♪</button>
       <span id="displayName"></span>
       <span class="bal" id="balance" aria-live="polite">—</span>
       <button class="btn ghost" id="signOut">Sign out</button>
@@ -241,6 +278,18 @@
 
       <div class="felt">
         <div class="dealer">
+          <div class="croupier">
+            <!-- Stylised rather than attempted realism: a pictogram reads as a
+                 choice, where a crude attempt at a person reads as a failure. -->
+            <svg viewBox="0 0 64 56" class="figure" aria-hidden="true">
+              <ellipse cx="32" cy="50" rx="26" ry="14" class="cl-body"/>
+              <path d="M32 36 L24 44 32 50 40 44Z" class="cl-lapel"/>
+              <circle cx="32" cy="20" r="11" class="cl-head"/>
+              <path d="M26 33h12l-2 5h-8z" class="cl-collar"/>
+              <path d="M32 36l-5-3 5-2 5 2z" class="cl-tie"/>
+            </svg>
+            <div class="say" id="dealerSay" role="status" aria-live="polite"></div>
+          </div>
           <div class="label">Dealer</div>
           <div class="hand" id="dealerHand" aria-live="polite" aria-label="Dealer's hand"></div>
           <div class="total" id="dealerTotal"></div>
@@ -579,9 +628,50 @@ function cardEl(name) {
   return d;
 }
 
+/* How many cards each hand had last time it was drawn, so only the new ones
+   animate. Without this every render re-deals the whole table, which looks
+   like a glitch rather than a deal. A hand that shrank is a new round, so the
+   count resets and the next deal animates in full. */
+/* A hand only ever grows within a round, so what is on screen is normally a
+   prefix of what should be. Keeping those nodes and appending the rest is not
+   an optimisation — rebuilding the row wholesale destroyed the deal animation
+   before it could paint, because the table deals and opens the first turn in
+   the same tick and render therefore runs twice in a row. The hole card turning
+   over is the one case where the prefix stops matching partway, and there the
+   face-down node is the only one replaced, which is exactly the flip. */
 const renderHand = (el, cards, hidden = 0) => {
-  el.replaceChildren(...cards.map(cardEl), ...Array.from({ length: hidden }, () => cardEl('??')));
+  const want = [...cards, ...Array.from({ length: hidden }, () => '??')];
+  const have = [...el.children].map(c => c.dataset.card ?? '');
+
+  let keep = 0;
+  while (keep < have.length && keep < want.length && have[keep] === want[keep]) keep++;
+  while (el.children.length > keep) el.lastChild.remove();
+
+  want.slice(keep).forEach((name, i) => {
+    const n = cardEl(name);
+    n.dataset.card = name;
+    n.classList.add('dealt');
+    n.style.animationDelay = `${i * 90}ms`;
+    el.append(n);
+    setTimeout(() => SFX.card(), i * 90);
+  });
 };
+
+/* What the dealer is saying. Text first: it works muted, it reaches a screen
+   reader, and it is the same information the sound carries for anyone who has
+   the sound off — which is most people, most of the time. */
+let lastSaid = '';
+function say(line) {
+  if (!line || line === lastSaid) return;
+  lastSaid = line;
+  const el = $('#dealerSay');
+  el.textContent = line;
+  el.classList.remove('fresh');
+  void el.offsetWidth;                       // restart the animation
+  el.classList.add('fresh');
+}
+
+const seatName = n => (mySeat === n ? 'your move' : `seat ${n + 1}`);
 
 /* ----------------------------------------------------------------- table */
 function render() {
@@ -674,6 +764,81 @@ function render() {
   }
   if (ticking) paintRings();
 }
+
+/* ------------------------------------------------------------------ sound */
+
+/* Synthesised rather than sampled. A chip clink is a short bright transient
+   and a card slide is filtered noise, and both are a dozen lines of oscillator
+   — which keeps the page a page rather than a page plus a megabyte of audio
+   that has to load before the table feels right.
+
+   Off until asked. A site that makes noise the moment it opens is a site
+   people close, and autoplay policy would block it anyway until a click. */
+const SOUND_KEY = 'bjTableSound';
+let soundOn = false;
+try { soundOn = localStorage.getItem(SOUND_KEY) === '1'; } catch {}
+let audio = null;
+
+const ac = () => {
+  if (!soundOn) return null;
+  try {
+    audio = audio || new (window.AudioContext || window.webkitAudioContext)();
+    if (audio.state === 'suspended') audio.resume();
+    return audio;
+  } catch { return null; }
+};
+
+/** One oscillator with an envelope — the whole vocabulary of these sounds. */
+function tone(freq, { type = 'sine', at = 0, dur = 0.12, gain = 0.12, to = null } = {}) {
+  const c = ac(); if (!c) return;
+  const t = c.currentTime + at;
+  const o = c.createOscillator(), g = c.createGain();
+  o.type = type;
+  o.frequency.setValueAtTime(freq, t);
+  if (to) o.frequency.exponentialRampToValueAtTime(to, t + dur);
+  g.gain.setValueAtTime(0.0001, t);
+  g.gain.exponentialRampToValueAtTime(gain, t + 0.008);
+  g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+  o.connect(g).connect(c.destination);
+  o.start(t); o.stop(t + dur + 0.02);
+}
+
+/** Filtered noise: a card on felt is a hiss with a fast decay, not a pitch. */
+function noise({ at = 0, dur = 0.16, gain = 0.06, freq = 1800 } = {}) {
+  const c = ac(); if (!c) return;
+  const t = c.currentTime + at;
+  const frames = Math.max(1, Math.floor(c.sampleRate * dur));
+  const buf = c.createBuffer(1, frames, c.sampleRate);
+  const data = buf.getChannelData(0);
+  for (let i = 0; i < frames; i++) data[i] = (Math.random() * 2 - 1) * (1 - i / frames);
+  const src = c.createBufferSource(); src.buffer = buf;
+  const bp = c.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = freq; bp.Q.value = 0.8;
+  const g = c.createGain(); g.gain.value = gain;
+  src.connect(bp).connect(g).connect(c.destination);
+  src.start(t);
+}
+
+const SFX = {
+  card: () => noise({ dur: 0.13, gain: 0.05, freq: 2100 }),
+  chip: () => { tone(2400, { type: 'triangle', dur: 0.05, gain: 0.07, to: 1500 });
+                tone(3600, { type: 'sine', at: 0.012, dur: 0.05, gain: 0.04 }); },
+  win:  () => [0, 0.09, 0.18].forEach((at, i) =>
+          tone([523.25, 659.25, 783.99][i], { type: 'triangle', at, dur: 0.22, gain: 0.09 })),
+  lose: () => tone(320, { type: 'sine', dur: 0.3, gain: 0.07, to: 180 }),
+  push: () => tone(440, { type: 'sine', dur: 0.18, gain: 0.06 }),
+  turn: () => tone(880, { type: 'sine', dur: 0.1, gain: 0.05 }),
+};
+
+function setSound(on) {
+  soundOn = on;
+  try { localStorage.setItem(SOUND_KEY, on ? '1' : '0'); } catch {}
+  const b = $('#soundBtn');
+  b.setAttribute('aria-pressed', String(on));
+  b.textContent = on ? '♪' : '♪̸';
+  b.title = on ? 'Table sound on' : 'Table sound off';
+  if (on) SFX.chip();                       // confirm it works, and unlock audio
+}
+$('#soundBtn').onclick = () => setSound(!soundOn);
 
 /* -------------------------------------------------------------------- chat */
 
@@ -899,6 +1064,11 @@ function connect() {
 
   es.addEventListener('acted', ev => {
     const d = JSON.parse(ev.data);
+    const line = { double: 'Double down.', split: 'Splitting.', surrender: 'Surrender — half back.',
+                   stand: null, hit: null }[d.action];
+    if (line) say(line);
+    if (d.action === 'double' || d.action === 'split') SFX.chip();
+    if (d.timedOut) say(`No answer from ${seatName(d.seatNo)} — standing.`);
     if (d.state) { state = d.state; render(); }
   });
 
@@ -907,11 +1077,34 @@ function connect() {
     lastActions = d.actions || [];
     if (d.state) state = d.state;
     if (state) { state.active = { seat: d.seatNo, hand: d.hand }; state.deadline = d.deadline; }
+    say(d.seatNo === mySeat ? 'Your move.' : `Your move, seat ${d.seatNo + 1}.`);
+    if (d.seatNo === mySeat) SFX.turn();
     render();
+  });
+
+  es.addEventListener('dealt', () => say('Cards out.'));
+  es.addEventListener('insurance', () => say('Dealer shows an ace. Insurance is open.'));
+  es.addEventListener('shoe.new', () => say('New shoe.'));
+
+  // The table announces the dealer's turn with its own event; the phase frame
+  // is only published when betting reopens.
+  es.addEventListener('dealer', () => say('Dealer plays.'));
+  es.addEventListener('phase', ev => {
+    try { if (JSON.parse(ev.data).phase === 'betting') say('Place your bets.'); } catch {}
   });
 
   es.addEventListener('payout', ev => {
     const d = JSON.parse(ev.data);
+
+    // The dealer announces the table first and the player second, which is the
+    // order it happens at a real one.
+    const dt = d.dealer || {};
+    const bust = dt.total > 21;
+    say(bust ? `Dealer busts with ${dt.total}.`
+             : (dt.cards && dt.cards.length === 2 && dt.total === 21)
+               ? 'Dealer has blackjack.'
+               : `Dealer stands on ${dt.total}.`);
+
     const mine = d.results.find(r => r.seatNo === mySeat);
     if (mine) {
       setBalance(mine.balance);
@@ -921,6 +1114,13 @@ function connect() {
       p.className = 'outcome ' + (net > 0 ? 'win' : net < 0 ? 'lose' : 'push');
       p.textContent = net > 0 ? `You won ${money(net)}` : net < 0 ? `You lost ${money(-net)}` : 'Push — your stake is returned';
       $('#result').append(p);
+
+      const natural = mine.hands.some(h => h.outcome === 'blackjack');
+      setTimeout(() => {
+        if (natural) say('Blackjack pays three to two.');
+        else if (net === 0) say('Push. Bets stand off.');
+        (net > 0 ? SFX.win : net < 0 ? SFX.lose : SFX.push)();
+      }, 700);
     }
     api('/api/table').then(s => { state = s; render(); });
   });
