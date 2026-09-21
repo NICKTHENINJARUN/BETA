@@ -318,6 +318,109 @@ const force = table => table.tick(Date.now() + 10 ** 7);
   eq(settleHand(busted, dealerBust, rules).delta, 0, 'the player busts first and loses to a busted dealer');
 }
 
+/* --------------------------------------------- surviving a restart
+   A hand lives in memory; its stake has already left the balance. If the
+   process dies in between, that money sits in the ledger with nothing to
+   answer it — and no audit notices, because the books balance perfectly.
+
+   The hard part is telling an unsettled stake from a settled one. A losing
+   hand returns nothing and so writes no row at all, which makes "a bet with
+   no payout" ambiguous. Get it wrong in the generous direction and every
+   loss is refunded; that is the first thing checked here.              */
+{
+  const boot = (accounts) => new Table({ id: 't', accounts, onEvent: () => {} });
+
+  // Play one round to completion, then restart. Nothing may be handed back,
+  // whether the hand won, pushed or lost.
+  {
+    const db = openDb(':memory:');
+    const accounts = new Accounts(db);
+    const t = boot(accounts);
+    const alice = user(accounts, 'restart-a');
+    t.sit(0, alice);
+    t.placeBet(alice.id, 1000);
+    let now = Date.now();
+    t.tick(now += TIMING.betting + 1);
+    for (let i = 0; i < 40 && t.phase !== 'payout' && t.phase !== 'betting'; i++) {
+      t.tick(now += TIMING.turn + TIMING.insurance + 1);
+    }
+    ok(t.phase === 'payout' || t.phase === 'betting', 'the round reached a settlement');
+    const settled = accounts.balance(alice.id);
+    const after = boot(accounts);
+    eq(after.recovered.length, 0, 'a finished round is refunded nothing on the next boot');
+    eq(accounts.balance(alice.id), settled, 'a finished round leaves the balance exactly as settled');
+  }
+
+  // Die mid-hand: the stake comes back.
+  {
+    const db = openDb(':memory:');
+    const accounts = new Accounts(db);
+    const t = boot(accounts);
+    const alice = user(accounts, 'restart-b');
+    t.sit(0, alice);
+    t.placeBet(alice.id, 1000);
+    t.tick(Date.now() + TIMING.betting + 1);
+    eq(accounts.balance(alice.id), STARTING_BALANCE - 1000, 'the stake is off the balance mid-hand');
+    const after = boot(accounts);
+    eq(after.recovered.length, 1, 'the interrupted stake is found on the next boot');
+    eq(accounts.balance(alice.id), STARTING_BALANCE, 'the interrupted stake is returned in full');
+  }
+
+  // Die between the bet and the deal: also comes back.
+  {
+    const db = openDb(':memory:');
+    const accounts = new Accounts(db);
+    const t = boot(accounts);
+    const alice = user(accounts, 'restart-c');
+    t.sit(0, alice);
+    t.placeBet(alice.id, 2500);
+    boot(accounts);
+    eq(accounts.balance(alice.id), STARTING_BALANCE, 'a bet that was never dealt is returned');
+  }
+
+  // Refunding is idempotent: booting repeatedly cannot mint money.
+  {
+    const db = openDb(':memory:');
+    const accounts = new Accounts(db);
+    const t = boot(accounts);
+    const alice = user(accounts, 'restart-d');
+    t.sit(0, alice);
+    t.placeBet(alice.id, 700);
+    boot(accounts); boot(accounts); boot(accounts);
+    eq(accounts.balance(alice.id), STARTING_BALANCE, 'three boots return the stake once, not three times');
+  }
+
+  // The table id is a constant, so a hand counter that restarted at zero would
+  // write a ref that already belongs to an earlier hand.
+  {
+    const db = openDb(':memory:');
+    const accounts = new Accounts(db);
+    const seen = [];
+    for (let i = 0; i < 3; i++) {
+      const t = boot(accounts);
+      const p = user(accounts, `restart-seq-${i}`);
+      t.sit(0, p);
+      t.placeBet(p.id, 500);
+      t.tick(Date.now() + TIMING.betting + 1);
+      seen.push(t.handNo);
+    }
+    eq(new Set(seen).size, seen.length, `hand numbers stay distinct across restarts (${seen.join(',')})`);
+  }
+
+  // Whatever the recovery does, the ledger must still explain every balance.
+  {
+    const db = openDb(':memory:');
+    const accounts = new Accounts(db);
+    const t = boot(accounts);
+    const alice = user(accounts, 'restart-e');
+    t.sit(0, alice);
+    t.placeBet(alice.id, 1200);
+    t.tick(Date.now() + TIMING.betting + 1);
+    boot(accounts);
+    eq(accounts.audit().length, 0, 'every balance still matches its ledger after a recovery');
+  }
+}
+
 /* ------------------------------------------------------------------ done */
 console.log(`table checks run: ${checks}`);
 if (fails.length) {

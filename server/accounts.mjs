@@ -52,6 +52,16 @@ export function openDb(path = ':memory:') {
       created_at INTEGER NOT NULL
     );
 
+    -- How far a table has been settled. This cannot be derived from the ledger:
+    -- a losing hand returns nothing and so writes no row at all, which makes
+    -- "a stake with no payout" indistinguishable from "a stake still on the
+    -- table". This column is the difference between the two.
+    CREATE TABLE IF NOT EXISTS table_state (
+      id           TEXT PRIMARY KEY,
+      settled_upto INTEGER NOT NULL DEFAULT 0
+    );
+
+    CREATE INDEX IF NOT EXISTS ledger_ref ON ledger(ref);
     CREATE INDEX IF NOT EXISTS ledger_user ON ledger(user_id, id);
     CREATE INDEX IF NOT EXISTS sessions_user ON sessions(user_id);
   `);
@@ -155,6 +165,100 @@ export class Accounts {
     this.db.exec('BEGIN');
     try {
       const out = entries.map(e => ({ userId: e.userId, balance: this.#post(e.userId, e.delta, e.reason, e.ref) }));
+      this.db.exec('COMMIT');
+      return out;
+    } catch (e) {
+      this.db.exec('ROLLBACK');
+      throw e;
+    }
+  }
+
+  /* ------------------------------------------------- surviving a restart
+     A hand lives in the server's memory, but its stake has already left the
+     player's balance. If the process dies in between — a deploy, a crash, a
+     host moving underneath it — that money is in the ledger with nothing to
+     answer it, and no amount of auditing will notice, because the books
+     balance perfectly. It is simply gone.
+
+     These three are what let the next boot find it and give it back.        */
+
+  /** Highest hand number this table has ever written, from the ledger itself. */
+  lastHandNo(tableId) {
+    const r = this.db.prepare(
+      'SELECT MAX(CAST(SUBSTR(ref, ?) AS INTEGER)) AS n FROM ledger WHERE ref LIKE ?'
+    ).get(tableId.length + 2, `${tableId}#%`);
+    return (r && r.n) || 0;
+  }
+
+  settledUpto(tableId) {
+    const r = this.db.prepare('SELECT settled_upto FROM table_state WHERE id = ?').get(tableId);
+    return r ? r.settled_upto : 0;
+  }
+
+  markSettled(tableId, handNo) {
+    this.db.prepare(
+      `INSERT INTO table_state (id, settled_upto) VALUES (?, ?)
+       ON CONFLICT(id) DO UPDATE SET settled_upto = MAX(settled_upto, excluded.settled_upto)`
+    ).run(tableId, handNo);
+  }
+
+  /**
+   * Give back every stake on a hand that was never settled, and return what
+   * was handed to whom. Only the four reasons that take money off a player
+   * count; a payout is not a stake, and a hand that merely lost is not
+   * unsettled — it is settled, at zero.
+   */
+  /**
+   * Pay a round out and record that it is closed, together. These must not be
+   * two transactions: a crash in the gap leaves a round that has already paid
+   * still looking open, and the next boot would refund stakes it had settled.
+   * Entries may be empty — a round where every hand lost moves no money and is
+   * closed just the same.
+   */
+  settleRound(tableId, handNo, entries = []) {
+    this.db.exec('BEGIN');
+    try {
+      const out = entries.map(e => ({ userId: e.userId, balance: this.#post(e.userId, e.delta, e.reason, e.ref) }));
+      this.db.prepare(
+        `INSERT INTO table_state (id, settled_upto) VALUES (?, ?)
+         ON CONFLICT(id) DO UPDATE SET settled_upto = MAX(settled_upto, excluded.settled_upto)`
+      ).run(tableId, handNo);
+      this.db.exec('COMMIT');
+      return out;
+    } catch (e) {
+      this.db.exec('ROLLBACK');
+      throw e;
+    }
+  }
+
+  refundOpenStakes(tableId) {
+    const after = this.settledUpto(tableId);
+    const upto  = this.lastHandNo(tableId);
+    const open = this.db.prepare(
+      `SELECT user_id AS userId, SUM(delta) AS staked FROM ledger
+        WHERE reason IN ('bet','insurance','double','split')
+          AND ref LIKE ?
+          AND CAST(SUBSTR(ref, ?) AS INTEGER) > ?
+        GROUP BY user_id`
+    ).all(`${tableId}#%`, tableId.length + 2, after);
+    const owed = open.filter(r => r.staked < 0);
+
+    // The refund and the mark that it happened go in together. Split across
+    // two transactions, a crash in the gap either pays twice or never pays at
+    // all, which is the same class of bug this method exists to fix. The ref
+    // deliberately does not parse as a hand number, so it cannot be mistaken
+    // for one by lastHandNo.
+    this.db.exec('BEGIN');
+    try {
+      const out = owed.map(r => ({
+        userId: r.userId,
+        cents: -r.staked,
+        balance: this.#post(r.userId, -r.staked, 'refund', `${tableId}#recovered-after-${after}`),
+      }));
+      this.db.prepare(
+        `INSERT INTO table_state (id, settled_upto) VALUES (?, ?)
+         ON CONFLICT(id) DO UPDATE SET settled_upto = MAX(settled_upto, excluded.settled_upto)`
+      ).run(tableId, upto);
       this.db.exec('COMMIT');
       return out;
     } catch (e) {
