@@ -88,10 +88,43 @@ modulo bias. When the shoe is retired the seed is published, and anyone can
 rebuild the exact shoe and check it against the cards they saw — and check the
 published fingerprint against the revealed seed.
 
+**A stake leaves your balance when the bet is placed**, which is what stops the
+same money being bet twice — but the hand itself lives in the server's memory.
+If the process dies in between, a deploy or a crash, that stake would sit in the
+ledger with nothing coming back, and no audit would notice: the debit is real
+and the books balance perfectly. So a table records how far it has settled, and
+returns anything staked past that line when it starts. A losing hand returns
+nothing and writes no row, so "a bet with no payout" is ambiguous on its own;
+the settled mark is what tells the two apart, and without it every loss would
+be refunded.
+
+**Players carry a tag** — six characters, no `O/0` or `I/1/L`, because reading a
+UUID aloud across a table is not a feature. It is what seats are identified by,
+since display names are not unique, and it is what you give someone so they can
+send you chips. The account id stays on the server.
+
+**Gifting** moves play money between players in one transaction; a gift that
+debited without crediting would be money destroyed. Because every new account
+arrives holding a thousand play dollars, sending requires having played 50
+hands, with a ceiling of $250 a gift and $500 a day — enough that anyone
+actually playing never notices, and enough that an account made to farm the
+signup bonus never qualifies.
+
+**The leaderboard** ranks on what a player has won at the table, derived from
+the ledger. Gifts are left out on purpose: a board that counted money you were
+handed would rank whoever has generous friends, and would make gifting the
+fastest route to the top.
+
 It is Server-Sent Events rather than WebSockets, and `node:sqlite` rather than
 a driver, so the server has no runtime dependency either. `node:sqlite` is
 still flagged experimental in Node 22; it is fine for play money and is the
 one thing here that would want revisiting before anything else did.
+
+Signup and login are rate limited per address, and so are betting, sitting and
+acting. The event stream is open to anyone — watching a table should not need
+an account — but capped at six connections per address: each one is a response
+held open, the host stops accepting at a couple of hundred, and one client in a
+loop would otherwise close the table to everybody.
 
 ## Hosting the table
 
@@ -222,7 +255,7 @@ node tests/test-engine.mjs  # 67 strategy/index/shoe assertions
 node tests/test-table.mjs   # the multiplayer table: money, turns, fairness
 node tests/test-server.mjs  # the HTTP/SSE layer in front of it
 node tests/test-ui.mjs      # end-to-end pass over all seven screens
-node tests/test-a11y.mjs    # 49 accessibility checks across the trainer and
+node tests/test-a11y.mjs    # 54 accessibility checks across the trainer and
                             # the table: names, labels, live regions, keyboard
                             # paths and WCAG AA contrast
 node tests/test-money.mjs   # 220 simulated hands reconciled against an
