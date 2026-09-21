@@ -423,6 +423,50 @@ function client() {
   ok(board.every(p => p.email === undefined), 'the leaderboard exposes no email addresses');
 }
 
+/* ============================================ busting out, and getting back */
+{
+  const broke = accounts.createUser('broke@example.com', 'password123', 'Broke');
+  const c = client().as(broke);
+
+  let r = await c.call('/api/bailout', {});
+  eq(r.status, 400, 'a funded account is refused a grant');
+
+  // Lose almost everything at the table, the ordinary way.
+  accounts.post([{ userId: broke.id, delta: -(STARTING_BALANCE - 50), reason: 'bet', ref: 'bust#1' }]);
+
+  r = await c.call('/api/bailout', {});
+  eq(r.status, 200, 'an account that cannot play is granted one');
+  ok(accounts.balance(broke.id) > 0, 'the grant reaches the balance');
+
+  // Bust again immediately: the cooldown, not the balance, is what refuses.
+  accounts.post([{ userId: broke.id, delta: -(accounts.balance(broke.id) - 10), reason: 'bet', ref: 'bust#2' }]);
+  r = await c.call('/api/bailout', {});
+  eq(r.status, 400, 'a second grant the same day is refused');
+  ok(/day/i.test(r.data.error || ''), `the refusal says why (${r.data.error})`);
+
+  const nobody = client();
+  eq((await nobody.call('/api/bailout', {})).status, 401, 'a grant requires an account');
+
+  /* The point of ranking on winnings rather than balance: a grant is not a
+     win. Measured as a before and after across the grant itself — comparing
+     against a figure computed here would only restate the implementation, and
+     an account that loses the grant again afterwards hides the difference. */
+  const clean = accounts.createUser('clean@example.com', 'password123', 'Clean');
+  const cc = client().as(clean);
+  accounts.post([{ userId: clean.id, delta: -(STARTING_BALANCE - 50), reason: 'bet', ref: 'clean#1' }]);
+  const netBefore = accounts.leaderboard(200).find(p => p.display === 'Clean')?.net;
+  const balBefore = accounts.balance(clean.id);
+
+  eq((await cc.call('/api/bailout', {})).status, 200, 'the clean account is granted one');
+
+  const after = accounts.leaderboard(200).find(p => p.display === 'Clean');
+  ok(after, 'the account is still on the board after a grant');
+  eq(after && after.net, netBefore, 'a grant does not move net winnings by a cent');
+  ok(accounts.balance(clean.id) > balBefore, 'though it certainly moves the balance');
+
+  eq(accounts.audit().length, 0, 'every balance still matches its ledger after a grant');
+}
+
 /* ============================================== chat, and who moderates it */
 {
   const talker = accounts.createUser('talker@example.com', 'password123', 'Talker');

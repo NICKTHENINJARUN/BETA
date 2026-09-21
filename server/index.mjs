@@ -14,7 +14,7 @@ import { createServer } from 'node:http';
 import { readFile } from 'node:fs/promises';
 import { extname, join, normalize } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { openDb, Accounts, GIFT } from './accounts.mjs';
+import { openDb, Accounts, GIFT, BAILOUT } from './accounts.mjs';
 import { Chat, CHAT } from './chat.mjs';
 import { Table, SEATS } from './table.mjs';
 
@@ -307,7 +307,19 @@ const ROUTES = {
   'GET /api/stats': async (req, res) => {
     const user = userFor(req);
     if (!user) return fail(res, 401, 'not signed in');
-    send(res, 200, { stats: accounts.stats(user.id), gift: GIFT });
+    send(res, 200, {
+      stats: accounts.stats(user.id), gift: GIFT,
+      bailout: accounts.bailoutState(user.id),
+    });
+  },
+
+  /* Offered only to someone who cannot play, once a day. Every rule that
+     matters lives in accounts.bailout — this is the doorway. */
+  'POST /api/bailout': async (req, res) => {
+    const user = userFor(req);
+    if (!user) return fail(res, 401, 'not signed in');
+    if (tooMany(`bailout:${user.id}`, 6, 60000)) return fail(res, 429, 'slow down');
+    send(res, 200, accounts.bailout(user.id));
   },
 
   /* What a platform's health check calls. Touches the database rather than

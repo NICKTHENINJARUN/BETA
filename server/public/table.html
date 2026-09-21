@@ -330,6 +330,11 @@
         <p class="fair">
           Your player tag is <code id="myTag">—</code>. Give it to someone and they can send you chips.
         </p>
+        <div id="bailoutBox" hidden>
+          <p class="fair" id="bailoutWhy"></p>
+          <button class="btn primary" id="bailoutBtn" type="button">Take a grant</button>
+          <div class="err" id="bailoutErr" role="alert"></div>
+        </div>
         <form id="giftForm" class="bar" autocomplete="off">
           <div class="field">
             <label for="giftTo">Send to (player tag)</label>
@@ -469,7 +474,25 @@ async function refreshWallet() {
   try {
     const r = await fetch('/api/stats');
     if (!r.ok) return;
-    const { stats, gift } = await r.json();
+    const { stats, gift, bailout: b } = await r.json();
+    // Busting out is the one moment this page has something urgent to say, so
+    // it says it here rather than leaving a dead balance and no way forward.
+    const box = $('#bailoutBox');
+    if (b && b.eligible) {
+      box.hidden = false;
+      $('#bailoutWhy').textContent =
+        `You are down to ${money(b.balance)}, which is not enough to play. ` +
+        `Take ${money(b.grant)} and carry on — one a day.`;
+    } else if (b && b.readyAt && b.balance < b.below) {
+      box.hidden = false;
+      $('#bailoutWhy').textContent =
+        'You have already taken a grant today. The next one is available tomorrow.';
+      $('#bailoutBtn').hidden = true;
+    } else {
+      box.hidden = true;
+      $('#bailoutBtn').hidden = false;
+    }
+
     const short = Math.max(0, gift.minHandsPlayed - stats.hands);
     $('#giftRule').textContent = short
       ? `You need ${short} more hand${short === 1 ? '' : 's'} before you can send chips — ` +
@@ -506,6 +529,21 @@ async function refreshBoard() {
     });
   } catch {}
 }
+
+$('#bailoutBtn').onclick = async () => {
+  const btn = $('#bailoutBtn');
+  btn.disabled = true;
+  $('#bailoutErr').textContent = '';
+  try {
+    const out = await api('/api/bailout');
+    setBalance(out.balance);
+  } catch (e) {
+    showErr($('#bailoutErr'), e.message);
+  } finally {
+    btn.disabled = false;
+    refreshWallet();
+  }
+};
 
 $('#giftForm').addEventListener('submit', async e => {
   e.preventDefault();
@@ -1123,6 +1161,10 @@ function connect() {
       }, 700);
     }
     api('/api/table').then(s => { state = s; render(); });
+    // Busting out happens here, so this is where the page finds out it has
+    // something to offer.
+    refreshWallet();
+    refreshBoard();
   });
 
   es.addEventListener('shoe.revealed', ev => {
