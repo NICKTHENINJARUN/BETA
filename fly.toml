@@ -12,7 +12,7 @@
 # volume is a config change rather than a port.
 
 app = "blackjack-academy"
-primary_region = "iad"          # change to the region nearest your players
+primary_region = "dfw"          # Dallas — change to the region nearest your players
 
 [build]
   dockerfile = "Dockerfile"

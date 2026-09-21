@@ -12,11 +12,6 @@ on:
   pull_request:
   workflow_dispatch:
 
-# A newer commit on main supersedes an in-flight deploy rather than racing it.
-concurrency:
-  group: pages
-  cancel-in-progress: false
-
 jobs:
   test:
     runs-on: ubuntu-latest
@@ -95,6 +90,17 @@ jobs:
     # switched on after this workflow already existed.
     if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
     runs-on: ubuntu-latest
+
+    # One Pages deploy at a time, and an in-flight one finishes rather than
+    # being cancelled part-way: a half-published site is worse than a slightly
+    # stale one, so a newer commit queues behind the running deploy instead of
+    # killing it. This belongs to the deploy job alone. At the workflow level,
+    # where it used to sit, the same group also held every test run in the
+    # repository in a single queue — an unrelated pull request could sit
+    # waiting on a deploy it had nothing to do with.
+    concurrency:
+      group: pages
+      cancel-in-progress: false
 
     # Scoped to this job: the test job needs no write access to anything.
     permissions:
