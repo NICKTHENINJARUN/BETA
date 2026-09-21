@@ -93,6 +93,70 @@
      sentence and should not shout. */
   #giftTo{text-transform:uppercase}
   #giftTo::placeholder{text-transform:none}
+  /* --- seat badges, turn ring, chips, emotes ------------------------- */
+  .seat{position:relative}
+  .badge{position:absolute;top:8px;right:8px;font-size:11px;font-weight:700;
+         letter-spacing:.04em;text-transform:uppercase;padding:3px 7px;border-radius:99px;
+         border:1px solid var(--line);background:var(--panel2);color:var(--muted)}
+  .badge.hit{color:#f39a69;border-color:#59311f}
+  .badge.stand{color:#f2708f;border-color:#590821}
+  .badge.double{color:#56d795;border-color:#0b432c}
+  .badge.split{color:#e8d264;border-color:#5b511d}
+  .badge.surrender{color:#e578a8;border-color:#4c132d}
+  .badge.bust{color:#e0546f;border-color:#572131;background:#1a0d11}
+  .badge.blackjack{color:#14110f;background:linear-gradient(#f7c35c,#e9a825);border-color:#f7c35c}
+
+  /* The ring reads the server's own deadline, so it cannot promise a different
+     amount of time than the table is actually giving you. */
+  .ring{position:absolute;top:6px;left:8px;width:30px;height:30px;transform:rotate(-90deg)}
+  /* The ring lives where the name starts, so the name steps aside for it —
+     only while it is this seat's turn, so nothing shifts for anyone else. */
+  .seat.turn .who{padding-left:36px}
+  .ring circle{fill:none;stroke-width:3;stroke-linecap:round}
+  .ring .track{stroke:#241f1c}
+  .ring .fill{stroke:#3fca77;transition:stroke .4s linear}
+  .ring.warn .fill{stroke:#e0a06f}
+  .ring.late .fill{stroke:#e0546f}
+  @media(prefers-reduced-motion:no-preference){
+    .ring.late{animation:ringpulse 1s ease-in-out infinite}
+  }
+  @keyframes ringpulse{50%{opacity:.45}}
+
+  .chips{display:flex;gap:3px;align-items:flex-end;justify-content:center;min-height:20px;margin-top:4px}
+  .stack{display:flex;flex-direction:column-reverse;align-items:center}
+  .chip{width:22px;height:5px;border-radius:99px;margin-top:-1px;
+        border:1px solid rgba(0,0,0,.45);box-shadow:0 1px 0 rgba(255,255,255,.12) inset}
+  .chip.c5{background:#b8353f}.chip.c25{background:#2f8a4e}.chip.c100{background:#1d1d1d}
+  .chip.c500{background:#6c3f9e}.chip.c1000{background:#d08a1c}
+  .stack b{font-size:10px;color:var(--muted2);margin-top:3px;font-weight:650}
+
+  .chatlog{max-height:240px;overflow-y:auto;display:grid;gap:6px;margin-bottom:10px;
+            padding-right:4px}
+  .msg{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:baseline;
+       font-size:14px;line-height:1.5;padding:5px 7px;border-radius:6px;background:var(--panel2)}
+  .msg .from{color:var(--orange);font-weight:650;margin-right:6px}
+  .msg.mine{background:#1a1311}
+  .msg .tools{display:flex;gap:4px;opacity:0;transition:.12s}
+  .msg:hover .tools,.msg:focus-within .tools{opacity:1}
+  .msg .tools button{font-size:11px;padding:2px 6px;border-radius:5px;
+                     border:1px solid var(--line);background:transparent;color:var(--muted2)}
+  .msg .tools button:hover{color:#ddd}
+  .chatbox{display:flex;gap:6px}
+  .chatbox input{flex:1;min-width:0}
+  .muted-note{font-size:12px;color:var(--muted2)}
+  .emotes{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}
+  .emotes button{width:44px;height:44px;border-radius:50%;border:1px solid var(--line);
+                 background:var(--panel2);font-size:20px;line-height:1;padding:0}
+  .emotes button:disabled{opacity:.4}
+  .flyout{position:absolute;left:50%;top:0;transform:translateX(-50%);font-size:26px;
+          pointer-events:none;animation:fly 1.6s ease-out forwards}
+  @keyframes fly{
+    0%{opacity:0;transform:translate(-50%,6px) scale(.7)}
+    18%{opacity:1;transform:translate(-50%,-6px) scale(1.1)}
+    100%{opacity:0;transform:translate(-50%,-46px) scale(1)}
+  }
+  @media(prefers-reduced-motion:reduce){ .flyout{animation:none;opacity:1} }
+
   .board{width:100%;border-collapse:collapse;font-size:14px;margin-top:6px}
   .board th{text-align:left;color:var(--muted);font-weight:650;padding:6px 8px;
             border-bottom:1px solid var(--line);font-size:13px}
@@ -207,6 +271,7 @@
           <span class="phase">Pick a seat above to join.</span>
         </div>
 
+        <div class="emotes" id="emotes" role="group" aria-label="React"></div>
         <div class="err" id="tableErr" role="alert"></div>
         <div id="result" role="status" aria-live="polite"></div>
       </div>
@@ -231,6 +296,19 @@
         <p class="fair" id="giftRule"></p>
         <div class="err" id="giftErr" role="alert"></div>
         <div id="giftOk" role="status" aria-live="polite"></div>
+      </div>
+
+      <div class="panel">
+        <h2>Table chat</h2>
+        <div class="chatlog" id="chatlog" role="log" aria-live="polite" aria-label="Table chat"></div>
+        <form class="chatbox" id="chatForm" autocomplete="off">
+          <label class="vh" for="chatText">Say something at the table</label>
+          <input id="chatText" name="chatText" maxlength="200" placeholder="Say something…">
+          <button class="btn" id="chatSend" type="submit">Send</button>
+        </form>
+        <p class="muted-note" id="chatRule"></p>
+        <div class="err" id="chatErr" role="alert"></div>
+        <p class="muted-note" id="mutedNote" hidden></p>
       </div>
 
       <div class="panel">
@@ -331,6 +409,8 @@ function enter(user) {
   connect();
   refreshWallet();
   refreshBoard();
+  renderEmotes();
+  refreshChat();
 }
 
 /* ------------------------------------------------------- wallet and board */
@@ -406,6 +486,80 @@ $('#giftForm').addEventListener('submit', async e => {
 
 const setBalance = c => { $('#balance').textContent = money(c); };
 
+/* --------------------------------------------------- seats: what they show */
+
+const DENOMS = [[100000, 'c1000', '1K'], [50000, 'c500', '500'], [10000, 'c100', '100'],
+                [2500, 'c25', '25'], [500, 'c5', '5']];
+
+/** A bet drawn the way it would sit on the felt, largest denomination first. */
+function chipStack(cents) {
+  const wrap = document.createElement('div');
+  wrap.className = 'chips';
+  let left = cents || 0;
+  for (const [value, cls, label] of DENOMS) {
+    const n = Math.floor(left / value);
+    if (!n) continue;
+    left -= n * value;
+    const stack = document.createElement('div');
+    stack.className = 'stack';
+    // Eight is as tall as a stack reads before it is just a column; past that
+    // the count below it does the talking.
+    for (let i = 0; i < Math.min(n, 8); i++) {
+      const c = document.createElement('div');
+      c.className = 'chip ' + cls;
+      stack.append(c);
+    }
+    const tag = document.createElement('b');
+    tag.textContent = (n > 1 ? n + '×' : '') + '$' + label;
+    stack.append(tag);
+    wrap.append(stack);
+  }
+  return wrap;
+}
+
+function seatBadge(s) {
+  const last = s.hands[s.hands.length - 1];
+  if (last && last.bust) return 'bust';
+  if (last && last.natural) return 'blackjack';
+  const a = (s.lastAction || '').toLowerCase();
+  return ['hit', 'stand', 'double', 'split', 'surrender'].includes(a) ? a : '';
+}
+
+/** Redrawn from the server's deadline every frame, so it counts down the time
+    the table is actually giving you rather than a number chosen here. */
+function turnRing() {
+  const NS = 'http://www.w3.org/2000/svg';
+  const svg = document.createElementNS(NS, 'svg');
+  svg.setAttribute('class', 'ring');
+  svg.setAttribute('viewBox', '0 0 36 36');
+  svg.setAttribute('aria-hidden', 'true');
+  for (const cls of ['track', 'fill']) {
+    const c = document.createElementNS(NS, 'circle');
+    c.setAttribute('class', cls);
+    c.setAttribute('cx', '18'); c.setAttribute('cy', '18'); c.setAttribute('r', '15');
+    svg.append(c);
+  }
+  return svg;
+}
+
+const PHASE_TIMER = { betting: 'betting', insurance: 'insurance', acting: 'turn', payout: 'payout' };
+
+let ringTimer = null;
+function paintRings() {
+  const ring = document.querySelector('.ring');
+  if (!ring || !state || !state.deadline) return;
+  const total = (state.timing || {})[PHASE_TIMER[state.phase]];
+  if (!total) return;
+  const left = Math.max(0, state.deadline - Date.now());
+  const frac = Math.max(0, Math.min(1, left / total));
+  const c = 2 * Math.PI * 15;
+  const fill = ring.querySelector('.fill');
+  fill.setAttribute('stroke-dasharray', String(c));
+  fill.setAttribute('stroke-dashoffset', String(c * (1 - frac)));
+  ring.classList.toggle('warn', frac <= 0.5 && frac > 0.2);
+  ring.classList.toggle('late', frac <= 0.2);
+}
+
 /* ----------------------------------------------------------------- cards */
 function cardEl(name) {
   const d = document.createElement('div');
@@ -465,13 +619,25 @@ function render() {
       return d;
     }
     d.className = 'seat' + (i === mySeat ? ' mine' : '') + (state.active?.seat === i ? ' turn' : '');
+    d.dataset.tag = s.tag || '';
     const who = document.createElement('div');
     who.className = 'who';
     who.textContent = s.display + (i === mySeat ? ' (you)' : '');
     const stake = document.createElement('div');
     stake.className = 'stake';
     stake.textContent = s.bet ? money(s.bet) : 'no bet';
-    d.append(who, stake);
+    d.append(who, stake, chipStack(s.bet));
+
+    // What this seat just did. Bust and blackjack win over the action, because
+    // "stand" is not the interesting part of standing on twenty-one.
+    const label = seatBadge(s);
+    if (label) {
+      const bdg = document.createElement('div');
+      bdg.className = 'badge ' + label;
+      bdg.textContent = label;
+      d.append(bdg);
+    }
+    if (state.active?.seat === i && state.phase === 'acting') d.append(turnRing());
 
     s.hands.forEach((h, hi) => {
       const hand = document.createElement('div');
@@ -494,6 +660,164 @@ function render() {
   const myTurn = state.phase === 'acting' && state.active?.seat === mySeat;
   $('#actControls').hidden = !myTurn;
   if (myTurn) renderActions(lastActions);
+
+  // One loop while something is on a clock, none when nothing is. A timer left
+  // running against a table that is waiting for players burns a phone battery
+  // for no reason.
+  const ticking = !!(state.deadline && document.querySelector('.ring'));
+  if (ticking && !ringTimer) {
+    const step = () => { paintRings(); ringTimer = requestAnimationFrame(step); };
+    ringTimer = requestAnimationFrame(step);
+  } else if (!ticking && ringTimer) {
+    cancelAnimationFrame(ringTimer);
+    ringTimer = null;
+  }
+  if (ticking) paintRings();
+}
+
+/* -------------------------------------------------------------------- chat */
+
+/* Muting is held here, in this browser, and nowhere else. Nobody should need
+   the server's permission to stop reading someone — a mute that took a round
+   trip is a mute that could be refused or lost. It is a tag list, because tags
+   are unique and display names are not. */
+const MUTE_KEY = 'bjTableMutes';
+let muted = new Set();
+try { muted = new Set(JSON.parse(localStorage.getItem(MUTE_KEY) || '[]')); } catch {}
+const saveMutes = () => { try { localStorage.setItem(MUTE_KEY, JSON.stringify([...muted])); } catch {} };
+
+let chatSeen = [];
+
+function renderChat() {
+  const log = $('#chatlog');
+  const visible = chatSeen.filter(m => !m.tag || !muted.has(m.tag));
+  log.replaceChildren(...visible.map(m => {
+    const row = document.createElement('div');
+    row.className = 'msg' + (me && m.tag === me.tag ? ' mine' : '');
+
+    const body = document.createElement('div');
+    const who = document.createElement('span');
+    who.className = 'from';
+    // textContent for both: a display name and a message are whatever someone
+    // else typed, and neither is ever markup.
+    who.textContent = m.display;
+    body.append(who, document.createTextNode(m.text));
+
+    const tools = document.createElement('div');
+    tools.className = 'tools';
+    if (m.tag && (!me || m.tag !== me.tag)) {
+      const mute = document.createElement('button');
+      mute.type = 'button';
+      mute.textContent = 'Mute';
+      mute.title = `Stop seeing messages from ${m.display}`;
+      mute.onclick = () => { muted.add(m.tag); saveMutes(); renderChat(); };
+
+      const report = document.createElement('button');
+      report.type = 'button';
+      report.textContent = 'Report';
+      report.onclick = () => {
+        report.disabled = true;
+        api('/api/chat/report', { id: m.id })
+          .then(() => { report.textContent = 'Reported'; })
+          .catch(() => { report.textContent = 'Reported'; });
+      };
+      tools.append(mute, report);
+    }
+    row.append(body, tools);
+    return row;
+  }));
+  log.scrollTop = log.scrollHeight;
+
+  const note = $('#mutedNote');
+  note.hidden = muted.size === 0;
+  if (muted.size) {
+    note.textContent = '';
+    note.append(document.createTextNode(
+      `${muted.size} ${muted.size === 1 ? 'person' : 'people'} muted on this device. `));
+    const undo = document.createElement('button');
+    undo.type = 'button';
+    undo.className = 'btn sm ghost';
+    undo.textContent = 'Unmute all';
+    undo.onclick = () => { muted.clear(); saveMutes(); renderChat(); };
+    note.append(undo);
+  }
+}
+
+async function refreshChat() {
+  try {
+    const r = await fetch('/api/chat');
+    if (!r.ok) return;
+    const { messages, limits } = await r.json();
+    chatSeen = messages;
+    renderChat();
+    const played = (await (await fetch('/api/stats')).json().catch(() => ({}))).stats;
+    if (played && played.hands < limits.minHandsPlayed) {
+      const short = limits.minHandsPlayed - played.hands;
+      $('#chatRule').textContent =
+        `Play ${short} more hand${short === 1 ? '' : 's'} before chatting — it keeps drive-by accounts out.`;
+      $('#chatText').disabled = $('#chatSend').disabled = true;
+    } else {
+      $('#chatRule').textContent = `Up to ${limits.maxLength} characters, ${limits.perMinute} a minute.`;
+    }
+  } catch {}
+}
+
+$('#chatForm').addEventListener('submit', async e => {
+  e.preventDefault();
+  const input = $('#chatText');
+  const text = input.value.trim();
+  if (!text) return;
+  $('#chatErr').textContent = '';
+  $('#chatSend').disabled = true;
+  try {
+    await api('/api/chat', { text });
+    input.value = '';
+  } catch (err) {
+    showErr($('#chatErr'), err.message);
+  } finally {
+    $('#chatSend').disabled = false;
+  }
+});
+
+/* --------------------------------------------------------------- reactions */
+
+const EMOTE_GLYPH = { clap: '👏', fire: '🔥', 'mind-blown': '🤯',
+                      luck: '🍀', cheers: '🥂', rip: '💀' };
+const EMOTE_NAME  = { clap: 'Applause', fire: 'On fire', 'mind-blown': 'No way',
+                      luck: 'Good luck', cheers: 'Cheers', rip: 'Brutal' };
+
+function renderEmotes() {
+  const wrap = $('#emotes');
+  wrap.replaceChildren(...Object.keys(EMOTE_GLYPH).map(key => {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.textContent = EMOTE_GLYPH[key];
+    // The glyph alone announces as "clapping hands sign" or nothing at all,
+    // so the button carries a name and the emoji is decoration.
+    b.setAttribute('aria-label', EMOTE_NAME[key]);
+    b.title = EMOTE_NAME[key];
+    b.onclick = () => {
+      b.disabled = true;
+      api('/api/emote', { emote: key })
+        .catch(() => {})
+        .finally(() => setTimeout(() => { b.disabled = false; }, 700));
+    };
+    return b;
+  }));
+}
+
+/** Float a reaction over whoever sent it, or over the felt if they are standing. */
+function showEmote({ tag, emote }) {
+  const glyph = EMOTE_GLYPH[emote];
+  if (!glyph) return;                       // a key this page does not know
+  const host = (tag && document.querySelector(`.seat[data-tag="${CSS.escape(tag)}"]`)) || $('#seats');
+  if (!host) return;
+  if (getComputedStyle(host).position === 'static') host.style.position = 'relative';
+  const el = document.createElement('div');
+  el.className = 'flyout';
+  el.textContent = glyph;
+  host.append(el);
+  setTimeout(() => el.remove(), 1700);
 }
 
 function renderActions(actions) {
@@ -551,6 +875,27 @@ function connect() {
       if (d.seats) onState(ev); else api('/api/table').then(s => { state = s; render(); });
     });
   }
+
+  es.addEventListener('chat', ev => {
+    try {
+      const m = JSON.parse(ev.data);
+      chatSeen.push(m);
+      if (chatSeen.length > 60) chatSeen.shift();
+      renderChat();
+    } catch {}
+  });
+
+  es.addEventListener('chat.hidden', ev => {
+    try {
+      const { id, hidden } = JSON.parse(ev.data);
+      if (hidden) chatSeen = chatSeen.filter(m => m.id !== id);
+      renderChat();
+    } catch {}
+  });
+
+  es.addEventListener('emote', ev => {
+    try { showEmote(JSON.parse(ev.data)); } catch {}
+  });
 
   es.addEventListener('acted', ev => {
     const d = JSON.parse(ev.data);

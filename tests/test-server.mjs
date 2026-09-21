@@ -423,6 +423,131 @@ function client() {
   ok(board.every(p => p.email === undefined), 'the leaderboard exposes no email addresses');
 }
 
+/* ============================================== chat, and who moderates it */
+{
+  const talker = accounts.createUser('talker@example.com', 'password123', 'Talker');
+  const other  = accounts.createUser('other@example.com',  'password123', 'Other');
+  const quiet  = accounts.createUser('quiet@example.com',  'password123', 'Quiet');
+  const a = client().as(talker), o = client().as(other), q = client().as(quiet);
+  const play = (u, n) => { for (let i = 1; i <= n; i++)
+    accounts.post([{ userId: u.id, delta: -100, reason: 'bet', ref: `chat#${u.id}#${i}` },
+                   { userId: u.id, delta: 200, reason: 'settle', ref: `chat#${u.id}#${i}/0` }]); };
+  play(talker, 10); play(other, 10);
+
+  let r = await q.call('/api/chat', { text: 'hello' });
+  eq(r.status, 400, 'an account that has not played cannot chat');
+
+  r = await a.call('/api/chat', { text: 'dealer is running hot' });
+  eq(r.status, 200, 'a player who has played can chat');
+  const msgId = r.data.id;
+
+  r = await a.call('/api/chat', { text: 'this is fucking rigged' });
+  eq(r.status, 400, 'the filter refuses what it catches');
+
+  // Refusal rather than masking: starring it out teaches which spellings pass.
+  r = await a.call('/api/chat', { text: 'f  u  c  k' });
+  eq(r.status, 400, 'the filter sees through spacing');
+  r = await a.call('/api/chat', { text: 'ffffuuuuuck' });
+  eq(r.status, 400, 'the filter sees through repetition');
+  r = await a.call('/api/chat', { text: 'sh1t' });
+  eq(r.status, 400, 'the filter sees through digit substitution');
+
+  // A second mouth, because the first has nearly used its minute — which is
+  // the limiter working, not a problem with it.
+  const wordy = accounts.createUser('wordy@example.com', 'password123', 'Wordy');
+  play(wordy, 10);
+  const w = client().as(wordy);
+
+  // The filter must not swallow ordinary words that merely contain letters.
+  for (const fine of ['bookkeeper', 'committee', 'assume the dealer stands', 'grass']) {
+    r = await w.call('/api/chat', { text: fine });
+    eq(r.status, 200, `the filter leaves "${fine}" alone`);
+  }
+
+  // This account must have played, or "refused" would mean the not-played gate
+  // rather than the length check — the same 400 for a different reason.
+  const lengthyUser = accounts.createUser('lengthy@example.com', 'password123', 'Lengthy');
+  play(lengthyUser, 10);
+  const lengthy = client().as(lengthyUser);
+  ok((await lengthy.call('/api/chat', { text: 'a normal message' })).status === 200,
+     'the length checks run against an account that is allowed to chat');
+  r = await lengthy.call('/api/chat', { text: 'x'.repeat(500) });
+  eq(r.status, 400, 'an overlong message is refused');
+  r = await lengthy.call('/api/chat', { text: '   ' });
+  eq(r.status, 400, 'an empty message is refused');
+
+  // The limiter itself.
+  const chattyUser = accounts.createUser('chatty@example.com', 'password123', 'Chatty');
+  play(chattyUser, 10);
+  const chatty = client().as(chattyUser);
+  let hitLimit = false;
+  for (let i = 0; i < 15; i++) {
+    const res = await chatty.call('/api/chat', { text: `counting ${i}` });
+    if (res.status === 429) { hitLimit = true; break; }
+  }
+  ok(hitLimit, 'chat is rate limited');
+
+  const nobody = client();
+  r = await nobody.call('/api/chat', { text: 'hi' });
+  eq(r.status, 401, 'chatting requires an account');
+
+  // Reporting
+  r = await o.call('/api/chat/report', { id: msgId });
+  eq(r.status, 200, 'a message can be reported');
+  r = await o.call('/api/chat/report', { id: msgId });
+  ok(r.data && r.data.already, 'the same person reporting twice does not stack');
+  r = await a.call('/api/chat/report', { id: msgId });
+  eq(r.status, 400, 'you cannot report your own message');
+
+  // With no owner configured the moderation surface does not exist at all —
+  // not 403, which would confirm it is there.
+  r = await o.call('/api/chat/reports');
+  eq(r.status, 404, 'with no ADMIN_EMAIL set, reading reports is not a route');
+  r = await o.call('/api/chat/hide', { id: msgId });
+  eq(r.status, 404, 'with no ADMIN_EMAIL set, hiding is not a route');
+
+  const shown = (await nobody.call('/api/chat')).data.messages;
+  ok(shown.some(m => m.id === msgId), 'chat history is readable without an account');
+  ok(shown.every(m => m.user_id === undefined), 'chat history exposes no account ids');
+}
+
+/* ===================================================== reactions at the table */
+{
+  const c = client().as(accounts.createUser('emoter@example.com', 'password123', 'Emoter'));
+
+  let r = await c.call('/api/emote', { emote: 'fire' });
+  eq(r.status, 200, 'a signed-in player can react');
+
+  // The vocabulary is closed, which is the entire reason this is safe: there is
+  // no moderation surface because nothing a player writes is ever relayed.
+  r = await c.call('/api/emote', { emote: 'not-an-emote' });
+  eq(r.status, 400, 'an emote outside the list is refused');
+
+  r = await c.call('/api/emote', { emote: '<img src=x onerror=alert(1)>' });
+  eq(r.status, 400, 'an emote key cannot carry markup');
+
+  const nobody = client();
+  r = await nobody.call('/api/emote', { emote: 'clap' });
+  eq(r.status, 401, 'reacting requires an account');
+
+  // Spam is the one abuse a fixed vocabulary still allows.
+  let limited = false;
+  for (let i = 0; i < 20; i++) {
+    const res = await c.call('/api/emote', { emote: 'clap' });
+    if (res.status === 429) { limited = true; break; }
+  }
+  ok(limited, 'reactions are rate limited');
+}
+
+/* ============================================ what the table tells the page */
+{
+  const state = (await client().call('/api/table')).data;
+  ok(state.timing && state.timing.turn > 0,
+     `the table publishes its own timings so a countdown cannot promise different time (turn ${state.timing?.turn}ms)`);
+  ok(state.seats.some(s => s && 'lastAction' in s) || state.seats.every(s => !s),
+     'seats report what they last did, for a client that joined mid-hand');
+}
+
 /* ================================================ a seat says whose it is */
 {
   const c = client().as(accounts.createUser('seated@example.com', 'password123', 'Seated'));

@@ -409,6 +409,31 @@ ok(glyphs === 0, `decorative glyphs are hidden from screen readers (${glyphs} ex
   ok(buried.length === 0,
      `touch: no control is buried under another element (${buried.map(r => `${r.name} ${r.box}`).slice(0, 5).join(', ')})`);
 
+  /* The nav scrolls sideways at this width, and arriving straight at a view
+     used to leave the selected tab off the end of it — you could not see which
+     screen you were on. Moving focus scrolls a tab into view by itself, which
+     is why the arrow keys never showed this; these arrive by URL instead. */
+  for (const view of ['dashboard', 'analyzer', 'course']) {
+    await m.goto(APP_URL + '#' + view);
+    await m.waitForTimeout(400);
+    const r = await m.evaluate(() => {
+      const nav = document.getElementById('nav');
+      const tab = nav.querySelector('button.active');
+      if (!tab) return { ok: false, why: 'no tab is marked selected' };
+      const nb = nav.getBoundingClientRect(), tb = tab.getBoundingClientRect();
+      return { ok: tb.left >= nb.left - 1 && tb.right <= nb.right + 1,
+               why: `"${tab.textContent}" sits ${Math.round(tb.left - nb.left)}px from the nav's left edge, ` +
+                    `${Math.round(tb.right - nb.right)}px from its right` };
+    });
+    ok(r.ok, `touch: landing on #${view} shows which tab is selected (${r.why})`);
+    /* There was a check here that the page had not scrolled. It could not
+       fail: showView scrolls to the top on every call, so scrollY is zero
+       whatever this code does, and the assertion was testing that other line
+       rather than this one. */
+  }
+  await m.goto(APP_URL);
+  await m.waitForTimeout(300);
+
   // The page must not be wider than the phone. Comparing scrollWidth against
   // innerWidth alone cannot catch this: faced with content it cannot fit, the
   // browser widens the layout viewport and zooms out instead of scrolling, so

@@ -15,6 +15,7 @@ import { readFile } from 'node:fs/promises';
 import { extname, join, normalize } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { openDb, Accounts, GIFT } from './accounts.mjs';
+import { Chat, CHAT } from './chat.mjs';
 import { Table, SEATS } from './table.mjs';
 
 const HERE = fileURLToPath(new URL('.', import.meta.url));
@@ -48,7 +49,15 @@ function broadcast(type, payload) {
   }
 }
 
+const chat = new Chat(db, accounts);
 const table = new Table({ id: 'main', accounts, onEvent: broadcast });
+
+/* Moderation needs a moderator. Without one, reporting is a button that files
+   a complaint to nobody. ADMIN_EMAIL names the account that can read reports
+   and hide messages; unset, those two routes do not exist to anyone. */
+const ADMIN_EMAIL = (process.env.ADMIN_EMAIL || '').trim().toLowerCase();
+const isAdmin = user => !!ADMIN_EMAIL && !!user && user.email &&
+  user.email.toLowerCase() === ADMIN_EMAIL;
 
 // The table's clock. Everything time-based — betting closing, a turn expiring,
 // the payout pause — happens because of this, not because a client asked.
@@ -136,6 +145,10 @@ const clientIp = req =>
 /* Open event streams, counted per address. Decremented when the connection
    closes rather than expiring on a timer, because a stream is meant to stay
    open — a window would let someone accumulate them. */
+/* The only gestures that exist. Sent and matched by key, so the client decides
+   what each one looks like and no player-supplied string is ever broadcast. */
+export const EMOTES = ['clap', 'fire', 'mind-blown', 'luck', 'cheers', 'rip'];
+
 const streamsPerIp = new Map();
 const MAX_STREAMS_PER_IP = 6;
 
@@ -234,6 +247,58 @@ const ROUTES = {
     if (tooMany(`gift:${user.id}`, 10, 60000)) return fail(res, 429, 'slow down');
     const { to, cents } = await readJson(req);
     send(res, 200, accounts.gift(user.id, to, cents));
+  },
+
+  /* Emotes are a closed vocabulary — six keys, and the glyph lives on the
+     client. Nothing a player types reaches another player's page, which is the
+     whole reason this is a wheel and not a chat box: there is no moderation
+     surface because there is nothing to moderate. They are broadcast and never
+     stored; the table's state machine does not hear about them at all. */
+  'POST /api/emote': async (req, res) => {
+    const user = userFor(req);
+    if (!user) return fail(res, 401, 'not signed in');
+    if (tooMany(`emote:${user.id}`, 12, 60000)) return fail(res, 429, 'easy on the emotes');
+    const { emote } = await readJson(req);
+    if (!EMOTES.includes(emote)) return fail(res, 400, 'no such emote');
+    broadcast('emote', { tag: user.tag || null, display: user.display, emote });
+    send(res, 200, { ok: true });
+  },
+
+  /* --------------------------------------------------------------- chat */
+
+  'GET /api/chat': async (req, res) =>
+    send(res, 200, { messages: chat.recent(), limits: CHAT }),
+
+  'POST /api/chat': async (req, res) => {
+    const user = userFor(req);
+    if (!user) return fail(res, 401, 'not signed in');
+    if (tooMany(`chat:${user.id}`, CHAT.perMinute, 60000)) return fail(res, 429, 'slow down');
+    const { text } = await readJson(req);
+    const msg = chat.say(user, text);
+    broadcast('chat', msg);
+    send(res, 200, msg);
+  },
+
+  'POST /api/chat/report': async (req, res) => {
+    const user = userFor(req);
+    if (!user) return fail(res, 401, 'not signed in');
+    if (tooMany(`report:${user.id}`, 20, 60000)) return fail(res, 429, 'slow down');
+    const { id } = await readJson(req);
+    send(res, 200, chat.report(id, user.id));
+  },
+
+  /* Owner only, and absent entirely when no owner is configured. */
+  'GET /api/chat/reports': async (req, res) => {
+    if (!isAdmin(userFor(req))) return fail(res, 404, 'no such endpoint');
+    send(res, 200, { reports: chat.reports() });
+  },
+
+  'POST /api/chat/hide': async (req, res) => {
+    if (!isAdmin(userFor(req))) return fail(res, 404, 'no such endpoint');
+    const { id, hidden } = await readJson(req);
+    const out = chat.hide(id, hidden !== false);
+    broadcast('chat.hidden', out);
+    send(res, 200, out);
   },
 
   'GET /api/leaderboard': async (req, res) =>

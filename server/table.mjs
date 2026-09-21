@@ -402,6 +402,9 @@ export class Table {
       phase: this.phase,
       handNo: this.handNo,
       deadline: this.deadline,
+      // Published so a countdown drawn on the page counts the time this table
+      // is actually giving, rather than a number picked to look right.
+      timing: TIMING,
       rules: this.rules,
       commit: this.commit,
       cardsLeft: this.shoe.length - this.pos,
@@ -416,6 +419,10 @@ export class Table {
         // take your name and cause it deliberately.
         tag: s.tag || null,
         bet: s.bet,
+        // What this seat last did, so the table can show it without the client
+        // having to remember every 'acted' event it has ever seen — a client
+        // that joins mid-hand has seen none of them.
+        lastAction: s.lastAction || null,
         inRound: s.inRound,
         insurance: s.insurance > 0 ? s.insurance : 0,
         activeHand: s.activeHand,
