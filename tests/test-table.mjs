@@ -352,14 +352,26 @@ const force = table => table.tick(Date.now() + 10 ** 7);
   }
 
   // Die mid-hand: the stake comes back.
+  //
+  // A deal does not always leave a hand to interrupt. A dealer blackjack
+  // settles the round before anyone acts, and so does a natural against a
+  // dealer who has none — both are settled rounds, correctly refunded
+  // nothing. Assuming otherwise is what made the first version of this fail
+  // about one run in eleven. Deal until a round is genuinely in progress, and
+  // assert that one was, so this cannot quietly pass by never getting there.
   {
-    const db = openDb(':memory:');
-    const accounts = new Accounts(db);
-    const t = boot(accounts);
-    const alice = user(accounts, 'restart-b');
-    t.sit(0, alice);
-    t.placeBet(alice.id, 1000);
-    t.tick(Date.now() + TIMING.betting + 1);
+    let accounts, t, alice, tries = 0;
+    do {
+      accounts = new Accounts(openDb(':memory:'));
+      t = boot(accounts);
+      alice = user(accounts, `restart-b-${tries}`);
+      t.sit(0, alice);
+      t.placeBet(alice.id, 1000);
+      t.tick(Date.now() + TIMING.betting + 1);
+    } while (t.phase !== 'acting' && t.phase !== 'insurance' && ++tries < 60);
+
+    ok(t.phase === 'acting' || t.phase === 'insurance',
+       `a hand was left in progress to interrupt (phase ${t.phase} after ${tries} deals)`);
     eq(accounts.balance(alice.id), STARTING_BALANCE - 1000, 'the stake is off the balance mid-hand');
     const after = boot(accounts);
     eq(after.recovered.length, 1, 'the interrupted stake is found on the next boot');
