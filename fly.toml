@@ -11,7 +11,7 @@
 # Dockerfile, so moving to Railway, Render or anywhere else that mounts a
 # volume is a config change rather than a port.
 
-app = "blackjack-academy"
+app = "black-jack"
 primary_region = "dfw"          # Dallas — change to the region nearest your players
 
 [build]
