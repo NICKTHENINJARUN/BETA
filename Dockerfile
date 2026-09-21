@@ -11,7 +11,9 @@ FROM node:22-alpine
 # Node so the graceful shutdown in index.mjs actually runs. Without an init,
 # PID 1 ignores the default signal handlers and the platform ends up killing
 # the process mid-write.
-RUN apk add --no-cache tini
+# su-exec drops to the unprivileged user from the entrypoint, after it has
+# fixed the ownership of the mounted volume. See docker-entrypoint.sh.
+RUN apk add --no-cache tini su-exec
 
 WORKDIR /app
 
@@ -23,9 +25,14 @@ COPY package.json ./
 COPY index.html ./index.html
 COPY server ./server
 
-# The database lives on a mounted volume, owned by the user we drop to.
+COPY docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
+
+# The image's own /data only matters when nothing is mounted over it. When a
+# volume IS mounted there — which is the whole point on a real deployment — it
+# arrives root-owned and replaces this directory entirely, so the entrypoint
+# has to fix the ownership at boot. This container therefore starts as root and
+# drops to `node` there, rather than dropping here with USER.
 RUN mkdir -p /data && chown -R node:node /data /app
-USER node
 
 ENV NODE_ENV=production \
     PORT=8080 \
@@ -40,5 +47,5 @@ EXPOSE 8080
 HEALTHCHECK --interval=30s --timeout=4s --start-period=5s --retries=3 \
   CMD node -e "fetch('http://127.0.0.1:'+(process.env.PORT||8080)+'/healthz').then(r=>r.json()).then(j=>process.exit(j.ok?0:1)).catch(()=>process.exit(1))"
 
-ENTRYPOINT ["/sbin/tini", "--"]
+ENTRYPOINT ["/sbin/tini", "--", "/usr/local/bin/docker-entrypoint.sh"]
 CMD ["node", "server/index.mjs"]

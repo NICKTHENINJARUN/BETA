@@ -11,8 +11,8 @@
 # Dockerfile, so moving to Railway, Render or anywhere else that mounts a
 # volume is a config change rather than a port.
 
-app = "blackjack-academy"
-primary_region = "iad"          # change to the region nearest your players
+app = "black-jack"
+primary_region = "dfw"          # Dallas — change to the region nearest your players
 
 [build]
   dockerfile = "Dockerfile"
@@ -51,6 +51,14 @@ primary_region = "iad"          # change to the region nearest your players
     # requests per second.
     soft_limit = 180
     hard_limit = 220
+
+# Stated rather than left to the platform's default, which has changed before
+# and decides the bill. Node plus a SQLite file sits well under this; the
+# ceiling is here so a busy shoe cannot push the machine into the next size
+# without anyone choosing it.
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "512mb"
 
 [checks.health]
   type = "http"
