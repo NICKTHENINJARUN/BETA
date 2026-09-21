@@ -15,6 +15,7 @@ import { readFile } from 'node:fs/promises';
 import { extname, join, normalize } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { openDb, Accounts, GIFT } from './accounts.mjs';
+import { Chat, CHAT } from './chat.mjs';
 import { Table, SEATS } from './table.mjs';
 
 const HERE = fileURLToPath(new URL('.', import.meta.url));
@@ -48,7 +49,15 @@ function broadcast(type, payload) {
   }
 }
 
+const chat = new Chat(db, accounts);
 const table = new Table({ id: 'main', accounts, onEvent: broadcast });
+
+/* Moderation needs a moderator. Without one, reporting is a button that files
+   a complaint to nobody. ADMIN_EMAIL names the account that can read reports
+   and hide messages; unset, those two routes do not exist to anyone. */
+const ADMIN_EMAIL = (process.env.ADMIN_EMAIL || '').trim().toLowerCase();
+const isAdmin = user => !!ADMIN_EMAIL && !!user && user.email &&
+  user.email.toLowerCase() === ADMIN_EMAIL;
 
 // The table's clock. Everything time-based — betting closing, a turn expiring,
 // the payout pause — happens because of this, not because a client asked.
@@ -253,6 +262,43 @@ const ROUTES = {
     if (!EMOTES.includes(emote)) return fail(res, 400, 'no such emote');
     broadcast('emote', { tag: user.tag || null, display: user.display, emote });
     send(res, 200, { ok: true });
+  },
+
+  /* --------------------------------------------------------------- chat */
+
+  'GET /api/chat': async (req, res) =>
+    send(res, 200, { messages: chat.recent(), limits: CHAT }),
+
+  'POST /api/chat': async (req, res) => {
+    const user = userFor(req);
+    if (!user) return fail(res, 401, 'not signed in');
+    if (tooMany(`chat:${user.id}`, CHAT.perMinute, 60000)) return fail(res, 429, 'slow down');
+    const { text } = await readJson(req);
+    const msg = chat.say(user, text);
+    broadcast('chat', msg);
+    send(res, 200, msg);
+  },
+
+  'POST /api/chat/report': async (req, res) => {
+    const user = userFor(req);
+    if (!user) return fail(res, 401, 'not signed in');
+    if (tooMany(`report:${user.id}`, 20, 60000)) return fail(res, 429, 'slow down');
+    const { id } = await readJson(req);
+    send(res, 200, chat.report(id, user.id));
+  },
+
+  /* Owner only, and absent entirely when no owner is configured. */
+  'GET /api/chat/reports': async (req, res) => {
+    if (!isAdmin(userFor(req))) return fail(res, 404, 'no such endpoint');
+    send(res, 200, { reports: chat.reports() });
+  },
+
+  'POST /api/chat/hide': async (req, res) => {
+    if (!isAdmin(userFor(req))) return fail(res, 404, 'no such endpoint');
+    const { id, hidden } = await readJson(req);
+    const out = chat.hide(id, hidden !== false);
+    broadcast('chat.hidden', out);
+    send(res, 200, out);
   },
 
   'GET /api/leaderboard': async (req, res) =>

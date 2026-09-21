@@ -130,6 +130,20 @@
   .chip.c500{background:#6c3f9e}.chip.c1000{background:#d08a1c}
   .stack b{font-size:10px;color:var(--muted2);margin-top:3px;font-weight:650}
 
+  .chatlog{max-height:240px;overflow-y:auto;display:grid;gap:6px;margin-bottom:10px;
+            padding-right:4px}
+  .msg{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:baseline;
+       font-size:14px;line-height:1.5;padding:5px 7px;border-radius:6px;background:var(--panel2)}
+  .msg .from{color:var(--orange);font-weight:650;margin-right:6px}
+  .msg.mine{background:#1a1311}
+  .msg .tools{display:flex;gap:4px;opacity:0;transition:.12s}
+  .msg:hover .tools,.msg:focus-within .tools{opacity:1}
+  .msg .tools button{font-size:11px;padding:2px 6px;border-radius:5px;
+                     border:1px solid var(--line);background:transparent;color:var(--muted2)}
+  .msg .tools button:hover{color:#ddd}
+  .chatbox{display:flex;gap:6px}
+  .chatbox input{flex:1;min-width:0}
+  .muted-note{font-size:12px;color:var(--muted2)}
   .emotes{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}
   .emotes button{width:44px;height:44px;border-radius:50%;border:1px solid var(--line);
                  background:var(--panel2);font-size:20px;line-height:1;padding:0}
@@ -285,6 +299,19 @@
       </div>
 
       <div class="panel">
+        <h2>Table chat</h2>
+        <div class="chatlog" id="chatlog" role="log" aria-live="polite" aria-label="Table chat"></div>
+        <form class="chatbox" id="chatForm" autocomplete="off">
+          <label class="vh" for="chatText">Say something at the table</label>
+          <input id="chatText" name="chatText" maxlength="200" placeholder="Say something…">
+          <button class="btn" id="chatSend" type="submit">Send</button>
+        </form>
+        <p class="muted-note" id="chatRule"></p>
+        <div class="err" id="chatErr" role="alert"></div>
+        <p class="muted-note" id="mutedNote" hidden></p>
+      </div>
+
+      <div class="panel">
         <h2>Leaderboard</h2>
         <p class="fair">
           Ranked by what each player has won at the table. Chips you were given do not count —
@@ -383,6 +410,7 @@ function enter(user) {
   refreshWallet();
   refreshBoard();
   renderEmotes();
+  refreshChat();
 }
 
 /* ------------------------------------------------------- wallet and board */
@@ -647,6 +675,110 @@ function render() {
   if (ticking) paintRings();
 }
 
+/* -------------------------------------------------------------------- chat */
+
+/* Muting is held here, in this browser, and nowhere else. Nobody should need
+   the server's permission to stop reading someone — a mute that took a round
+   trip is a mute that could be refused or lost. It is a tag list, because tags
+   are unique and display names are not. */
+const MUTE_KEY = 'bjTableMutes';
+let muted = new Set();
+try { muted = new Set(JSON.parse(localStorage.getItem(MUTE_KEY) || '[]')); } catch {}
+const saveMutes = () => { try { localStorage.setItem(MUTE_KEY, JSON.stringify([...muted])); } catch {} };
+
+let chatSeen = [];
+
+function renderChat() {
+  const log = $('#chatlog');
+  const visible = chatSeen.filter(m => !m.tag || !muted.has(m.tag));
+  log.replaceChildren(...visible.map(m => {
+    const row = document.createElement('div');
+    row.className = 'msg' + (me && m.tag === me.tag ? ' mine' : '');
+
+    const body = document.createElement('div');
+    const who = document.createElement('span');
+    who.className = 'from';
+    // textContent for both: a display name and a message are whatever someone
+    // else typed, and neither is ever markup.
+    who.textContent = m.display;
+    body.append(who, document.createTextNode(m.text));
+
+    const tools = document.createElement('div');
+    tools.className = 'tools';
+    if (m.tag && (!me || m.tag !== me.tag)) {
+      const mute = document.createElement('button');
+      mute.type = 'button';
+      mute.textContent = 'Mute';
+      mute.title = `Stop seeing messages from ${m.display}`;
+      mute.onclick = () => { muted.add(m.tag); saveMutes(); renderChat(); };
+
+      const report = document.createElement('button');
+      report.type = 'button';
+      report.textContent = 'Report';
+      report.onclick = () => {
+        report.disabled = true;
+        api('/api/chat/report', { id: m.id })
+          .then(() => { report.textContent = 'Reported'; })
+          .catch(() => { report.textContent = 'Reported'; });
+      };
+      tools.append(mute, report);
+    }
+    row.append(body, tools);
+    return row;
+  }));
+  log.scrollTop = log.scrollHeight;
+
+  const note = $('#mutedNote');
+  note.hidden = muted.size === 0;
+  if (muted.size) {
+    note.textContent = '';
+    note.append(document.createTextNode(
+      `${muted.size} ${muted.size === 1 ? 'person' : 'people'} muted on this device. `));
+    const undo = document.createElement('button');
+    undo.type = 'button';
+    undo.className = 'btn sm ghost';
+    undo.textContent = 'Unmute all';
+    undo.onclick = () => { muted.clear(); saveMutes(); renderChat(); };
+    note.append(undo);
+  }
+}
+
+async function refreshChat() {
+  try {
+    const r = await fetch('/api/chat');
+    if (!r.ok) return;
+    const { messages, limits } = await r.json();
+    chatSeen = messages;
+    renderChat();
+    const played = (await (await fetch('/api/stats')).json().catch(() => ({}))).stats;
+    if (played && played.hands < limits.minHandsPlayed) {
+      const short = limits.minHandsPlayed - played.hands;
+      $('#chatRule').textContent =
+        `Play ${short} more hand${short === 1 ? '' : 's'} before chatting — it keeps drive-by accounts out.`;
+      $('#chatText').disabled = $('#chatSend').disabled = true;
+    } else {
+      $('#chatRule').textContent = `Up to ${limits.maxLength} characters, ${limits.perMinute} a minute.`;
+    }
+  } catch {}
+}
+
+$('#chatForm').addEventListener('submit', async e => {
+  e.preventDefault();
+  const input = $('#chatText');
+  const text = input.value.trim();
+  if (!text) return;
+  $('#chatErr').textContent = '';
+  $('#chatSend').disabled = true;
+  try {
+    await api('/api/chat', { text });
+    input.value = '';
+  } catch (err) {
+    showErr($('#chatErr'), err.message);
+  } finally {
+    $('#chatSend').disabled = false;
+  }
+});
+
 /* --------------------------------------------------------------- reactions */
 
 const EMOTE_GLYPH = { clap: '👏', fire: '🔥', 'mind-blown': '🤯',
@@ -743,6 +875,23 @@ function connect() {
       if (d.seats) onState(ev); else api('/api/table').then(s => { state = s; render(); });
     });
   }
+
+  es.addEventListener('chat', ev => {
+    try {
+      const m = JSON.parse(ev.data);
+      chatSeen.push(m);
+      if (chatSeen.length > 60) chatSeen.shift();
+      renderChat();
+    } catch {}
+  });
+
+  es.addEventListener('chat.hidden', ev => {
+    try {
+      const { id, hidden } = JSON.parse(ev.data);
+      if (hidden) chatSeen = chatSeen.filter(m => m.id !== id);
+      renderChat();
+    } catch {}
+  });
 
   es.addEventListener('emote', ev => {
     try { showEmote(JSON.parse(ev.data)); } catch {}

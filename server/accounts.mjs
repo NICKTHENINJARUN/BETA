@@ -76,6 +76,28 @@ export function openDb(path = ':memory:') {
       settled_upto INTEGER NOT NULL DEFAULT 0
     );
 
+    /* Chat is kept rather than only broadcast, for two reasons: someone
+       arriving mid-shoe should see what was just said, and a report is
+       meaningless if the thing reported is already gone. Removing a message
+       sets its hidden flag rather than deleting the row, so a report still
+       points at something and the text cannot be quietly rewritten. */
+    CREATE TABLE IF NOT EXISTS chat (
+      id         INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id    TEXT NOT NULL REFERENCES users(id),
+      text       TEXT NOT NULL,
+      created_at INTEGER NOT NULL,
+      hidden     INTEGER NOT NULL DEFAULT 0
+    );
+
+    CREATE TABLE IF NOT EXISTS chat_reports (
+      id          INTEGER PRIMARY KEY AUTOINCREMENT,
+      message_id  INTEGER NOT NULL REFERENCES chat(id),
+      reporter_id TEXT NOT NULL REFERENCES users(id),
+      created_at  INTEGER NOT NULL,
+      UNIQUE(message_id, reporter_id)      -- one report each, not a brigade
+    );
+
+    CREATE INDEX IF NOT EXISTS chat_recent ON chat(id DESC);
     CREATE INDEX IF NOT EXISTS ledger_ref ON ledger(ref);
     CREATE INDEX IF NOT EXISTS ledger_user ON ledger(user_id, id);
     CREATE INDEX IF NOT EXISTS sessions_user ON sessions(user_id);

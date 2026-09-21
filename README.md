@@ -120,6 +120,21 @@ a driver, so the server has no runtime dependency either. `node:sqlite` is
 still flagged experimental in Node 22; it is fine for play money and is the
 one thing here that would want revisiting before anything else did.
 
+**Chat** carries four things, because no one of them is enough on its own. A
+word filter, which catches the obvious and nothing clever — anyone determined
+walks around a list in seconds, so it is a speed bump rather than a defence.
+Muting, held in the reader's own browser: nobody should need the server's
+permission to stop reading someone. Reporting, one per person per message, so
+a handful of friends cannot manufacture a queue. And hiding, which is the
+owner's actual lever — the row survives and is flagged, so a report still
+points at something afterwards. Talking needs five hands played, rather than
+the fifty gifting needs; talking is not taking.
+
+Moderation needs a moderator. `ADMIN_EMAIL` names the account that can read
+reports and hide messages. Leave it unset and those two routes do not exist to
+anybody — they answer 404 rather than 403, because a 403 confirms there is
+something there.
+
 Signup and login are rate limited per address, and so are betting, sitting and
 acting. The event stream is open to anyone — watching a table should not need
 an account — but capped at six connections per address: each one is a response
