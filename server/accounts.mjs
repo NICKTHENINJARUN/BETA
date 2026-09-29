@@ -433,8 +433,14 @@ export class Accounts {
    */
   stats(userId) {
     const one = (sql, ...args) => this.db.prepare(sql).get(userId, ...args) || {};
+    /* Counted per round on what was actually left on the table. A bet placed
+       and then taken back down before the deal nets to zero on its ref, and
+       must not count -- betting and clearing on repeat is otherwise a way to
+       reach the fifty hands gifting asks for without ever risking a cent. */
     const hands = one(
-      "SELECT COUNT(DISTINCT ref) AS n FROM ledger WHERE user_id = ? AND reason = 'bet'"
+      `SELECT COUNT(*) AS n FROM (
+         SELECT ref FROM ledger WHERE user_id = ? AND reason = 'bet'
+          GROUP BY ref HAVING SUM(delta) < 0)`
     ).n || 0;
     const staked = -(one(
       "SELECT SUM(delta) AS s FROM ledger WHERE user_id = ? AND reason IN ('bet','double','split','insurance')"
@@ -460,8 +466,15 @@ export class Accounts {
    */
   leaderboard(limit = 20) {
     return this.db.prepare(
-      `SELECT u.display, u.tag, u.balance,
-              COUNT(DISTINCT CASE WHEN l.reason = 'bet' THEN l.ref END) AS hands,
+      /* `hands` counts rounds where a stake was still on the table when the
+         cards came out, so a bet placed and cleared again does not inflate it.
+         A cleared bet nets to zero in `net` on its own, since the refund is
+         posted under the same reason as the stake. */
+      `WITH played AS (
+         SELECT user_id, ref FROM ledger WHERE reason = 'bet'
+          GROUP BY user_id, ref HAVING SUM(delta) < 0)
+       SELECT u.display, u.tag, u.balance,
+              (SELECT COUNT(*) FROM played p WHERE p.user_id = u.id) AS hands,
               COALESCE(SUM(CASE
                 WHEN l.reason IN ('settle','insurance-win')             THEN l.delta
                 WHEN l.reason IN ('bet','double','split','insurance')   THEN l.delta

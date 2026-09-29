@@ -134,15 +134,41 @@ export class Table {
     const seat = this.seatOf(userId);
     if (!seat) throw new Error('you are not seated');
     cents = Math.floor(Number(cents) || 0);
-    if (cents < this.rules.minBet) throw new Error(`minimum bet is ${this.rules.minBet} cents`);
-    if (cents > this.rules.maxBet) throw new Error(`maximum bet is ${this.rules.maxBet} cents`);
-    if (seat.bet) throw new Error('you have already bet this round');
+    if (cents <= 0) { const e = new Error('that is not a bet'); e.expected = true; throw e; }
+
+    /* Chips add up, the way they do on a felt: you lay a hundred down, then
+       another, and you are betting two hundred. The minimum is checked
+       against the total rather than the chip, so a five-dollar chip on top of
+       nothing is fine and the table minimum still means something. */
+    const have = seat.bet || 0;
+    const total = have + cents;
+    if (total < this.rules.minBet) throw new Error(`minimum bet is ${this.rules.minBet} cents`);
+    if (total > this.rules.maxBet) throw new Error(`maximum bet is ${this.rules.maxBet} cents`);
 
     // Taken now, not at settlement. The stake leaves the balance when it goes
     // on the table, which is what stops the same money being bet twice.
     this.accounts.post([{ userId, delta: -cents, reason: 'bet', ref: `${this.id}#${this.handNo + 1}` }]);
-    seat.bet = cents;
-    this.onEvent('bet', { seatNo: seat.seatNo, cents, balance: this.accounts.balance(userId) });
+    seat.bet = total;
+    this.onEvent('bet', { seatNo: seat.seatNo, cents: total, balance: this.accounts.balance(userId) });
+    return seat;
+  }
+
+  /* Chips come back off the felt too. Without this a misplaced chip is money
+     gone until the hand plays out, and with six denominations to choose from
+     a misplaced chip is a matter of time.
+
+     Refunded under the same reason it was staked under, deliberately: the
+     restart recovery nets stakes against payouts by reason, so a refund
+     posted under a new one would leave the round looking unpaid and hand the
+     money back a second time on the next boot. */
+  clearBet(userId) {
+    if (this.phase !== 'betting') throw new Error('betting is closed');
+    const seat = this.seatOf(userId);
+    if (!seat) throw new Error('you are not seated');
+    if (!seat.bet) return seat;
+    this.accounts.post([{ userId, delta: seat.bet, reason: 'bet', ref: `${this.id}#${this.handNo + 1}` }]);
+    seat.bet = 0;
+    this.onEvent('bet', { seatNo: seat.seatNo, cents: 0, balance: this.accounts.balance(userId) });
     return seat;
   }
 

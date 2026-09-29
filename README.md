@@ -88,6 +88,23 @@ modulo bias. When the shoe is retired the seed is published, and anyone can
 rebuild the exact shoe and check it against the cards they saw — and check the
 published fingerprint against the revealed seed.
 
+**You bet with chips, and chips add up.** The rack holds the cheques a casino
+racks, in the colours it racks them in — white $1, red $5, green $25, black
+$100, purple $500, orange $1K — and each one you lay down raises the bet
+rather than replacing it, so two blacks and a green is $225. Table limits are
+$1 to $2,500 a hand, checked against the total rather than the chip: a ceiling
+you can step over by adding one more chip is not a ceiling. Chips come back
+off again while betting is open, because with six denominations to aim at a
+misplaced chip is a matter of time.
+
+That refund is posted under the same reason as the stake, which matters more
+than it looks: the restart recovery below nets stakes against payouts by
+reason, so a refund filed under a reason of its own would leave the round
+looking unpaid and hand the money over a second time on the next boot. Hands
+played — the count that gates gifting at fifty and chat at five — is measured
+per round on what was still on the table when the cards came out, so betting
+and clearing on repeat gets you nowhere near either.
+
 **A stake leaves your balance when the bet is placed**, which is what stops the
 same money being bet twice — but the hand itself lives in the server's memory.
 If the process dies in between, a deploy or a crash, that stake would sit in the
@@ -136,6 +153,15 @@ a handful of friends cannot manufacture a queue. And hiding, which is the
 owner's actual lever — the row survives and is flagged, so a report still
 points at something afterwards. Talking needs five hands played, rather than
 the fifty gifting needs; talking is not taking.
+
+**The dealer speaks**, using the browser's own synthesiser. That is the only
+reason she can: a recorded voice means an audio pipeline, a megabyte of clips
+per accent, and a page that stops working on a plane. Totals are read as
+words, because a dealer calls "seventeen" and a screen reader reads "one
+seven". It is wired into the same function that writes her line on screen, so
+every callout is spoken by construction rather than by remembering to add it
+in two places — and it is off until you ask, which is also the click browsers
+require before a page may make any sound at all.
 
 Moderation needs a moderator. `ADMIN_EMAIL` names the account that can read
 reports and hide messages. Leave it unset and those two routes do not exist to

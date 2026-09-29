@@ -351,6 +351,161 @@ ok(glyphs === 0, `decorative glyphs are hidden from screen readers (${glyphs} ex
      than the check is worth. It is covered by hand instead; a stub that
      counted nothing would just read like coverage. */
 
+
+
+  /* ------------------------------------------------ the betting chip rack */
+  /* This shipped broken and nobody's test noticed: the felt's chip stacks and
+     the betting picker were both styled `.chips`/`.chip`, the felt rules came
+     later in the file, and so the picker's buttons were drawn as 22x5px
+     slivers with their labels spilling out across the emote wheel below.
+     Measured rather than eyeballed, because that is what missed it. */
+  /* The rack only exists while betting is open, and by now the round this
+     page opened with has been dealt and played out. Wound back to a betting
+     phase rather than measured wherever it happens to land -- zero-by-zero
+     rectangles would otherwise read as a failure of the layout instead of a
+     failure to look at it. */
+  for (let attempt = 0; attempt < 30 && table.phase !== 'betting'; attempt++) {
+    table.tick(Date.now() + 10 ** 8 * (attempt + 2));
+    await t.waitForTimeout(150);
+    if (table.active) table.act(table.seats[table.active.seat].userId, 'stand');
+  }
+  await t.waitForTimeout(400);
+  ok(table.phase === 'betting', `table: the rack can be reached while betting is open (${table.phase})`);
+  await t.evaluate(() => { window.scrollTo(0, 0); });
+  const rack = await t.evaluate(() => {
+    const btns = [...document.querySelectorAll('#chips .chip')];
+    const emotes = [...document.querySelectorAll('#emotes button, .emote')];
+    const overlaps = (a, c) => a.left < c.right - 1 && c.left < a.right - 1
+                            && a.top < c.bottom - 1 && c.top < a.bottom - 1;
+    return {
+      count: btns.length,
+      labels: btns.map(x => x.textContent.trim()),
+      named: btns.every(x => (x.getAttribute('aria-label') || '').trim().length > 0),
+      // Round, and big enough to hit. A sliver fails both.
+      tooSmall: btns.filter(x => {
+        const r = x.getBoundingClientRect();
+        return r.width < 44 || r.height < 44;
+      }).map(x => `${x.textContent.trim()} ${Math.round(x.getBoundingClientRect().width)}x${Math.round(x.getBoundingClientRect().height)}`),
+      // A label wider than the button it sits in is the spill from the bug.
+      spilling: btns.filter(x => x.scrollWidth > x.clientWidth + 1)
+                    .map(x => `${x.textContent.trim()} ${x.scrollWidth}>${x.clientWidth}`),
+      // And nothing in the rack may sit on top of anything else.
+      collides: btns.some((x, i) => {
+        const a = x.getBoundingClientRect();
+        return btns.slice(i + 1).some(y => overlaps(a, y.getBoundingClientRect()))
+            || emotes.some(e => e.offsetParent && overlaps(a, e.getBoundingClientRect()));
+      }),
+    };
+  });
+  ok(rack.count === 6, `table: the rack holds six denominations (${rack.count})`);
+  ok(rack.labels.join(' ') === '$1 $5 $25 $100 $500 $1K',
+     `table: and they are the cheques a casino racks (${rack.labels.join(' ')})`);
+  ok(rack.named, 'table: every chip says what it does, not just what it is worth');
+  ok(rack.tooSmall.length === 0, `table: every chip is big enough to hit (${rack.tooSmall.join(', ')})`);
+  ok(rack.spilling.length === 0, `table: no chip's label spills out of it (${rack.spilling.join(', ')})`);
+  ok(!rack.collides, 'table: and no chip lands on top of another control');
+
+  /* The two things called .chip are different sizes on purpose -- one is a
+     button you press, the other is a disc lying on the felt. Asserting they
+     differ is what would have caught the collision at the time. */
+  // A chip on the felt needs a bet on the felt.
+  await t.click('#chips .c25');
+  await t.waitForTimeout(400);
+  const distinct = await t.evaluate(() => {
+    const pick = document.querySelector('#chips .chip');
+    const felt = document.querySelector('.betstack .betchip');
+    if (!pick || !felt) return { missing: !pick ? 'picker' : 'felt' };
+    const a = pick.getBoundingClientRect(), b = felt.getBoundingClientRect();
+    return { pick: Math.round(a.height), felt: Math.round(b.height) };
+  });
+  ok(!distinct.missing, `table: both kinds of chip are on screen to compare (${distinct.missing || ''})`);
+  ok(distinct.missing || distinct.pick > distinct.felt * 3,
+     `table: a chip you press is not styled as a chip lying on the felt ` +
+     `(${distinct.pick}px vs ${distinct.felt}px)`);
+
+  /* --------------------------------------------------- the dealer's voice */
+  /* The dealer reads her lines with the browser's synthesiser. The promise
+     worth checking is not that one callout speaks — it is that every one of
+     them does, which holds only while there is a single place that speaks.
+     So this counts lines rather than sampling them: what reached the screen
+     and what reached the voice have to be the same set.
+
+     Stubbed at speechSynthesis, because a real voice needs a sound card and
+     would prove less. Driven through the actual table, because a test that
+     called say() itself would be testing its own copy of the funnel. */
+  const watch = () => t.evaluate(() => {
+    window.__spoken = [];
+    window.__seen = [];
+    speechSynthesis.speak = u => window.__spoken.push(u.text);
+    speechSynthesis.cancel = () => {};
+    const el = document.getElementById('dealerSay');
+    new MutationObserver(() => {
+      const s = el.textContent.trim();
+      if (s && s !== window.__seen[window.__seen.length - 1]) window.__seen.push(s);
+    }).observe(el, { childList: true, characterData: true, subtree: true });
+  });
+
+  const voiceCtl = await t.evaluate(() => {
+    const b = document.getElementById('voiceBtn');
+    return { there: !!b && !b.hidden, named: !!(b && (b.getAttribute('aria-label') || '').trim()),
+             pressed: !!(b && b.hasAttribute('aria-pressed')),
+             off: !!(b && b.getAttribute('aria-pressed') === 'false') };
+  });
+  ok(voiceCtl.there, 'table: there is a dealer voice control');
+  ok(voiceCtl.named, 'table: the voice control has a name, not just a glyph');
+  ok(voiceCtl.pressed, 'table: the voice control reports whether it is on');
+  ok(voiceCtl.off, 'table: the dealer is silent until asked');
+
+  /** Play a round from the outside, so the page hears the same events a real
+      table sends. Returns what reached the screen and what reached the voice. */
+  const playARound = async () => {
+    await watch();
+    for (let attempt = 0; attempt < 30; attempt++) {
+      if (table.phase === 'betting') {
+        try { await t.click('#chips .c25', { timeout: 2000 }); } catch {}
+        await t.waitForTimeout(150);
+      }
+      table.tick(Date.now() + 10 ** 7 * (attempt + 2));
+      await t.waitForTimeout(200);
+      if (table.active) { table.act(table.seats[table.active.seat].userId, 'stand'); await t.waitForTimeout(200); }
+      if (table.phase === 'betting' && attempt > 1) break;
+    }
+    await t.waitForTimeout(500);
+    return t.evaluate(() => ({ seen: window.__seen.slice(), spoken: window.__spoken.slice() }));
+  };
+
+  // Off: the lines still arrive on screen, and not one of them is spoken.
+  const silent = await playARound();
+  ok(silent.seen.length >= 3,
+     `table: a round produces dealer lines to check against (${silent.seen.length})`);
+  ok(silent.spoken.length === 0,
+     `table: with the voice off not a word is spoken (${silent.spoken.length}: ${silent.spoken.join(' | ')})`);
+
+  // On: every line that reaches the screen reaches the voice as well.
+  await t.click('#voiceBtn');
+  const loud = await playARound();
+  ok(loud.seen.length >= 3, `table: the round with the voice on produces lines too (${loud.seen.length})`);
+  ok(loud.spoken.length >= loud.seen.length,
+     `table: every dealer line on screen is also spoken ` +
+     `(${loud.seen.length} shown, ${loud.spoken.length} spoken; ` +
+     `shown: ${loud.seen.join(' | ')})`);
+
+  /* Totals are read as words. "Dealer stands on 17" spoken as one-seven is
+     the tell that a synthesiser is reading a screen rather than a dealer
+     calling a hand. */
+  const digits = loud.spoken.filter(s => /\d/.test(s));
+  ok(digits.length === 0,
+     `table: no callout is spoken with digits left in it (${digits.join(' | ')})`);
+  ok(loud.spoken.some(s => /\b(seventeen|eighteen|nineteen|twenty|ace|blackjack|bets)\b/i.test(s)),
+     `table: the callouts are words a dealer would say (${loud.spoken.slice(0, 4).join(' | ')})`);
+
+  // Off again, and it stops. A toggle that only works one way is half a toggle.
+  await t.click('#voiceBtn');
+  const hushed = await playARound();
+  ok(hushed.spoken.length === 0,
+     `table: switching the voice back off silences it (${hushed.spoken.length})`);
+  ok(hushed.seen.length >= 3, 'table: while the lines keep arriving on screen');
+
   await t.close();
   server.close();
 }
